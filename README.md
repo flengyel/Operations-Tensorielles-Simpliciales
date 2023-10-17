@@ -10,13 +10,13 @@ Nous considérons les opérations simpliciales définies sur les matrices et les
 
 $$
 \begin{aligned}
-d_i d_j &= d_{j-1} d_i, \quad  \text{si } i < j; \\
-s_i s_j &= s_j s_{i-1}, \quad  \text{si } i > j; \\
+d_i d_j &= d_{j-1} d_i, \quad  \text{ si } i < j; \\
+s_i s_j &= s_j s_{i-1}, \quad  \text{ si } i > j; \\
 d_i s_j &=
 \begin{cases}
-s_{j-1} d_i,   \text{si } i < j; \\
-1, \qquad  \text{si } i \in \lbrace j, j+1\rbrace; \\
-s_j d_{i-1},  \text{si } i > j+1.
+s_{j-1} d_i,   \text{ si } i < j; \\
+1, \qquad  \text{ si } i \in \lbrace j, j+1\rbrace; \\
+s_j d_{i-1},  \text{ si } i > j+1.
 \end{cases}
 \end{aligned}
 $$

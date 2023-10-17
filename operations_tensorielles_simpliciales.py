@@ -1,36 +1,35 @@
 import numpy as np
 
-# dimensions of a matrix as a tuple of lists of row and column indices
-# e.g. _dims(M) = ([0,1,2,3], [0,1,2,3,4,5,6,7,8])
-# This precomputation is used to avoid recomputing the same list of indices
-# in boundary computations
-
+# dimensions d'une matrice sous forme d'un tuple de listes d'indices de lignes et de colonnes
+# par exemple, _dims(M) = ([0,1,2,3], [0,1,2,3,4,5,6,7,8])
+# Cette précomputation est utilisée pour éviter de recalculer la même liste d'indices
+# dans les calculs de frontière
 def _dims(M):
     return tuple([np.arange(dim_size) for dim_size in M.shape])
 
 
-# Generalization of the face operation to tensors
+# Généralisation de l'opération face aux tenseurs
 def _face(M, axes, i):
     indices = [np.delete(axis, i) if len(axis) > i else axis for axis in axes]
     grid = np.ix_(*indices)
     return M[grid]
 
+# i-ème face d'une matrice
 def face(M, i):
     axes = _dims(M)
     return _face(M, axes, i)
 
-
-# i-th horizontal face of a matrix, with dimensional indices given by rows and cols
+# i-ème face horizontale d'une matrice, avec des indices dimensionnels donnés par les lignes et les colonnes
 def _hface(M, rows, cols, i):
     grid = np.ix_(np.delete(rows,i),cols)
     return M[grid]
 
-# i-th horizontal face of a matrix
+# i-ème face horizontale d'une matrice
 def hface(M, i):
     (r, c) = _dims(M)
     return _hface(M, r, c, i)
 
-# i-th vertical face of a matrix, with dimensional indices given by rows and cols   
+# i-ème face verticale d'une matrice, avec des indices dimensionnels donnés par les lignes et les colonnes
 def _vface(M, rows, cols, i):
     grid = np.ix_(rows,np.delete(cols,i))
     return M[grid]
