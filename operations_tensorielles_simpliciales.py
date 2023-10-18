@@ -34,39 +34,39 @@ def _vface(M, rows, cols, i):
     grid = np.ix_(rows,np.delete(cols,i))
     return M[grid]
 
-# i-th diagonal face of a matrix
+#  i-ème face verticale d'une matrice
 def vface(M, i):
     (r, c) = _dims(M)
     return _vface(M, r, c, i)
 
-# j-th vertical degeneracy of a matrix
+#  j-ème dégénérescence verticale d'une matrice
 def vdegen(z, j):
     return np.insert(z, j, z[:, j], axis=1)
 
-# j-th horizontal degeneracy of a matrix
+#  j-ème dégénérescence horizontale d'une matrice
 def hdegen(z, j):
     return np.insert(z, j, z[j, :], axis=0)
 
-# j-th degeneracy of a matrix
+# j-ème dégénérescence d'une matrice
 def degen_matrix(z, j):
     z_with_row = np.insert(z, j, z[j, :], axis=0)
     z_with_row_and_col = np.insert(z_with_row, j, z_with_row[:, j], axis=1)
     return z_with_row_and_col
 
-# k-th degeneracy of a tensor
+# k-ème dégénérescence d'un tenseur
 def degen(z, k):
-    # Iterate through each dimension and duplicate the k-th hypercolumn
+    # Parcourez chaque dimension et dupliquez la k-ème hypercolonne
     for axis in range(z.ndim):
         slices = [slice(None)] * z.ndim
         slices[axis] = k
         z = np.insert(z, k, z[tuple(slices)], axis=axis)
     return z
 
-# Boundary of a tensor
+# Frontière d'un tenseur
 def bdry(M):
     d = np.min(M.shape)
     axes = _dims(M)
-    # subtract 1 from each dimension
+    #  soustraire 1 de chaque dimension
     A = np.zeros(np.subtract(M.shape,np.array([1])))
     for i in range(d):
        if i % 2 == 0:
@@ -75,11 +75,11 @@ def bdry(M):
            A = np.subtract(A, _face(M, axes, i))
     return A
 
-# Horizontal boundary of a matrix
+#  Frontière horizontale d'une matrice
 def hbdry(M):
     d = M.shape[0]
     rows, cols = _dims(M)
-    # subtract 1 from zeroth dimension
+    # soustraire 1 de la dimension zéro
     A = np.zeros(np.subtract(M.shape,np.array([1,0])))
     for i in range(d):
         if i % 2 == 0:
@@ -88,11 +88,11 @@ def hbdry(M):
             A = np.subtract(A, _hface(M, rows, cols, i))
     return A
 
-# Vertical boundary of a matrix
+#  Frontière verticale d'une matrice
 def vbdry(M):
     d = M.shape[1]
     rows, cols = _dims(M)
-    # subtract 1 from first dimension
+    # soustraire 1 de la première dimension
     A = np.zeros(np.subtract(M.shape,np.array([0,1])))
     for i in range(d):
         if i % 2 == 0:
@@ -101,11 +101,10 @@ def vbdry(M):
             A = np.subtract(A, _vface(M, rows, cols, i))  
     return A
 
-# coboundary of a matrix. This will always give zero cohomology
+# cobord d'une matrice. Cela donnera toujours une cohomologie nulle
 def cobdry(M):    
     d = np.min(M.shape)
-    #rows, cols = _dims(M)
-    # Add 1 to each dimension
+    # Ajoutez 1 à chaque dimension
     A = np.zeros(np.add(M.shape,np.array([1])))
     for i in range(d):
        if i % 2 == 0:
@@ -114,9 +113,9 @@ def cobdry(M):
            A = np.subtract(A, degen(M, i))
     return A
 
-# Horn function, given a matrix M and an index k, 0 <= k <= min(M.shape)
-# This returns the list of diagonal faces of M in order except for the k-th.
-# The k-th matrix is the zero matrix of dimension (M.shape[0]-1)x(M.shape[1]-1)
+# Fonction de cornet, donnée une matrice M et un indice k, 0 <= k <= min(M.shape)
+# Ceci retourne la liste des faces diagonales de M en ordre à l'exception de la k-ème.
+# La k-ème matrice est la matrice zéro de dimension (M.shape[0]-1)x(M.shape[1]-1)
 def horn(M, k):
     d = min(M.shape)
     if k < 0 or k >= d:
