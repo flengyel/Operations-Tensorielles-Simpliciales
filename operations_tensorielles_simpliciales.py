@@ -190,11 +190,34 @@ def tensor_inner_horn_rank_dimension_comparison(shape = (3,2,2,2), verbose = Fal
     return True
 
 if __name__ == "__main__":
-    shape = (8,7,7,8,9)
-    rank = len(shape)
-    dim = min(shape)-1
-    print("shape:", shape, "rank", rank, "dim", dim)
-    conjecture = tensor_inner_horn_rank_dimension_conjecture(shape, verbose=True)
-    print("The tensor inner horn rank dimension conjecture for shape =", shape, "is", conjecture)
-    comparison = tensor_inner_horn_rank_dimension_comparison(shape, verbose=True)
-    print("The tensor inner horn rank dimension comparison for shape =", shape, "is", comparison)
+    # Counterexample from On Reconstruction of Matrices
+    # Bennet Manvel and Paul K. Stockmeyer
+    # Mathematics Magazine , Sep., 1971, Vol. 44, No. 4 (Sep., 1971), pp. 218-221 
+    def checkReconstruction(A: np.ndarray):
+        dim  = min(A.shape)-1 
+                
+        for i in range(dim+1):
+            H = horn(A, i)
+            B = filler(H, i)
+            Hprime = horn(B, i)
+            if not np.array_equal(H,Hprime):
+                raise FillerException("Original horn and filler horn disagree!")
+            if not np.array_equal(A, B):
+                print("Reconstructed matrix disagreement.", A, B, sep="\n" )
+                return False
+        print("All reconstructions agree", A, B, sep="\n")
+        return True
+    # Because the horns are ordered, the matrices can be reconstructed from their inner horns
+    A = np.array([[2, 4, 3, 4], 
+                  [5, 2, 3, 3],
+                  [6, 6, 2, 4],
+                  [5, 6, 5, 2]])
+    checkReconstruction(A)    
+    B = np.array([[2, 3, 4, 3], 
+                  [6, 2, 4, 4],
+                  [5, 5, 2, 3],
+                  [6, 5, 6, 2]])
+    checkReconstruction(B)    
+    print("Faces of A", [face(A, i) for i in range(4)])
+    print("Faces of B", [face(B, i) for i in range(4)])
+    
