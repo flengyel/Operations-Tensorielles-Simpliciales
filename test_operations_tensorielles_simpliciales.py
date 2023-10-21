@@ -1,5 +1,8 @@
 import numpy as np
+from numpy import ndarray
 import pytest
+from typing import Tuple
+
 from operations_tensorielles_simpliciales import _dims, face, hface, vface, bdry, hbdry, vbdry 
 from operations_tensorielles_simpliciales import degen, hdegen, vdegen, horn, Kan_condition, filler
 from operations_tensorielles_simpliciales import standard_basis_matrix, cobdry
@@ -9,7 +12,7 @@ from operations_tensorielles_simpliciales import tensor_inner_horn_rank_dimensio
 Z = np.arange(7*9)
 Z = Z.reshape(7,9)
 
-def test_face():
+def test_face() -> None:
     expected_face = np.array([[ 0,  1,  2,  3,  4,  6,  7,  8],
                               [ 9, 10, 11, 12, 13, 15, 16, 17],
                               [18, 19, 20, 21, 22, 24, 25, 26],
@@ -18,7 +21,7 @@ def test_face():
                               [54, 55, 56, 57, 58, 60, 61, 62]])
     assert np.allclose(face(Z,5), expected_face)
 
-def test_hface():
+def test_hface() -> None:
     expected_hface = np.array( [[ 0,  1,  2,  3,  4,  5,  6,  7,  8],
                                 [ 9, 10, 11, 12, 13, 14, 15, 16, 17],
                                 [18, 19, 20, 21, 22, 23, 24, 25, 26],
@@ -27,19 +30,19 @@ def test_hface():
                                 [54, 55, 56, 57, 58, 59, 60, 61, 62]])
     assert np.allclose(hface(Z,3), expected_hface)  
        
-def test_hbdry_hbdry():
+def test_hbdry_hbdry() -> None:
     expected_hbdry_hbdry = np.zeros((5,9))
     assert np.allclose(hbdry(hbdry(Z)), expected_hbdry_hbdry)   
 
-def test_vbdry_vbdry():
+def test_vbdry_vbdry() -> None:
     expected_vbdry_vbdry = np.zeros((7,7))  
     assert np.allclose(vbdry(vbdry(Z)), expected_vbdry_vbdry)
 
-def test_bdry_bdry():
+def test_bdry_bdry() -> None:
     expected_bdry_bdry = np.zeros((5,7))  
     assert np.allclose(bdry(bdry(Z)), expected_bdry_bdry)   
 
-def test_bdry_hbdry():
+def test_bdry_hbdry() -> None:
     expected_bdry_hbdry = np.array([[1., 0., 1., 0., 1., 0., 0., 0.],
                                     [1., 0., 1., 0., 1., 0., 0., 0.],
                                     [1., 0., 1., 0., 1., 0., 0., 0.],
@@ -58,7 +61,7 @@ def test_bdry_hbdry():
 
 W = np.random.randint(low=-10, high=73, size=(73,109))
 
-def facecommute(A):
+def facecommute(A)  -> bool:
     d = min(A.shape)
     for j in range(d):
         B = face(A,j); # face operation of diagonal module
@@ -68,10 +71,10 @@ def facecommute(A):
 
 # the diagonal face operation is the composite of vertical and horizontal face operations
 # This is given axiomatically in 
-def test_facecommute():
+def test_facecommute() -> None:
     assert np.allclose(facecommute(W), True)
 
-def transcommute(A):
+def transcommute(A) -> bool:
     d = min(A.shape)
     for j in range(d):
         if not np.array_equal(face(np.transpose(A), j), np.transpose(face(A, j))):
@@ -79,7 +82,7 @@ def transcommute(A):
     return True
 
 # The face operation preserves transposition
-def test_transcommute():
+def test_transcommute() -> None:
     assert np.allclose(transcommute(W), True)
 
 # Verify that degen(A,j) = hdegen(vdegen(A,j),j) = vdegen(hdegen(A,j),j)
@@ -88,7 +91,7 @@ def test_transcommute():
 # a Double Semi-Simplical Group.” Topology 5 (2): 155–57. 
 # https://doi.org/10.1016/0040-9383(66)90016-4.
 
-def degencommute(A):
+def degencommute(A) -> bool:
     (m,n) = A.shape
     d = min(m,n)
     for j in range(d):
@@ -97,12 +100,12 @@ def degencommute(A):
             return False
     return True
 
-def test_degencommute():
+def test_degencommute() -> None:
     assert np.allclose(degencommute(W), True) 
 
 # degeneracies commute with transpose
 
-def degentranscommute(A):
+def degentranscommute(A) -> bool:
     (m, n) = A.shape
     d = min(m,n)
     for j in range(d):
@@ -110,14 +113,14 @@ def degentranscommute(A):
             return False
     return True
 
-def test_degentranscommute():
+def test_degentranscommute() -> None:
     assert np.allclose(degentranscommute(W), True)
 
 
 # The five simplicial identities for the diagonal simplicial operations 
 
-def test_first_identity():
-    def first_identity(M):
+def test_first_identity() -> None:
+    def first_identity(M) -> bool:
         d = min(M.shape)
         for j in range(d):
             for i in range(j):  # i < j here
@@ -128,8 +131,8 @@ def test_first_identity():
         return True
     assert np.allclose(first_identity(W), True)       
 
-def test_second_identity():
-    def second_identity(M):
+def test_second_identity() -> None:
+    def second_identity(M) -> bool:
         d = min(M.shape) # d is the dimension
         for j in range(d):
             for i in range(j):
@@ -140,8 +143,8 @@ def test_second_identity():
         return True
     assert np.allclose(second_identity(W), True)
 
-def test_third_identity():
-    def third_identity(M):
+def test_third_identity() -> None:
+    def third_identity(M) -> bool:
         d = min(M.shape) # d is the dimension
         for j in range(d):
             X = face(degen(M,j), j)
@@ -151,8 +154,8 @@ def test_third_identity():
         return True    
     assert np.allclose(third_identity(W), True)
 
-def test_fourth_identity():
-    def fourth_identity(M):
+def test_fourth_identity() -> None:
+    def fourth_identity(M) -> bool:
         d = min(M.shape) # d is the dimension
         for i in range(d):
             for j in range(i+1):
@@ -164,8 +167,8 @@ def test_fourth_identity():
         return True
     assert np.allclose(fourth_identity(W), True)
 
-def test_fifth_identity():
-    def fifth_identity(M):
+def test_fifth_identity() -> None:
+    def fifth_identity(M) -> bool:
         d = min(M.shape) # d is the dimension
         for j in range(d):
             for i in range(j+1):
@@ -178,7 +181,7 @@ def test_fifth_identity():
 
 # module structure (horizontal)
 
-def h_module(A, L, B):
+def h_module(A: ndarray, L: ndarray, B: ndarray) -> bool:
     n = A.shape[1]
     p = L.shape[0]
     d = min(n,p)
@@ -197,13 +200,13 @@ def h_module(A, L, B):
             return False
     return True
 
-def test_h_module():
+def test_h_module() -> None:
     A = np.random.randint(low=-11, high=73, size=(7,5))
     L = np.random.randint(low=-133, high=103, size=(5,5))
     B = np.random.randint(low=44, high=83, size=(5,13))
     assert np.allclose(h_module(A,L,B), True)
 
-def h_module2(A, L, B):
+def h_module2(A: ndarray, L: ndarray, B: ndarray) -> bool:
     n = A.shape[1]
     p = L.shape[0]
     d = min(n,p)
@@ -222,7 +225,7 @@ def h_module2(A, L, B):
             return False
     return True
 
-def test_h_module2():
+def test_h_module2() -> None:
     A = np.random.randint(low=-11, high=73, size=(7,5))
     L = np.random.randint(low=-133, high=103, size=(5,5))
     B = np.random.randint(low=44, high=83, size=(5,13))
@@ -230,7 +233,7 @@ def test_h_module2():
 
 
 # face and degeneracy operations commute with the hadamard product
-def hadamard_face(A, B):
+def hadamard_face(A: ndarray, B: ndarray) -> bool:
     if A.shape != B.shape:
         return False
     d = min(A.shape)
@@ -239,12 +242,12 @@ def hadamard_face(A, B):
             return False
     return True
 
-def test_hadamard_face():
+def test_hadamard_face() -> None:
     A = np.random.randint(low=-11, high=73, size=(7,11))
     B = np.random.randint(low=1, high=43, size=(7,11))
     assert np.allclose(hadamard_face(A, B), True)
 
-def hadamard_degen(A, B):
+def hadamard_degen(A: ndarray, B: ndarray) -> bool:
     if A.shape != B.shape:
         return False
     d = min(A.shape)
@@ -253,22 +256,22 @@ def hadamard_degen(A, B):
             return False
     return True
 
-def test_hadamard_degen():
+def test_hadamard_degen() -> None:
     A = np.random.randint(low=-11, high=73, size=(7,11))
     B = np.random.randint(low=1, high=43, size=(7,11))
     assert np.allclose(hadamard_degen(A, B), True)
 
 
 # The transpose of the boundary is the boundary of the transpose
-def test_transpose_bdry():
-    def transpose_bdry(A):
+def test_transpose_bdry() -> None:
+    def transpose_bdry(A) -> bool:
         return(np.array_equal(np.transpose(bdry(A)), bdry(np.transpose(A))))
     A = np.random.randint(low=-11, high=73, size=(7,11,4))
     assert np.allclose(transpose_bdry(A), True)
 
 # The face operations are linear and commute with hermitian transpose as well
-def test_linear_map():
-    def linear_map():
+def test_linear_map() -> None:
+    def linear_map() -> bool:
         A = np.random.randint(low=-11, high=73, size=(7,11))
         B = np.random.randint(low=1, high=43, size=(7,11))
         d = min(A.shape)
@@ -287,8 +290,8 @@ def test_linear_map():
 # Simplicial matrix modules are fibrant
 # Check that the k-horn function produces a list of matrix-simplices that satisfies the Kan condition    
 
-def test_kan_condition():
-    def _kan_condition():
+def test_kan_condition() -> None:
+    def _kan_condition() -> bool:
         X = np.random.randint(low=-11, high=11, size=(11,11))
         d = min(X.shape)
         for k in range(d):
@@ -299,7 +302,7 @@ def test_kan_condition():
     assert np.allclose(_kan_condition(), True)
 
 # The filler is not unique in dimension 2 (a 3x3 matrix has dimension max(shape)-1)
-def test_filler_dimension2():
+def test_filler_dimension2() -> None:
     X = np.array([[-6,  5,  7],
                   [-5,  4,  8],
                   [ 1,  9,  0]])
@@ -310,20 +313,20 @@ def test_filler_dimension2():
     assert np.allclose(np.array_equal(H, HH) and not np.array_equal(X, Y), True)
 
 # in dimension 3 and higher, the filler is unique
-def test_filler_dimension3():
+def test_filler_dimension3() -> None:
     X = np.random.randint(low=-11, high=73, size=(8,4))
     H = horn(X, 1)
     Y = filler(H, 1)
     assert np.allclose(np.array_equal(X, Y), True)
 
 # in dimension 10 the filler is unique
-def test_filler_dimension10():
+def test_filler_dimension10() -> None:
     X = np.random.randint(low=-11, high=11, size=(11,11))
     H = horn(X, 2)
     Y = filler(H, 2)
     assert np.allclose(np.array_equal(X, Y), True)
 
-def test_standard_basis_matrix():
+def test_standard_basis_matrix() -> None:
     # Example usage
     m = 3
     n = 3
@@ -335,7 +338,7 @@ def test_standard_basis_matrix():
                   [0., 0., 0.]])
     assert np.allclose(M_ij, B)
 
-def test_coboundary():
+def test_coboundary() -> None:
     X = np.random.randint(low=-11, high=11, size=(11,11))
     Y = bdry(X)
     Z = cobdry(bdry(Y))    
@@ -343,8 +346,8 @@ def test_coboundary():
     assert np.allclose(np.linalg.matrix_rank(Z), 0)
 
 
-def test_tensor_kan_condition():
-    def _kan_condition():
+def test_tensor_kan_condition() -> None:
+    def _kan_condition() -> bool:
         X = np.random.randint(low=-11, high=11, size=(4,4,4,4))
         d = min(X.shape)
         for k in range(d):
@@ -354,9 +357,9 @@ def test_tensor_kan_condition():
         return True
     assert np.allclose(_kan_condition(), True)
 
-def test_tensor_inner_horn_rank_dimension_conjecture():
+def test_tensor_inner_horn_rank_dimension_conjecture() -> None:
     import random
-    def random_shape():
+    def random_shape() -> Tuple[int]:
         length = random.randint(2, 10)  # Length of at least two and bounded by 10
         return tuple(random.randint(2, 10) for _ in range(length))  # Positive integers at least two and bounded by 10
 
@@ -366,8 +369,9 @@ def test_tensor_inner_horn_rank_dimension_conjecture():
 
 if __name__ == "__main__":
     pytest.main([__file__])
-    exit(0)
-    def pretty_print_coefficients(coefficients):
+    #exit(0)
+    def pretty_print_coefficients(coefficients: dict) -> None: 
+        # coefficients[i, j, k, l] holds the coefficient for mapping M_{i, j} to M_{k, l} 
         for key, value in coefficients.items():
             print(f"({key[0]},{key[1]}): [")
             for coeff, matrix in value:
@@ -397,7 +401,7 @@ if __name__ == "__main__":
     
     #print(coefficients)
     # Custom pretty print
-    #pretty_print_coefficients(coefficients)
+    pretty_print_coefficients(coefficients)
 
 
     X = np.random.randint(low=-11, high=11, size=(11,11))
