@@ -3,7 +3,7 @@ from numpy import ndarray
 import pytest
 from typing import Tuple
 
-from operations_tensorielles_simpliciales import _dims, face, hface, vface, bdry, hbdry, vbdry 
+from operations_tensorielles_simpliciales import SimplicialException, face, hface, vface, bdry, hbdry, vbdry 
 from operations_tensorielles_simpliciales import degen, hdegen, vdegen, horn, Kan_condition, filler
 from operations_tensorielles_simpliciales import standard_basis_matrix, cobdry
 from operations_tensorielles_simpliciales import tensor_inner_horn_rank_dimension_comparison
@@ -367,9 +367,42 @@ def test_tensor_inner_horn_rank_dimension_conjecture() -> None:
     assert np.allclose(tensor_inner_horn_rank_dimension_comparison(shape),
                        tensor_inner_horn_rank_dimension_conjecture(shape))
 
+def test_manvel_stockmeyer() -> None:
+    # Counterexample from On Reconstruction of Matrices
+    # Bennet Manvel and Paul K. Stockmeyer
+    # Mathematics Magazine , Sep., 1971, Vol. 44, No. 4 (Sep., 1971), pp. 218-221 
+    def checkReconstruction(A: np.ndarray) -> bool:
+        dim  = min(A.shape)-1 
+        for i in range(dim+1):
+            H = horn(A, i)
+            B = filler(H, i)
+            Hprime = horn(B, i)
+            if not np.array_equal(H,Hprime):
+                raise SimplicialException("Original horn and filler horn disagree!")
+            if not np.array_equal(A, B):
+                print("Reconstructed matrix disagreement.", A, B, sep="\n" )
+                return False
+        print("All reconstructions agree", A, B, sep="\n")
+        return True
+
+    # Since the set S of principal submatrices of A equals the set of principal 
+    # submatrices of B, A and B cannot be reconstructed from S. However, A and B
+    # can be reconstructed from their inner horns.
+
+    A = np.array([[2, 4, 3, 4], 
+                  [5, 2, 3, 3],
+                  [6, 6, 2, 4],
+                  [5, 6, 5, 2]])
+    B = np.array([[2, 3, 4, 3], 
+                  [6, 2, 4, 4],
+                  [5, 5, 2, 3],
+                  [6, 5, 6, 2]])
+    assert np.allclose(checkReconstruction(A) and checkReconstruction(B), True)
+
 if __name__ == "__main__":
     pytest.main([__file__])
-    #exit(0)
+    exit(0)
+    
     def pretty_print_coefficients(coefficients: dict) -> None: 
         # coefficients[i, j, k, l] holds the coefficient for mapping M_{i, j} to M_{k, l} 
         for key, value in coefficients.items():
@@ -402,7 +435,6 @@ if __name__ == "__main__":
     #print(coefficients)
     # Custom pretty print
     pretty_print_coefficients(coefficients)
-
 
     X = np.random.randint(low=-11, high=11, size=(11,11))
     print(X)

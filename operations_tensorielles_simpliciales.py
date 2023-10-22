@@ -6,9 +6,6 @@ from typing import Tuple, List, Union, Any
 # Cette précomputation est utilisée pour éviter de recalculer la même liste d'indices
 # dans les calculs de frontière
 
-
-
-
 def _dims(M: np.ndarray) -> Tuple[List[np.ndarray]]:
     return tuple([np.arange(dim_size) for dim_size in M.shape])
 
@@ -172,7 +169,7 @@ def tensor_inner_horn_rank_dimension_conjecture(shape: Tuple[int], verbose: bool
     return conjecture
 
 # custom exception for simplicial tensors
-class FillerException(Exception):
+class SimplicialException(Exception):
     pass
 
 def tensor_inner_horn_rank_dimension_comparison(shape: Tuple[int], verbose: bool = False) -> bool:
@@ -184,7 +181,7 @@ def tensor_inner_horn_rank_dimension_comparison(shape: Tuple[int], verbose: bool
         B = filler(H, i)
         Hprime = horn(B, i)
         if not np.array_equal(H,Hprime):
-            raise FillerException("Original horn and filler horn disagree!")
+            raise SimplicialException("Original horn and filler horn disagree!")
         if np.array_equal(A, B):
             if verbose:
                 print("Unique filler.")
@@ -194,33 +191,19 @@ def tensor_inner_horn_rank_dimension_comparison(shape: Tuple[int], verbose: bool
     return True
 
 if __name__ == "__main__":
-    # Counterexample from On Reconstruction of Matrices
-    # Bennet Manvel and Paul K. Stockmeyer
-    # Mathematics Magazine , Sep., 1971, Vol. 44, No. 4 (Sep., 1971), pp. 218-221 
-    def checkReconstruction(A: np.ndarray) -> bool:
-        dim  = min(A.shape)-1 
-        for i in range(dim+1):
-            H = horn(A, i)
-            B = filler(H, i)
-            Hprime = horn(B, i)
-            if not np.array_equal(H,Hprime):
-                raise FillerException("Original horn and filler horn disagree!")
-            if not np.array_equal(A, B):
-                print("Reconstructed matrix disagreement.", A, B, sep="\n" )
-                return False
-        print("All reconstructions agree", A, B, sep="\n")
-        return True
-    # Because the horns are ordered, the matrices can be reconstructed from their inner horns
-    A = np.array([[2, 4, 3, 4], 
-                  [5, 2, 3, 3],
-                  [6, 6, 2, 4],
-                  [5, 6, 5, 2]])
-    checkReconstruction(A)    
-    B = np.array([[2, 3, 4, 3], 
-                  [6, 2, 4, 4],
-                  [5, 5, 2, 3],
-                  [6, 5, 6, 2]])
-    checkReconstruction(B)    
-    print("Faces of A", [face(A, i) for i in range(4)])
-    print("Faces of B", [face(B, i) for i in range(4)])
+  
+    # more counterexamples from manvel and stockmeyer 1971
+    def matrixM(n: int) -> np.ndarray:
+        j = int(np.ceil(n/2))
+        A = np.zeros((n,n))
+        A[0,j] = 1
+        A[j,0] = 1
+        return A
+
+    def matrixN(n: int) -> np.ndarray:
+        A = np.zeros((n,n))
+        j = int(np.ceil(n/2))+1
+        A[0,j] = 1
+        A[j,0] = 1
+        return A
     
