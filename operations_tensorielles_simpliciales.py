@@ -188,19 +188,19 @@ def tensor_inner_horn_rank_dimension_comparison(A: np.ndarray, verbose: bool = F
         Hprime = horn(B, i)
         if not np.array_equal(H,Hprime):
             raise SimplicialException("Original horn and filler horn disagree!")
-        if np.array_equal(A, B):
+        if not np.array_equal(A, B):
             if verbose:
-                print("Unique filler.")
-            return True
+                print("There exist at least two fillers.")
+            return False
     if verbose:
-        print("Non unique filler.")
-    return False
+        print("Unique filler.")
+    return True
 
 if __name__ == "__main__":
   
     # more counterexamples from manvel and stockmeyer 1971
     def matrixM(n: int) -> np.ndarray:
-        j = int(np.ceil(n/2))
+        j = int(np.ceil(n // 2))
         A = np.zeros((n,n))
         A[0,j] = 1
         A[j,0] = 1
@@ -208,7 +208,7 @@ if __name__ == "__main__":
 
     def matrixN(n: int) -> np.ndarray:
         A = np.zeros((n,n))
-        j = int(np.ceil(n/2))+1
+        j = int(np.ceil(n // 2))+1
         A[0,j] = 1
         A[j,0] = 1
         return A

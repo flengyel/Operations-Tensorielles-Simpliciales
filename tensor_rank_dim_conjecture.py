@@ -9,7 +9,8 @@ def random_shape(n: int) -> Tuple[int]:
     length = random.randint(2, n // 2)  # Length of at least two and bounded by 10
     return tuple(random.randint(2, n) for _ in range(length))  # Positive integers at least two and bounded by n
 
-
+# force_degeneracy: if True, force random tensor A to be a degeneracy
+# skip_degeneracies: if True, skip degeneracies. No effect if force_degeneracy is True.
 def rank_dim_conjecture(tests: int, maxdim:int, force_degeneracy:bool=False, skip_degeneracies:bool=False) -> bool:    
     non_unique_horns = 0
     unique_horns = 0
@@ -18,7 +19,7 @@ def rank_dim_conjecture(tests: int, maxdim:int, force_degeneracy:bool=False, ski
         A = np.random.randint(low=1, high=10, size=shape, dtype=np.int16)
         if force_degeneracy:
             A = degen(A, 0) # force A to be a degeneracy
-        if skip_degeneracies:
+        if not force_degeneracy and skip_degeneracies:
             while isDegeneracy(A) or isDegeneracy(bdry(A)):
                 A = np.random.randint(low=1, high=10, size=shape, dtype=np.int16)    
         print(i+1 ,": Shape = ", shape)
@@ -35,7 +36,9 @@ def rank_dim_conjecture(tests: int, maxdim:int, force_degeneracy:bool=False, ski
             unique_horns += 1
         else:
             non_unique_horns += 1
-    print(f"Conjecture verified for {tests} random shapes. Unique horns: {unique_horns} non-unique horns: {non_unique_horns}")
+    print(f"Conjecture verified for {tests} shapes.") 
+    print(f"Inner horns w/ unique fillers: {unique_horns}") 
+    print(f"Inner horns w/ non-unique fillers: {non_unique_horns}")
     return True
 
 if __name__ == "__main__":
