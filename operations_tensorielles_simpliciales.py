@@ -172,11 +172,9 @@ def tensor_inner_horn_rank_dimension_conjecture(shape: Tuple[int], verbose: bool
 class SimplicialException(Exception):
     pass
 
-def tensor_inner_horn_rank_dimension_comparison(shape: Tuple[int], verbose: bool = False) -> bool:
-    rank = len(shape)
-    dim = min(shape)-1
-    # create a random non-zero tensor of the given shape
-    A = np.random.randint(low=1, high=10, size=shape, dtype=np.int16)
+def tensor_inner_horn_rank_dimension_comparison(A: np.ndarray, verbose: bool = False) -> bool:
+    rank = len(A.shape)
+    dim = min(A.shape)-1
     for i in range(1,dim+1):
         H = horn(A, i)
         B = filler(H, i)

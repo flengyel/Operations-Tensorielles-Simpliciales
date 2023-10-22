@@ -364,7 +364,10 @@ def test_tensor_inner_horn_rank_dimension_conjecture() -> None:
         return tuple(random.randint(2, 10) for _ in range(length))  # Positive integers at least two and bounded by 10
 
     shape = random_shape()
-    assert np.allclose(tensor_inner_horn_rank_dimension_comparison(shape),
+    # create a random non-zero tensor of the given shape
+    A = np.random.randint(low=1, high=10, size=shape, dtype=np.int16)
+   
+    assert np.allclose(tensor_inner_horn_rank_dimension_comparison(A),
                        tensor_inner_horn_rank_dimension_conjecture(shape))
 
 def test_manvel_stockmeyer() -> None:
