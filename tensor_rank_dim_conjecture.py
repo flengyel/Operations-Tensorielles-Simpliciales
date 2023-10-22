@@ -6,7 +6,7 @@ import numpy as np
 import random
 
 def random_shape(n: int) -> Tuple[int]:
-    length = random.randint(2, n/2)  # Length of at least two and bounded by 10
+    length = random.randint(2, n // 2)  # Length of at least two and bounded by 10
     return tuple(random.randint(2, n) for _ in range(length))  # Positive integers at least two and bounded by n
 
 
@@ -39,7 +39,7 @@ def rank_dim_conjecture(tests: int, maxdim:int, force_degeneracy:bool=False, ski
     return True
 
 if __name__ == "__main__":
-    rank_dim_conjecture(500, 6, force_degeneracy=False, skip_degeneracies=True)
+    rank_dim_conjecture(750, 7, force_degeneracy=False, skip_degeneracies=True)
     counterexample = np.array( [[8, 8, 7],
                                 [3, 2, 1],
                                 [6, 5, 4],
@@ -48,7 +48,7 @@ if __name__ == "__main__":
                                 [1, 4, 8],
                                 [6, 5, 6],
                                 [6, 2, 5]] ).transpose()
-    print(f"Counterexample: {counterexample}")
+    print(f"Counterexample with degenerate boundary: {counterexample}")
     print(f"bdry(counterexample): {bdry(counterexample)}")
     print(f"isDegeneracy(bdry(counterexample)): {isDegeneracy(bdry(counterexample))}")
     comparison = tensor_inner_horn_rank_dimension_comparison(counterexample, verbose=True)
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     counterexample2 = np.array([[6, 4, 7, 2, 4, 7, 5, 6],
                                 [4, 3, 6, 3, 9, 5, 3, 4],
                                 [6, 5, 7, 7, 1, 8, 4, 9]])
-    print("Counterexample:", counterexample2)
+    print("Counterexample with degenerate boundary:", counterexample2)
     print("bdry(counterexample):", bdry(counterexample2))
     print("isDegeneracy(bdry(counterexample)):", isDegeneracy(bdry(counterexample2)))
     comparison = tensor_inner_horn_rank_dimension_comparison(counterexample2, verbose=True)

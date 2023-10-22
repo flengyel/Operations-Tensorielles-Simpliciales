@@ -117,7 +117,6 @@ def degentranscommute(A) -> bool:
 def test_degentranscommute() -> None:
     assert np.allclose(degentranscommute(W), True)
 
-
 # The five simplicial identities for the diagonal simplicial operations 
 
 def test_first_identity() -> None:
@@ -346,7 +345,6 @@ def test_coboundary() -> None:
     print(Z)
     assert np.allclose(np.linalg.matrix_rank(Z), 0)
 
-
 def test_tensor_kan_condition() -> None:
     def _kan_condition() -> bool:
         X = np.random.randint(low=-11, high=11, size=(4,4,4,4))
@@ -424,8 +422,6 @@ if __name__ == "__main__":
                 formatted_matrix = np.array2string(matrix, formatter={'float_kind': lambda x: "%.2f" % x})
                 print(f"  ({coeff}, {formatted_matrix})")
             print("]")
-
-
 
     m, n = 3, 3
     coefficients = {}
