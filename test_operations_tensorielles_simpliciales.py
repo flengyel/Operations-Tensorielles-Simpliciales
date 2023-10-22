@@ -8,6 +8,7 @@ from operations_tensorielles_simpliciales import degen, hdegen, vdegen, horn, Ka
 from operations_tensorielles_simpliciales import standard_basis_matrix, cobdry
 from operations_tensorielles_simpliciales import tensor_inner_horn_rank_dimension_comparison
 from operations_tensorielles_simpliciales import tensor_inner_horn_rank_dimension_conjecture
+from operations_tensorielles_simpliciales import isDegeneracy    
 
 Z = np.arange(7*9)
 Z = Z.reshape(7,9)
@@ -366,7 +367,9 @@ def test_tensor_inner_horn_rank_dimension_conjecture() -> None:
     shape = random_shape()
     # create a random non-zero tensor of the given shape
     A = np.random.randint(low=1, high=10, size=shape, dtype=np.int16)
-   
+    # exclude known counterexamples
+    while isDegeneracy(A) or isDegeneracy(bdry(A)):
+        A = np.random.randint(low=1, high=10, size=shape, dtype=np.int16)
     assert np.allclose(tensor_inner_horn_rank_dimension_comparison(A),
                        tensor_inner_horn_rank_dimension_conjecture(shape))
 
@@ -401,6 +404,13 @@ def test_manvel_stockmeyer() -> None:
                   [5, 5, 2, 3],
                   [6, 5, 6, 2]])
     assert np.allclose(checkReconstruction(A) and checkReconstruction(B), True)
+
+def test_isDegeneracy() -> None:
+    D = np.array([[[4, 4, 8, 2],[4, 4, 8, 2],[4, 4, 2, 8],[1, 1, 6, 7],[1, 1, 8, 8]],
+    [[4, 4, 8, 2],[4, 4, 8, 2],[4, 4, 2, 8],[1, 1, 6, 7],[1, 1, 8, 8]], 
+    [[5, 5, 9, 9],[5, 5, 9, 9],[1, 1, 2, 6],[5, 5, 4, 4],[1, 1, 3, 6]],
+    [[2, 2, 7, 4],[2, 2, 7, 4],[2, 2, 3, 9],[7, 7, 7, 2],[9, 9, 3, 4]]])
+    assert np.allclose(isDegeneracy(D), True)
 
 if __name__ == "__main__":
     pytest.main([__file__])

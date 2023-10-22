@@ -63,6 +63,13 @@ def degen(z: np.ndarray, k: int) -> np.ndarray:
         z = np.insert(z, k, z[tuple(slices)], axis=axis)
     return z
 
+def isDegeneracy(A: np.ndarray) -> bool:
+    d = min(A.shape) 
+    for i in np.arange(d-1): # faces have dimension d-1
+        if np.array_equal(A, degen(face(A, i), i)):
+            return True
+    return False
+
 # Frontière d'un tenseur
 def bdry(M: np.ndarray) -> np.ndarray:
     d = np.min(M.shape)
