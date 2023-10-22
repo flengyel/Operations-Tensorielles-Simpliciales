@@ -158,14 +158,14 @@ def standard_basis_matrix(m: int, n: int, i: int, j: int) -> np.ndarray:
     M[i, j] = 1
     return M
 
-# the conjecture is that inner horns are non-unique if and only if
-# the rank of a tensor is greater than or equal to its simplicial dimension
+# the conjecture is that inner horns are unique if and only if
+# the rank of a (nonzero) tensor is less than its simplicial dimension
 def tensor_inner_horn_rank_dimension_conjecture(shape: Tuple[int], verbose: bool = False) -> bool:
     rank = len(shape)
     dim = min(shape)-1 # simplicial dimension
-    conjecture = rank >= dim
+    conjecture = rank < dim
     if verbose:
-        print( "shape:",shape,"dim:", dim, "<=", rank, ":rank", conjecture )
+        print( "shape:",shape,"rank:", rank, "<", dim, ":dim", conjecture )
     return conjecture
 
 # custom exception for simplicial tensors
@@ -175,7 +175,8 @@ class SimplicialException(Exception):
 def tensor_inner_horn_rank_dimension_comparison(shape: Tuple[int], verbose: bool = False) -> bool:
     rank = len(shape)
     dim = min(shape)-1
-    A = np.random.randint(low=-10, high=10, size=shape, dtype=np.int16)
+    # create a random non-zero tensor of the given shape
+    A = np.random.randint(low=1, high=10, size=shape, dtype=np.int16)
     for i in range(1,dim+1):
         H = horn(A, i)
         B = filler(H, i)
@@ -185,10 +186,10 @@ def tensor_inner_horn_rank_dimension_comparison(shape: Tuple[int], verbose: bool
         if np.array_equal(A, B):
             if verbose:
                 print("Unique filler.")
-            return False
+            return True
     if verbose:
         print("Non unique filler.")
-    return True
+    return False
 
 if __name__ == "__main__":
   
