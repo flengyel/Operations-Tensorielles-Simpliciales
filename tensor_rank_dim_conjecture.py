@@ -34,6 +34,7 @@ def rank_dim_conjecture(tests: int, maxdim:int, force_degeneracy:bool=False, ski
     non_unique_horns = 0
     unique_horns = 0
     for i in range(tests):
+        print(f"{i+1}: generating random hypermatrix")
         shape = random_shape(maxdim)
         A = np.random.randint(low=1, high=10, size=shape, dtype=np.int16)
         if force_degeneracy:
@@ -41,9 +42,8 @@ def rank_dim_conjecture(tests: int, maxdim:int, force_degeneracy:bool=False, ski
         if not force_degeneracy and skip_degeneracies:
             while isDegeneracy(A) or isDegeneracy(bdry(A)):
                 A = np.random.randint(low=1, high=10, size=shape, dtype=np.int16)    
-        print(i+1 ,": Shape = ", shape)
-        comparison = tensor_inner_horn_rank_dimension_comparison(A, verbose=True)
         conjecture = tensor_inner_horn_rank_dimension_conjecture(shape, verbose=True)
+        comparison = tensor_inner_horn_rank_dimension_comparison(A, verbose=True)
         if comparison != conjecture:
             print(f"Counterexample of shape: {A.shape} with tensor: {A}")
             print(f"Conjecture: {conjecture} Comparison: {comparison}")
@@ -61,7 +61,7 @@ def rank_dim_conjecture(tests: int, maxdim:int, force_degeneracy:bool=False, ski
     return True
 
 if __name__ == "__main__":
-    rank_dim_conjecture(750, 7, force_degeneracy=False, skip_degeneracies=True)
+    rank_dim_conjecture(750, 14, force_degeneracy=False, skip_degeneracies=True)
     counterexample = np.array( [[8, 8, 7],
                                 [3, 2, 1],
                                 [6, 5, 4],
@@ -82,18 +82,3 @@ if __name__ == "__main__":
     print("Filler:", f)
     print("Counterexample and filler agree:", np.array_equal(counterexample,f))
 
-    counterexample2 = np.array([[6, 4, 7, 2, 4, 7, 5, 6],
-                                [4, 3, 6, 3, 9, 5, 3, 4],
-                                [6, 5, 7, 7, 1, 8, 4, 9]])
-    print("Counterexample with degenerate boundary:", counterexample2)
-    print("bdry(counterexample):", bdry(counterexample2))
-    print("isDegeneracy(bdry(counterexample)):", isDegeneracy(bdry(counterexample2)))
-    comparison = tensor_inner_horn_rank_dimension_comparison(counterexample2, verbose=True)
-    conjecture = tensor_inner_horn_rank_dimension_conjecture(counterexample2.shape, verbose=True)
-    print("Conjecture:", conjecture, "Comparison:", comparison)
-    h = horn(counterexample2, 1)
-    print("Horn:", h)
-    f = filler(h, 1)
-    print("Filler:", f)
-    print("Counterexample and filler agree:", np.array_equal(counterexample2,f))
-    

@@ -228,7 +228,7 @@ def tensor_inner_horn_rank_dimension_conjecture(shape: Tuple[int], verbose: bool
     dim = min(shape)-1 # simplicial dimension
     conjecture = rank < dim
     if verbose:
-        print( "shape:",shape,"rank:", rank, "<", dim, ":dim", conjecture )
+        print(f"shape:{shape} rank:{rank} {'<' if conjecture else '>='} dim:{dim}")
     return conjecture
 
 # custom exception for simplicial tensors

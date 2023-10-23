@@ -467,6 +467,20 @@ def test_decomposeDegeneracy() -> None:
                                                    [0., 0., 0.],
                                                    [1., 0., 0.]]), 2)]), True)
 
+def test_counterexample_with_degenerate_boundary() -> None:
+    counterexample2 = np.array([[6, 4, 7, 2, 4, 7, 5, 6],
+                                [4, 3, 6, 3, 9, 5, 3, 4],
+                                [6, 5, 7, 7, 1, 8, 4, 9]])
+    isDegenerate = isDegeneracy(counterexample2)
+    bdryIsDenegerate = isDegeneracy(bdry(counterexample2))
+    comparison = tensor_inner_horn_rank_dimension_comparison(counterexample2, verbose=True)
+    conjecture = tensor_inner_horn_rank_dimension_conjecture(counterexample2.shape, verbose=True)
+    assert np.allclose(not isDegenerate and bdryIsDenegerate and comparison and not conjecture, True)
+    
+    
+
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
     exit(0)
