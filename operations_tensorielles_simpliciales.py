@@ -70,6 +70,43 @@ def isDegeneracy(A: np.ndarray) -> bool:
             return True
     return False
 
+def findDegeneracy(A: np.ndarray) -> Union[Tuple[np.ndarray, int], None]:   
+    d = min(A.shape) 
+    for i in np.arange(d-1): # faces have dimension d-1
+        if np.array_equal(A, degen(face(A, i), i)):
+            return face(A, i), i
+    return None    
+
+
+# Decompose a degenerate matrix into a non-degenerate base matrix and a sequence of degeneracy operations
+# Example usage
+# A = np.array([[...], [...]])  # Replace with an actual hypermatrix
+# non_degenerate_base, ops = decomposeDegeneracy(A)
+# print("Non-degenerate base matrix:", non_degenerate_base)
+# print("Sequence of degeneracy operations:", ops)
+
+from typing import Union, Tuple
+
+def decomposeDegeneracy(A: np.ndarray) -> Tuple[np.ndarray, list]:
+    operations = []
+
+    def helper(B: np.ndarray, ops: list) -> np.ndarray:
+        nonlocal operations
+        degeneracy_info = findDegeneracy(B)
+        
+        # Base case: If B is non-degenerate or no degeneracy found, set the operations
+        if degeneracy_info is None:
+            operations = ops
+            return B
+        
+        # Recursive case
+        F, i = degeneracy_info
+        return helper(F, ops + [(F, i)])
+
+    # Start the decomposition
+    non_degenerate_base = helper(A, [])
+    return non_degenerate_base, operations
+
 # Frontière d'un tenseur
 def bdry(M: np.ndarray) -> np.ndarray:
     d = np.min(M.shape)
@@ -179,6 +216,8 @@ def tensor_inner_horn_rank_dimension_conjecture(shape: Tuple[int], verbose: bool
 class SimplicialException(Exception):
     pass
 
+# Conjecture. Supppse that neither A, nor bdry(A) is degenerate. 
+# Then every inner horn of A has a unique filler if and only if rank < dim
 def tensor_inner_horn_rank_dimension_comparison(A: np.ndarray, verbose: bool = False) -> bool:
     rank = len(A.shape)
     dim = min(A.shape)-1
@@ -213,3 +252,36 @@ if __name__ == "__main__":
         A[j,0] = 1
         return A
     
+    M = matrixM(5)
+    print("M:", M)
+    print("isDegeneracy(M):", isDegeneracy(M))
+    non_degenerate_base, ops = decomposeDegeneracy(M)
+    print("Non-degenerate base matrix:", non_degenerate_base)
+    print("Sequence of degeneracy operations:", ops)
+
+    N = degen(degen(degen(matrixN(3),2),3),4)
+    print("N:", N)
+    print("isDegeneracy(N):", isDegeneracy(N))
+    non_degenerate_base, ops = decomposeDegeneracy(N)
+    print("Non-degenerate base matrix:", non_degenerate_base)
+    print("Sequence of degeneracy operations:", ops)
+
+    X = np.array([[0, 0, 1, 0],
+                [0, 0, 0, 0],
+                [1, 0, 0, 0,],
+                [0, 0, 0, 0]])
+    print("X:", X)
+    print("isDegeneracy(X):", isDegeneracy(X))
+    non_degenerate_base, ops = decomposeDegeneracy(X)
+    print("Non-degenerate base matrix:", non_degenerate_base)
+    print("Sequence of degeneracy operations:", ops)
+
+    Y = np.array([[0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0,],
+                [0, 0, 0, 0]])
+    print("Y:", Y)
+    print("isDegeneracy(Y):", isDegeneracy(Y))
+    non_degenerate_base, ops = decomposeDegeneracy(Y)
+    print("Non-degenerate base matrix:", non_degenerate_base)
+    print("Sequence of degeneracy operations:", ops)

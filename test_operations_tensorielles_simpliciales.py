@@ -8,7 +8,7 @@ from operations_tensorielles_simpliciales import degen, hdegen, vdegen, horn, Ka
 from operations_tensorielles_simpliciales import standard_basis_matrix, cobdry
 from operations_tensorielles_simpliciales import tensor_inner_horn_rank_dimension_comparison
 from operations_tensorielles_simpliciales import tensor_inner_horn_rank_dimension_conjecture
-from operations_tensorielles_simpliciales import isDegeneracy    
+from operations_tensorielles_simpliciales import isDegeneracy, decomposeDegeneracy    
 
 Z = np.arange(7*9)
 Z = Z.reshape(7,9)
@@ -409,6 +409,44 @@ def test_isDegeneracy() -> None:
     [[5, 5, 9, 9],[5, 5, 9, 9],[1, 1, 2, 6],[5, 5, 4, 4],[1, 1, 3, 6]],
     [[2, 2, 7, 4],[2, 2, 7, 4],[2, 2, 3, 9],[7, 7, 7, 2],[9, 9, 3, 4]]])
     assert np.allclose(isDegeneracy(D), True)
+
+def test_decomposeDegeneracy() -> None:
+    # more counterexamples from manvel and stockmeyer 1971
+    def matrixN(n: int) -> np.ndarray:
+        A = np.zeros((n,n))
+        j = int(np.ceil(n // 2))+1
+        A[0,j] = 1
+        A[j,0] = 1
+        return A
+    
+    def comp_op_seq(ops1, ops2):
+        if len(ops1) != len(ops2):
+            return False
+        for (array1, int1), (array2, int2) in zip(ops1, ops2):
+            if not np.array_equal(array1, array2) or int1 != int2:
+                return False
+        return True
+
+    N = degen(degen(degen(matrixN(3),2),3),4)
+    isDegen = isDegeneracy(N)
+    non_degenerate_base, ops = decomposeDegeneracy(N)
+    print("Non-degenerate base matrix:", non_degenerate_base)
+    print("Sequence of degeneracy operations:", ops)
+    assert np.allclose(isDegen 
+                       and np.array_equal( non_degenerate_base, matrixN(3))
+                       and comp_op_seq(ops, 
+                                          [(np.array([[0., 0., 1., 1., 1.],
+                                                   [0., 0., 0., 0., 0.],
+                                                   [1., 0., 0., 0., 0.],
+                                                   [1., 0., 0., 0., 0.],
+                                                   [1., 0., 0., 0., 0.]]), 2), 
+                                           (np.array([[0., 0., 1., 1.],
+                                                   [0., 0., 0., 0.],
+                                                   [1., 0., 0., 0.],
+                                                   [1., 0., 0., 0.]]), 2), 
+                                           (np.array([[0., 0., 1.],
+                                                   [0., 0., 0.],
+                                                   [1., 0., 0.]]), 2)]), True)
 
 if __name__ == "__main__":
     pytest.main([__file__])
