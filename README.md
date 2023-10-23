@@ -4,7 +4,7 @@
 
 ## Formalités Mathématiques
 
-Ce projet se concentre sur les opérations simpliciales sur les matrices et hypermatrices, en particulier les opérations de face (`d_i`), de dégénérescence (`s_i`), et de bord.
+Ce projet se concentre sur les opérations simpliciales sur les matrices et hypermatrices, en particulier les opérations de face (`d_i`), de dégénérescence (`s_i`), et de bord. Les opérations étudiées ici satisfont aux identités simpliciales.
 
 $$
 \begin{aligned}
@@ -18,5 +18,3 @@ s_j d_{i-1},  \text{ si } i > j+1.
 \end{cases}
 \end{aligned}
 $$
-
-Les opérations étudiées ici satisfont aux identités simpliciales.
