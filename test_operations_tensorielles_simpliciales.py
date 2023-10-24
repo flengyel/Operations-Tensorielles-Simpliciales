@@ -468,6 +468,19 @@ def test_decomposeDegeneracy() -> None:
                                                    [1., 0., 0.]]), 2)]), True)
 
 def test_counterexample_with_degenerate_boundary() -> None:
+    # Counterexample with degenerate boundary: 
+    # [[6 4 7 2 4 7 5 6]
+    # [4 3 6 3 9 5 3 4]
+    # [6 5 7 7 1 8 4 9]]
+    # isDegeneracy(counterexample2): False
+    # bdry(counterexample):  
+    # [[3. 3. 3. 9. 5. 3. 4.]
+    # [3. 3. 3. 9. 5. 3. 4.]]
+    # isDegeneracy(bdry(counterexample)): True
+    # Unique filler.
+    # shape:(3, 8) rank:2 >= dim:2
+    # Conjecture: False Comparison: True
+    # Counterexample and filler agree: True
     counterexample2 = np.array([[6, 4, 7, 2, 4, 7, 5, 6],
                                 [4, 3, 6, 3, 9, 5, 3, 4],
                                 [6, 5, 7, 7, 1, 8, 4, 9]])

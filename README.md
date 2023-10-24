@@ -18,3 +18,6 @@ s_j d_{i-1},  \text{ si } i > j+1.
 \end{cases}
 \end{aligned}
 $$
+
+>I do not know myself, and God forbid that I should.  
+>&mdash; Goethe, Conversations with Eckermann
