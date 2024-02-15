@@ -304,3 +304,31 @@ if __name__ == "__main__":
     non_degenerate_base, ops = decomposeDegeneracy(Y)
     print("Non-degenerate base matrix:", non_degenerate_base)
     print("Sequence of degeneracy operations:", ops)
+
+    a = np.array([0, 1, 2])
+    b = np.array([3, 4])
+    c = np.array([5, 6])
+
+    # Create an empty 3D array to store the tensor product
+    tensor = np.zeros((3, 2, 2), dtype=int)
+
+    # Fill the tensor by taking the pairwise product of elements from the 1D arrays
+    for i in range(3):
+        for j in range(2):
+            for k in range(2):
+                tensor[i, j, k] = a[i] * b[j] * c[k]
+    print(tensor)
+    tensor_inner_horn_rank_dimension_comparison(tensor, verbose=True)
+    # now compute the inner horn of the tensor one step at a time
+    rank = len(tensor.shape)
+    dim = min(tensor.shape)-1
+    print(f"shape {tensor.shape} rank {rank} dim {dim}")
+    for i in range(1,dim+1):
+        H = horn(tensor, i)
+        B = filler(H, i)
+        Hprime = horn(B, i)
+        print("tensor:", tensor)
+        print("B:", B)
+        print("Hprime:", Hprime)
+        print("np.array_equal(H,Hprime):", np.array_equal(H,Hprime))
+        print("np.array_equal(tensor, B):", np.array_equal(tensor, B))
