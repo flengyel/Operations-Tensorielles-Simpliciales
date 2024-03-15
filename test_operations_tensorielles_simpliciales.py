@@ -28,6 +28,7 @@ from operations_tensorielles_simpliciales import standard_basis_matrix, cobdry
 from operations_tensorielles_simpliciales import tensor_inner_horn_rank_dimension_comparison
 from operations_tensorielles_simpliciales import tensor_inner_horn_rank_dimension_conjecture
 from operations_tensorielles_simpliciales import isDegeneracy, decomposeDegeneracy    
+from operations_tensorielles_simpliciales import max_norm, bdry_n
 
 Z = np.arange(7*9)
 Z = Z.reshape(7,9)
@@ -491,8 +492,10 @@ def test_counterexample_with_degenerate_boundary() -> None:
     assert np.allclose(not isDegenerate and bdryIsDenegerate and comparison and not conjecture, True)
     
     
-
-
+def test_normed_bdry() -> None:
+    A = np.random.randint(low=-11, high=73, size=(5, 7, 9, 11))   
+    expected_bdry_bdry = np.zeros((3,5,7,9))
+    assert np.allclose(bdry_n(bdry_n(A)), expected_bdry_bdry)
 
 if __name__ == "__main__":
     pytest.main([__file__])

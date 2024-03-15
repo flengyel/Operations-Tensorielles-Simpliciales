@@ -19,6 +19,10 @@
 
 import numpy as np
 from typing import Tuple, List, Union, Any
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.WARNING)
 
 # dimensions d'une matrice sous forme d'un tuple de listes d'indices de lignes et de colonnes
 # par exemple, _dims(M) = ([0,1,2,3], [0,1,2,3,4,5,6,7,8])
@@ -104,7 +108,6 @@ def findDegeneracy(A: np.ndarray) -> Union[Tuple[np.ndarray, int], None]:
 # print("Non-degenerate base matrix:", non_degenerate_base)
 # print("Sequence of degeneracy operations:", ops)
 
-from typing import Union, Tuple
 
 def decomposeDegeneracy(A: np.ndarray) -> Tuple[np.ndarray, list]:
     operations = []
@@ -254,6 +257,23 @@ def tensor_inner_horn_rank_dimension_comparison(A: np.ndarray, verbose: bool = F
         print("Unique filler.")
     return True
 
+# max norm of a hypermatrix
+def max_norm(hyp : np.ndarray) -> Union[int, float]:
+    return np.max(np.abs(hyp))
+
+# Normed boundary
+def bdry_n(h: np.ndarray) -> np.ndarray:
+    if np.any(h):  # Check if h is non-zero
+        norm = max_norm(h)
+        if norm != 0:
+            return bdry(h) / norm
+        else:
+            # Log a warning if h is non-zero but max_norm is effectively zero
+            logging.warning("Non-zero array has an effective max norm of zero. Returning bdry(h) instead.")
+            return bdry(h)  # Return bdry(h) instead of h when norm is zero
+    else:  # Return bdry(h) directly if it is all zeros
+        return bdry(h)
+
 if __name__ == "__main__":
   
     # more counterexamples from manvel and stockmeyer 1971
@@ -332,3 +352,14 @@ if __name__ == "__main__":
         print("Hprime:", Hprime)
         print("np.array_equal(H,Hprime):", np.array_equal(H,Hprime))
         print("np.array_equal(tensor, B):", np.array_equal(tensor, B))
+
+    hypermatrix = np.array([[[1, -2, 3], [4, -5, 6], [7, 8, -9]],
+                        [[-1, 2, -3], [-4, 5, -6], [-7, -8, 9]],
+                        [[10, -11, 12], [-13, 14, -15], [16, 17, -18]]])
+
+    print(f"hypermatrix: {hypermatrix}")
+    print(f"Max norm of hypermatrix: {max_norm(hypermatrix)}")
+
+    print(f"bdry_n(hypermatrix) = {bdry_n(hypermatrix)}")
+    print(f"bdry_n(hypermatrix) = {bdry_n(hypermatrix)}")
+    print(f"bdry_n(bdry_n(hypermatrix)) = {bdry_n(bdry_n(hypermatrix))}")
