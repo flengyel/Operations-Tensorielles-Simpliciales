@@ -1,7 +1,7 @@
 #    Opérations Tensorielles Simpliciales
 #    Simplicial Operations on Matrices and Hypermatrices
 #
-#    Copyright (C) 2021-2023 Florian Lengyel
+#    Copyright (C) 2021-2024 Florian Lengyel
 #    Email: florian.lengyel at cuny edu, florian.lengyel at gmail
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -23,11 +23,11 @@ import pytest
 from typing import Tuple
 
 from operations_tensorielles_simpliciales import SimplicialException, face, hface, vface, bdry, hbdry, vbdry 
-from operations_tensorielles_simpliciales import degen, hdegen, vdegen, horn, Kan_condition, filler
+from operations_tensorielles_simpliciales import degen, hdegen, vdegen, horn, kan_condition, filler
 from operations_tensorielles_simpliciales import standard_basis_matrix, cobdry
 from operations_tensorielles_simpliciales import tensor_inner_horn_rank_dimension_comparison
 from operations_tensorielles_simpliciales import tensor_inner_horn_rank_dimension_conjecture
-from operations_tensorielles_simpliciales import isDegeneracy, decomposeDegeneracy    
+from operations_tensorielles_simpliciales import is_degen, decompose_degen    
 from operations_tensorielles_simpliciales import max_norm, bdry_n
 
 Z = np.arange(7*9)
@@ -251,7 +251,6 @@ def test_h_module2() -> None:
     B = np.random.randint(low=44, high=83, size=(5,13))
     assert np.allclose(h_module2(A,L,B), True)
 
-
 # face and degeneracy operations commute with the hadamard product
 def hadamard_face(A: ndarray, B: ndarray) -> bool:
     if A.shape != B.shape:
@@ -280,7 +279,6 @@ def test_hadamard_degen() -> None:
     A = np.random.randint(low=-11, high=73, size=(7,11))
     B = np.random.randint(low=1, high=43, size=(7,11))
     assert np.allclose(hadamard_degen(A, B), True)
-
 
 # The transpose of the boundary is the boundary of the transpose
 def test_transpose_bdry() -> None:
@@ -316,7 +314,7 @@ def test_kan_condition() -> None:
         d = min(X.shape)
         for k in range(d):
             H = horn(X, k)
-            if not Kan_condition(H, k):
+            if not kan_condition(H, k):
                 return False
         return True
     assert np.allclose(_kan_condition(), True)
@@ -371,7 +369,7 @@ def test_tensor_kan_condition() -> None:
         d = min(X.shape)
         for k in range(d):
             H = horn(X, k)
-            if not Kan_condition(H, k):
+            if not kan_condition(H, k):
                 return False
         return True
     assert np.allclose(_kan_condition(), True)
@@ -386,7 +384,7 @@ def test_tensor_inner_horn_rank_dimension_conjecture() -> None:
     # create a random non-zero tensor of the given shape
     A = np.random.randint(low=1, high=10, size=shape, dtype=np.int16)
     # exclude known counterexamples
-    while isDegeneracy(A) or isDegeneracy(bdry(A)):
+    while is_degen(A) or is_degen(bdry(A)):
         A = np.random.randint(low=1, high=10, size=shape, dtype=np.int16)
     assert np.allclose(tensor_inner_horn_rank_dimension_comparison(A),
                        tensor_inner_horn_rank_dimension_conjecture(shape))
@@ -423,16 +421,16 @@ def test_manvel_stockmeyer() -> None:
                   [6, 5, 6, 2]])
     assert np.allclose(checkReconstruction(A) and checkReconstruction(B), True)
 
-def test_isDegeneracy() -> None:
+def test_is_degen() -> None:
     D = np.array([[[4, 4, 8, 2],[4, 4, 8, 2],[4, 4, 2, 8],[1, 1, 6, 7],[1, 1, 8, 8]],
     [[4, 4, 8, 2],[4, 4, 8, 2],[4, 4, 2, 8],[1, 1, 6, 7],[1, 1, 8, 8]], 
     [[5, 5, 9, 9],[5, 5, 9, 9],[1, 1, 2, 6],[5, 5, 4, 4],[1, 1, 3, 6]],
     [[2, 2, 7, 4],[2, 2, 7, 4],[2, 2, 3, 9],[7, 7, 7, 2],[9, 9, 3, 4]]])
-    assert np.allclose(isDegeneracy(D), True)
+    assert np.allclose(is_degen(D), True)
 
-def test_decomposeDegeneracy() -> None:
+def test_decompose_degen() -> None:
     # more counterexamples from manvel and stockmeyer 1971
-    def matrixN(n: int) -> np.ndarray:
+    def matrix_n(n: int) -> np.ndarray:
         A = np.zeros((n,n))
         j = int(np.ceil(n // 2))+1
         A[0,j] = 1
@@ -447,13 +445,13 @@ def test_decomposeDegeneracy() -> None:
                 return False
         return True
 
-    N = degen(degen(degen(matrixN(3),2),3),4)
-    isDegen = isDegeneracy(N)
-    non_degenerate_base, ops = decomposeDegeneracy(N)
+    N = degen(degen(degen(matrix_n(3),2),3),4)
+    isDegen = is_degen(N)
+    non_degenerate_base, ops = decompose_degen(N)
     print("Non-degenerate base matrix:", non_degenerate_base)
     print("Sequence of degeneracy operations:", ops)
     assert np.allclose(isDegen 
-                       and np.array_equal( non_degenerate_base, matrixN(3))
+                       and np.array_equal( non_degenerate_base, matrix_n(3))
                        and comp_op_seq(ops, 
                                           [(np.array([[0., 0., 1., 1., 1.],
                                                    [0., 0., 0., 0., 0.],
@@ -485,11 +483,11 @@ def test_counterexample_with_degenerate_boundary() -> None:
     counterexample2 = np.array([[6, 4, 7, 2, 4, 7, 5, 6],
                                 [4, 3, 6, 3, 9, 5, 3, 4],
                                 [6, 5, 7, 7, 1, 8, 4, 9]])
-    isDegenerate = isDegeneracy(counterexample2)
-    bdryIsDenegerate = isDegeneracy(bdry(counterexample2))
+    is_degenerate = is_degen(counterexample2)
+    bdry_is_degen = is_degen(bdry(counterexample2))
     comparison = tensor_inner_horn_rank_dimension_comparison(counterexample2, verbose=True)
     conjecture = tensor_inner_horn_rank_dimension_conjecture(counterexample2.shape, verbose=True)
-    assert np.allclose(not isDegenerate and bdryIsDenegerate and comparison and not conjecture, True)
+    assert np.allclose(not is_degenerate and bdry_is_degen and comparison and not conjecture, True)
     
     
 def test_normed_bdry() -> None:
