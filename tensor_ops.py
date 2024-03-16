@@ -224,7 +224,7 @@ def standard_basis_matrix(m: int, n: int, i: int, j: int) -> np.ndarray:
 
 # the conjecture is that inner horns are unique if and only if
 # the rank of a (nonzero) tensor is less than its simplicial dimension
-def tensor_inner_horn_rank_dimension_conjecture(shape: Tuple[int], verbose: bool = False) -> bool:
+def n_hypergroupoid_conjecture(shape: Tuple[int], verbose: bool = False) -> bool:
     rank = len(shape)
     dim = min(shape)-1 # simplicial dimension
     conjecture = rank < dim
@@ -238,7 +238,7 @@ class SimplicialException(Exception):
 
 # Conjecture. Supppse that neither A, nor bdry(A) is degenerate. 
 # Then every inner horn of A has a unique filler if and only if rank < dim
-def tensor_inner_horn_rank_dimension_comparison(a: np.ndarray, verbose: bool = False) -> bool:
+def n_hypergroupoid_comparison(a: np.ndarray, verbose: bool = False) -> bool:
     rank = len(a.shape)
     dim = min(a.shape)-1
     for i in range(1,dim+1):
@@ -336,7 +336,7 @@ if __name__ == "__main__":
             for k in range(2):
                 tensor[i, j, k] = a[i] * b[j] * c[k]
     print(tensor)
-    tensor_inner_horn_rank_dimension_comparison(tensor, verbose=True)
+    n_hypergroupoid_comparison(tensor, verbose=True)
     # now compute the inner horn of the tensor one step at a time
     rank = len(tensor.shape)
     dim = min(tensor.shape)-1

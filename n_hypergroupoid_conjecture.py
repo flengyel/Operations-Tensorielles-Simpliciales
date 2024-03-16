@@ -17,12 +17,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Tuple # , List, Union, Any
-from operations_tensorielles_simpliciales import tensor_inner_horn_rank_dimension_conjecture
-from operations_tensorielles_simpliciales import tensor_inner_horn_rank_dimension_comparison
-from operations_tensorielles_simpliciales import horn, filler, bdry, degen, is_degen    
 import numpy as np
 import random
+from typing import Tuple # , List, Union, Any
+from tensor_ops import n_hypergroupoid_conjecture, n_hypergroupoid_comparison
+from tensor_ops import horn, filler, bdry, degen, is_degen    
 
 def random_shape(n: int) -> Tuple[int]:
     length = random.randint(2, n // 2)  # Length of at least two and bounded by 10
@@ -42,8 +41,8 @@ def rank_dim_conjecture(tests: int, maxdim:int, force_degeneracy:bool=False, ski
         if not force_degeneracy and skip_degeneracies:
             while is_degen(A) or is_degen(bdry(A)):
                 A = np.random.randint(low=1, high=10, size=shape, dtype=np.int16)    
-        conjecture = tensor_inner_horn_rank_dimension_conjecture(shape, verbose=True)
-        comparison = tensor_inner_horn_rank_dimension_comparison(A, verbose=True)
+        conjecture = n_hypergroupoid_conjecture(shape, verbose=True)
+        comparison = n_hypergroupoid_comparison(A, verbose=True)
         if comparison != conjecture:
             print(f"Counterexample of shape: {A.shape} with tensor: {A}")
             print(f"Conjecture: {conjecture} Comparison: {comparison}")
@@ -72,9 +71,9 @@ if __name__ == "__main__":
                                 [6, 2, 5]] ).transpose()
     print(f"Counterexample with degenerate boundary: {counterexample}")
     print(f"bdry(counterexample): {bdry(counterexample)}")
-    print(f"isDegeneracy(bdry(counterexample)): {is_degen(bdry(counterexample))}")
-    comparison = tensor_inner_horn_rank_dimension_comparison(counterexample, verbose=True)
-    conjecture = tensor_inner_horn_rank_dimension_conjecture(counterexample.shape, verbose=True)
+    print(f"is_degen(bdry(counterexample)): {is_degen(bdry(counterexample))}")
+    comparison = n_hypergroupoid_comparison(counterexample, verbose=True)
+    conjecture = n_hypergroupoid_conjecture(counterexample.shape, verbose=True)
     print("Conjecture:", conjecture, "Comparison:", comparison)
     h = horn(counterexample, 1)
     print("Horn:", h)

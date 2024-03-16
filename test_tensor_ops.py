@@ -22,13 +22,11 @@ from numpy import ndarray
 import pytest
 from typing import Tuple
 
-from operations_tensorielles_simpliciales import SimplicialException, face, hface, vface, bdry, hbdry, vbdry 
-from operations_tensorielles_simpliciales import degen, hdegen, vdegen, horn, kan_condition, filler
-from operations_tensorielles_simpliciales import standard_basis_matrix, cobdry
-from operations_tensorielles_simpliciales import tensor_inner_horn_rank_dimension_comparison
-from operations_tensorielles_simpliciales import tensor_inner_horn_rank_dimension_conjecture
-from operations_tensorielles_simpliciales import is_degen, decompose_degen    
-from operations_tensorielles_simpliciales import max_norm, bdry_n
+from tensor_ops import SimplicialException, face, hface, vface, bdry, hbdry, vbdry 
+from tensor_ops import degen, hdegen, vdegen, horn, kan_condition, filler
+from tensor_ops import standard_basis_matrix, cobdry
+from tensor_ops import n_hypergroupoid_comparison, n_hypergroupoid_conjecture
+from tensor_ops import is_degen, decompose_degen, max_norm, bdry_n
 
 Z = np.arange(7*9)
 Z = Z.reshape(7,9)
@@ -374,7 +372,7 @@ def test_tensor_kan_condition() -> None:
         return True
     assert np.allclose(_kan_condition(), True)
 
-def test_tensor_inner_horn_rank_dimension_conjecture() -> None:
+def test_n_hypergroupoid_conjecture() -> None:
     import random
     def random_shape() -> Tuple[int]:
         length = random.randint(2, 10)  # Length of at least two and bounded by 10
@@ -386,8 +384,8 @@ def test_tensor_inner_horn_rank_dimension_conjecture() -> None:
     # exclude known counterexamples
     while is_degen(A) or is_degen(bdry(A)):
         A = np.random.randint(low=1, high=10, size=shape, dtype=np.int16)
-    assert np.allclose(tensor_inner_horn_rank_dimension_comparison(A),
-                       tensor_inner_horn_rank_dimension_conjecture(shape))
+    assert np.allclose(n_hypergroupoid_comparison(A),
+                       n_hypergroupoid_conjecture(shape))
 
 def test_manvel_stockmeyer() -> None:
     # Counterexample from On Reconstruction of Matrices
@@ -485,8 +483,8 @@ def test_counterexample_with_degenerate_boundary() -> None:
                                 [6, 5, 7, 7, 1, 8, 4, 9]])
     is_degenerate = is_degen(counterexample2)
     bdry_is_degen = is_degen(bdry(counterexample2))
-    comparison = tensor_inner_horn_rank_dimension_comparison(counterexample2, verbose=True)
-    conjecture = tensor_inner_horn_rank_dimension_conjecture(counterexample2.shape, verbose=True)
+    comparison = n_hypergroupoid_comparison(counterexample2, verbose=True)
+    conjecture = n_hypergroupoid_conjecture(counterexample2.shape, verbose=True)
     assert np.allclose(not is_degenerate and bdry_is_degen and comparison and not conjecture, True)
     
     
