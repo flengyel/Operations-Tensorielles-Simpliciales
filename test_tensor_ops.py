@@ -219,79 +219,93 @@ def h_module(a: ndarray, t: ndarray, b: ndarray) -> bool:
     return True
 
 def test_h_module() -> None:
-    A = np.random.randint(low=-11, high=73, size=(7,5))
-    L = np.random.randint(low=-133, high=103, size=(5,5))
-    B = np.random.randint(low=44, high=83, size=(5,13))
+    seed = 12345  # Set the seed value
+    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
+    A = rng.integers(low=-11, high=73, size=(7,5), dtype=np.int16)
+    L = rng.integers(low=-133, high=103, size=(5,5), dtype=np.int16)
+    B = rng.integers(low=44, high=83, size=(5,13), dtype=np.int16)
     assert np.allclose(h_module(A,L,B), True)
 
-def h_module2(A: ndarray, L: ndarray, B: ndarray) -> bool:
-    n = A.shape[1]
-    p = L.shape[0]
+def h_module2(a: ndarray, l: ndarray, b: ndarray) -> bool:
+    n = a.shape[1]
+    p = l.shape[0]
     d = min(n,p)
-    X = np.dot(A, L)
+    X = np.dot(a, l)
     print(X.shape)
     print(X)
     for i in range(d):
-        if not np.array_equal(hdegen(X,i), np.dot(hdegen(A,i), L)):
+        if not np.array_equal(hdegen(X,i), np.dot(hdegen(a,i), l)):
             return False
-    q = L.shape[1]
-    r = B.shape[0]
+    q = l.shape[1]
+    r = b.shape[0]
     e = min(q,r)
-    Y = np.dot(L, B)
+    Y = np.dot(l, b)
     for i in range(e):
-        if not np.array_equal(hdegen(Y,i), np.dot(hdegen(L,i), B)):
+        if not np.array_equal(hdegen(Y,i), np.dot(hdegen(l,i), b)):
             return False
     return True
 
 def test_h_module2() -> None:
-    A = np.random.randint(low=-11, high=73, size=(7,5))
-    L = np.random.randint(low=-133, high=103, size=(5,5))
-    B = np.random.randint(low=44, high=83, size=(5,13))
+    seed = 12345  # Set the seed value
+    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
+    A = rng.integers(low=-11, high=73, size=(8,5), dtype=np.int16)
+    L = rng.integers(low=-133, high=103, size=(5,5), dtype=np.int16)
+    B = rng.integers(low=44, high=83, size=(5,14), dtype=np.int16)
     assert np.allclose(h_module2(A,L,B), True)
 
 # face and degeneracy operations commute with the hadamard product
-def hadamard_face(A: ndarray, B: ndarray) -> bool:
-    if A.shape != B.shape:
+def hadamard_face(a: ndarray, b: ndarray) -> bool:
+    if a.shape != b.shape:
         return False
-    d = min(A.shape)
-    for i in range(d):
-        if not np.array_equal(face(np.multiply(A, B), i), np.multiply(face(A,i), face(B, i)) ):
+    d = s_dim(a) # simplicial dimension of a
+    for i in range(d+1):
+        if not np.array_equal(face(np.multiply(a, b), i), np.multiply(face(a,i), face(b, i)) ):
             return False
     return True
 
 def test_hadamard_face() -> None:
-    A = np.random.randint(low=-11, high=73, size=(7,11))
-    B = np.random.randint(low=1, high=43, size=(7,11))
+    seed = 10101  # Set the seed value
+    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
+    A = rng.integers(low=-11, high=73, size=(7,11), dtype=np.int16)
+    B = rng.integers(low=1, high=43, size=(7,11), dtype=np.int16)
     assert np.allclose(hadamard_face(A, B), True)
 
-def hadamard_degen(A: ndarray, B: ndarray) -> bool:
-    if A.shape != B.shape:
+def hadamard_degen(a: ndarray, b: ndarray) -> bool:
+    if a.shape != b.shape:
         return False
-    d = min(A.shape)
-    for i in range(d):
-        if not np.array_equal(degen(np.multiply(A, B), i), np.multiply(degen(A,i), degen(B, i)) ):
+    d = s_dim(a) # simplicial dimension of a
+    for i in range(d+1):
+        if not np.array_equal(degen(np.multiply(a, b), i), np.multiply(degen(a,i), degen(b, i)) ):
             return False
     return True
 
 def test_hadamard_degen() -> None:
-    A = np.random.randint(low=-11, high=73, size=(7,11))
-    B = np.random.randint(low=1, high=43, size=(7,11))
+    seed = 10101  # Set the seed value
+    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
+    A = rng.integers(low=-11, high=73, size=(7,11), dtype=np.int16)
+    B = rng.integers(low=1, high=43, size=(7,11), dtype=np.int16)
     assert np.allclose(hadamard_degen(A, B), True)
 
 # The transpose of the boundary is the boundary of the transpose
 def test_transpose_bdry() -> None:
-    def transpose_bdry(A) -> bool:
-        return(np.array_equal(np.transpose(bdry(A)), bdry(np.transpose(A))))
-    A = np.random.randint(low=-11, high=73, size=(7,11,4))
+    def transpose_bdry(a) -> bool:
+        return(np.array_equal(np.transpose(bdry(a)), bdry(np.transpose(a))))
+
+    seed = 1010101  # Set the seed value
+    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
+    A = rng.integers(low=-11, high=73, size=(7,11,5), dtype=np.int16)
     assert np.allclose(transpose_bdry(A), True)
 
 # The face operations are linear and commute with hermitian transpose as well
 def test_linear_map() -> None:
     def linear_map() -> bool:
-        A = np.random.randint(low=-11, high=73, size=(7,11))
-        B = np.random.randint(low=1, high=43, size=(7,11))
-        d = min(A.shape)
-        for i in range(d):
+        seed = 10101  # Set the seed value
+        rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
+        A = rng.integers(low=-11, high=73, size=(7,11), dtype=np.int16)
+        B = rng.integers(low=1, high=43, size=(7,11), dtype=np.int16)
+
+        d = s_dim(A) # simplicial dimension of A
+        for i in range(d+1):
             if not np.array_equal(face(np.add(A, B), i), np.add(face(A,i), face(B,i))):
                 return False
             if not np.array_equal(degen(np.add(A, B), i), np.add(degen(A,i), degen(B,i))):
@@ -308,9 +322,12 @@ def test_linear_map() -> None:
 
 def test_kan_condition() -> None:
     def _kan_condition() -> bool:
-        X = np.random.randint(low=-11, high=11, size=(11,11))
-        d = min(X.shape)
-        for k in range(d):
+        seed = 2010101  # Set the seed value
+        rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
+        X = rng.integers(low=-11, high=11, size=(21,21), dtype=np.int16)
+
+        d = s_dim(X) # simplicial dimension of X
+        for k in range(d+1):
             H = horn(X, k)
             if not kan_condition(H, k):
                 return False
