@@ -26,7 +26,7 @@ from tensor_ops import SimplicialException, face, hface, vface, bdry, hbdry, vbd
 from tensor_ops import degen, hdegen, vdegen, horn, kan_condition, filler
 from tensor_ops import standard_basis_matrix, cobdry
 from tensor_ops import n_hypergroupoid_comparison, n_hypergroupoid_conjecture
-from tensor_ops import is_degen, decompose_degen, max_norm, bdry_n
+from tensor_ops import is_degen, decompose_degen, max_norm, bdry_n, s_dim
 
 Z = np.arange(7*9)
 Z = Z.reshape(7,9)
@@ -80,11 +80,11 @@ def test_bdry_hbdry() -> None:
 
 W = np.random.randint(low=-10, high=73, size=(73,109))
 
-def facecommute(A)  -> bool:
-    d = min(A.shape)
-    for j in range(d):
-        B = face(A,j); # face operation of diagonal module
-        if not np.array_equal(B, hface(vface(A,j),j)) or not np.array_equal(B, vface(hface(A,j),j)):
+def facecommute(a)  -> bool:
+    d = s_dim(a) # simplicial dimension of a
+    for j in range(d+1):
+        B = face(a,j); # face operation of diagonal module
+        if not np.array_equal(B, hface(vface(a,j),j)) or not np.array_equal(B, vface(hface(a,j),j)):
             return False
     return True
 
@@ -93,10 +93,10 @@ def facecommute(A)  -> bool:
 def test_facecommute() -> None:
     assert np.allclose(facecommute(W), True)
 
-def transcommute(A) -> bool:
-    d = min(A.shape)
-    for j in range(d):
-        if not np.array_equal(face(np.transpose(A), j), np.transpose(face(A, j))):
+def transcommute(a) -> bool:
+    d = s_dim(a) 
+    for j in range(d+1):
+        if not np.array_equal(face(np.transpose(a), j), np.transpose(face(a, j))):
             return False
     return True
 
@@ -110,12 +110,11 @@ def test_transcommute() -> None:
 # a Double Semi-Simplical Group.” Topology 5 (2): 155–57. 
 # https://doi.org/10.1016/0040-9383(66)90016-4.
 
-def degencommute(A) -> bool:
-    (m,n) = A.shape
-    d = min(m,n)
-    for j in range(d):
-        B = degen(A,j);
-        if not np.array_equal(B, hdegen(vdegen(A,j),j)) or not np.array_equal(B, vdegen(hdegen(A,j),j)):
+def degencommute(a) -> bool:
+    d = s_dim(a)
+    for j in range(d+1):
+        B = degen(a,j);
+        if not np.array_equal(B, hdegen(vdegen(a,j),j)) or not np.array_equal(B, vdegen(hdegen(a,j),j)):
             return False
     return True
 
@@ -124,11 +123,10 @@ def test_degencommute() -> None:
 
 # degeneracies commute with transpose
 
-def degentranscommute(A) -> bool:
-    (m, n) = A.shape
-    d = min(m,n)
-    for j in range(d):
-        if not np.array_equal(degen(np.transpose(A), j), np.transpose(degen(A, j))):
+def degentranscommute(t) -> bool:
+    d = s_dim(t) # simplicial dimension of t
+    for j in range(d+1):
+        if not np.array_equal(degen(np.transpose(t), j), np.transpose(degen(t, j))):
             return False
     return True
 
@@ -138,36 +136,36 @@ def test_degentranscommute() -> None:
 # The five simplicial identities for the diagonal simplicial operations 
 
 def test_first_identity() -> None:
-    def first_identity(M) -> bool:
-        d = min(M.shape)
-        for j in range(d):
+    def first_identity(t) -> bool:
+        d = s_dim(t) # simplicial dimension of t
+        for j in range(d+1):
             for i in range(j):  # i < j here
-                X = face(face(M, j), i)
-                Y = face(face(M, i), j-1)
+                X = face(face(t, j), i)
+                Y = face(face(t, i), j-1)
                 if not np.array_equal(X, Y):
                     return False
         return True
     assert np.allclose(first_identity(W), True)       
 
 def test_second_identity() -> None:
-    def second_identity(M) -> bool:
-        d = min(M.shape) # d is the dimension
-        for j in range(d):
+    def second_identity(t) -> bool:
+        d = s_dim(t) # simplicial dimension of t
+        for j in range(d+1):
             for i in range(j):
-                X = face(degen(M, j), i)
-                Y = degen(face(M, i), j-1)
+                X = face(degen(t, j), i)
+                Y = degen(face(t, i), j-1)
                 if not np.array_equal(X, Y):
                     return False
         return True
     assert np.allclose(second_identity(W), True)
 
 def test_third_identity() -> None:
-    def third_identity(M) -> bool:
-        d = min(M.shape) # d is the dimension
-        for j in range(d):
-            X = face(degen(M,j), j)
-            Y = face(degen(M,j), j+1)
-            if ((not np.array_equal(X, Y)) or (not np.array_equal(X , M)) or (not np.array_equal(Y, M))):
+    def third_identity(t) -> bool:
+        d = s_dim(t) # simplicial dimension of t
+        for j in range(d+1):
+            X = face(degen(t,j), j)
+            Y = face(degen(t,j), j+1)
+            if ((not np.array_equal(X, Y)) or (not np.array_equal(X ,t)) or (not np.array_equal(Y, t))):
                 return False
         return True    
     assert np.allclose(third_identity(W), True)
