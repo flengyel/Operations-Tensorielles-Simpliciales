@@ -24,23 +24,27 @@ from tensor_ops import n_hypergroupoid_conjecture, n_hypergroupoid_comparison
 from tensor_ops import horn, filler, bdry, degen, is_degen    
 
 def random_shape(n: int) -> Tuple[int]:
-    length = random.randint(2, n // 2)  # Length of at least two and bounded by 10
-    return tuple(random.randint(2, n) for _ in range(length))  # Positive integers at least two and bounded by n
+    # The degree of a hypermatrix is its number of dimensions. Defined as len(S.shape). 
+    degree = random.randint(2, n // 2)  # Length of at least two and bounded by 10
+    return tuple(random.randint(2, n) for _ in range(degree))  # Positive integers at least two and bounded by n
 
 # force_degeneracy: if True, force random tensor A to be a degeneracy
 # skip_degeneracies: if True, skip degeneracies. No effect if force_degeneracy is True.
 def rank_dim_conjecture(tests: int, maxdim:int, force_degeneracy:bool=False, skip_degeneracies:bool=False) -> bool:    
     non_unique_horns = 0
     unique_horns = 0
+    seed = 123  # Set the seed value
+    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
+
     for i in range(tests):
         print(f"{i+1}: generating random hypermatrix")
         shape = random_shape(maxdim)
-        A = np.random.randint(low=1, high=10, size=shape, dtype=np.int16)
+        A = rng.integers(low=1, high=10, size=shape, dtype=np.int16)  # Generate random integers
         if force_degeneracy:
             A = degen(A, 0) # force A to be a degeneracy
         if not force_degeneracy and skip_degeneracies:
             while is_degen(A) or is_degen(bdry(A)):
-                A = np.random.randint(low=1, high=10, size=shape, dtype=np.int16)    
+                A = rng.integers(low=1, high=10, size=shape, dtype=np.int16)  # Generate random integers    
         conjecture = n_hypergroupoid_conjecture(shape, verbose=True)
         comparison = n_hypergroupoid_comparison(A, verbose=True)
         if comparison != conjecture:
