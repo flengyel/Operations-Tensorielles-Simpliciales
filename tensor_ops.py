@@ -306,6 +306,9 @@ def bdry_n(h: np.ndarray) -> np.ndarray:
 if __name__ == "__main__":
   
     # more counterexamples from manvel and stockmeyer 1971
+    __NONDEGENERATE_BASE__ = "Non-degenerate base matrix:"
+    __DEGENERACY_OPERATIONS__ = "Sequence of degeneracy operations:"
+
     def matrix_m(n: int) -> np.ndarray:
         j = int(np.ceil(n // 2))
         A = np.zeros((n,n))
@@ -324,15 +327,15 @@ if __name__ == "__main__":
     print("M:", m)
     print("is_degen(M):", is_degen(m))
     non_degen_base, ops = decompose_degen(m)
-    print("Non-degenerate base matrix:", non_degen_base)
-    print("Sequence of degeneracy operations:", ops)
+    print(__NONDEGENERATE_BASE__, non_degen_base)
+    print(__DEGENERACY_OPERATIONS__, ops)
 
     n = degen(degen(degen(matrix_n(3),2),3),4)
     print("n:", n)
     print("is_degen(n):", is_degen(n))
     non_degenerate_base, ops = decompose_degen(n)
-    print("Non-degenerate base matrix:", non_degenerate_base)
-    print("Sequence of degeneracy operations:", ops)
+    print(__NONDEGENERATE_BASE__, non_degenerate_base)
+    print(__DEGENERACY_OPERATIONS__, ops)
 
     X = np.array([[0, 0, 1, 0],
                 [0, 0, 0, 0],
@@ -341,8 +344,8 @@ if __name__ == "__main__":
     print("X:", X)
     print("is_degen(X):", is_degen(X))
     non_degenerate_base, ops = decompose_degen(X)
-    print("Non-degenerate base matrix:", non_degenerate_base)
-    print("Sequence of degeneracy operations:", ops)
+    print(__NONDEGENERATE_BASE__, non_degenerate_base)
+    print(__DEGENERACY_OPERATIONS__, ops)
 
     Y = np.array([[0, 0, 0, 0],
                 [0, 0, 0, 0],
@@ -351,8 +354,8 @@ if __name__ == "__main__":
     print("Y:", Y)
     print("is_degen(Y):", is_degen(Y))
     non_degenerate_base, ops = decompose_degen(Y)
-    print("Non-degenerate base matrix:", non_degenerate_base)
-    print("Sequence of degeneracy operations:", ops)
+    print(__NONDEGENERATE_BASE__, non_degenerate_base)
+    print(__DEGENERACY_OPERATIONS__, ops)
 
     a = np.array([0, 1, 2])
     b = np.array([3, 4])
