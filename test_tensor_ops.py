@@ -171,25 +171,25 @@ def test_third_identity() -> None:
     assert np.allclose(third_identity(W), True)
 
 def test_fourth_identity() -> None:
-    def fourth_identity(M) -> bool:
-        d = min(M.shape) # d is the dimension
-        for i in range(d):
+    def fourth_identity(m) -> bool:
+        d = s_dim(m) # d is the simplicial dimension of m
+        for i in range(d+1):
             for j in range(i+1):
                 if j+1 < i:
-                    X = face(degen(M, j), i)
-                    Y = degen(face(M, i-1), j)
+                    X = face(degen(m, j), i)
+                    Y = degen(face(m, i-1), j)
                     if not np.array_equal(X , Y):
                         return False
         return True
     assert np.allclose(fourth_identity(W), True)
 
 def test_fifth_identity() -> None:
-    def fifth_identity(M) -> bool:
-        d = min(M.shape) # d is the dimension
-        for j in range(d):
+    def fifth_identity(m) -> bool:
+        d = s_dim(m) # d is the dimension
+        for j in range(d+1):
             for i in range(j+1):
-                X = degen(degen(M, j), i)
-                Y = degen(degen(M, i), j+1)
+                X = degen(degen(m, j), i)
+                Y = degen(degen(m, i), j+1)
                 if not np.array_equal(X, Y):
                     return False
         return True
@@ -197,22 +197,22 @@ def test_fifth_identity() -> None:
 
 # module structure (horizontal)
 
-def h_module(A: ndarray, L: ndarray, B: ndarray) -> bool:
-    n = A.shape[1]
-    p = L.shape[0]
+def h_module(a: ndarray, t: ndarray, b: ndarray) -> bool:
+    n = a.shape[1]
+    p = t.shape[0]
     d = min(n,p)
-    X = np.dot(A, L)
+    X = np.dot(a, t)
     print(X.shape)
     print(X)
     for i in range(d):
-        if not np.array_equal(hface(X,i), np.dot(hface(A,i), L)):
+        if not np.array_equal(hface(X,i), np.dot(hface(a,i), t)):
             return False
-    q = L.shape[1]
-    r = B.shape[0]
+    q = t.shape[1]
+    r = b.shape[0]
     e = min(q,r)
-    Y = np.dot(L, B)
+    Y = np.dot(t, b)
     for i in range(e):
-        if not np.array_equal(hface(Y,i), np.dot(hface(L,i), B)):
+        if not np.array_equal(hface(Y,i), np.dot(hface(t,i), b)):
             return False
     return True
 
