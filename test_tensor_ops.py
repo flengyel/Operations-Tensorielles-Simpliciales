@@ -347,14 +347,18 @@ def test_filler_dimension2() -> None:
 
 # in dimension 3 and higher, the filler is unique
 def test_filler_dimension3() -> None:
-    X = np.random.randint(low=-11, high=73, size=(8,4))
+    seed = 2010101  # Set the seed value
+    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
+    X = rng.integers(low=-11, high=73, size=(8,4), dtype=np.int16)
     H = horn(X, 1)
     Y = filler(H, 1)
     assert np.allclose(np.array_equal(X, Y), True)
 
 # in dimension 10 the filler is unique
 def test_filler_dimension10() -> None:
-    X = np.random.randint(low=-11, high=11, size=(11,11))
+    seed = 2010101  # Set the seed value
+    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
+    X = rng.integers(low=-11, high=11, size=(11,11), dtype=np.int16)
     H = horn(X, 2)
     Y = filler(H, 2)
     assert np.allclose(np.array_equal(X, Y), True)
@@ -365,14 +369,16 @@ def test_standard_basis_matrix() -> None:
     n = 3
     i = 1
     j = 2
-    M_ij = standard_basis_matrix(m, n, i, j)
+    m_ij = standard_basis_matrix(m, n, i, j)
     B = np.array([[0., 0., 0.],
                   [0., 0., 1.],
                   [0., 0., 0.]])
-    assert np.allclose(M_ij, B)
+    assert np.allclose(m_ij, B)
 
 def test_coboundary() -> None:
-    X = np.random.randint(low=-11, high=11, size=(11,11))
+    seed = 2010101  # Set the seed value
+    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
+    X = rng.integers(low=-11, high=11, size=(11,11), dtype=np.int16)
     Y = bdry(X)
     Z = cobdry(bdry(Y))    
     print(Z)
@@ -380,9 +386,11 @@ def test_coboundary() -> None:
 
 def test_tensor_kan_condition() -> None:
     def _kan_condition() -> bool:
-        X = np.random.randint(low=-11, high=11, size=(4,4,4,4))
-        d = min(X.shape)
-        for k in range(d):
+        seed = 2010101  # Set the seed value
+        rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
+        X = rng.integers(low=-11, high=11, size=(4,4,4,4), dtype=np.int16)
+        d = s_dim(X)
+        for k in range(d+1):
             H = horn(X, k)
             if not kan_condition(H, k):
                 return False
@@ -397,10 +405,15 @@ def test_n_hypergroupoid_conjecture() -> None:
 
     shape = random_shape()
     # create a random non-zero tensor of the given shape
-    A = np.random.randint(low=1, high=10, size=shape, dtype=np.int16)
+   
+    seed = 2010101  # Set the seed value
+    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
+    A = rng.integers(low=1, high=10, size=shape, dtype=np.int16)
+   
     # exclude known counterexamples
     while is_degen(A) or is_degen(bdry(A)):
-        A = np.random.randint(low=1, high=10, size=shape, dtype=np.int16)
+        A = rng.integers(low=1, high=10, size=shape, dtype=np.int16)
+   
     assert np.allclose(n_hypergroupoid_comparison(A),
                        n_hypergroupoid_conjecture(shape))
 
@@ -408,18 +421,18 @@ def test_manvel_stockmeyer() -> None:
     # Counterexample from On Reconstruction of Matrices
     # Bennet Manvel and Paul K. Stockmeyer
     # Mathematics Magazine , Sep., 1971, Vol. 44, No. 4 (Sep., 1971), pp. 218-221 
-    def checkReconstruction(A: np.ndarray) -> bool:
-        dim  = min(A.shape)-1 
+    def check_reconstruction(a: np.ndarray) -> bool:
+        dim  = s_dim(a)  
         for i in range(dim+1):
-            H = horn(A, i)
-            B = filler(H, i)
-            Hprime = horn(B, i)
-            if not np.array_equal(H,Hprime):
+            h = horn(a, i)
+            b = filler(h, i)
+            h_prime = horn(b, i)
+            if not np.array_equal(h, h_prime):
                 raise SimplicialException("Original horn and filler horn disagree!")
-            if not np.array_equal(A, B):
-                print("Reconstructed matrix disagreement.", A, B, sep="\n" )
+            if not np.array_equal(a, b):
+                print("Reconstructed matrix disagreement.", a, b, sep="\n" )
                 return False
-        print("All reconstructions agree", A, B, sep="\n")
+        print("All reconstructions agree", a, b, sep="\n")
         return True
 
     # Since the set S of principal submatrices of A equals the set of principal 
@@ -434,7 +447,8 @@ def test_manvel_stockmeyer() -> None:
                   [6, 2, 4, 4],
                   [5, 5, 2, 3],
                   [6, 5, 6, 2]])
-    assert np.allclose(checkReconstruction(A) and checkReconstruction(B), True)
+    
+    assert np.allclose(check_reconstruction(A) and check_reconstruction(B), True)
 
 def test_is_degen() -> None:
     D = np.array([[[4, 4, 8, 2],[4, 4, 8, 2],[4, 4, 2, 8],[1, 1, 6, 7],[1, 1, 8, 8]],
@@ -461,11 +475,11 @@ def test_decompose_degen() -> None:
         return True
 
     N = degen(degen(degen(matrix_n(3),2),3),4)
-    isDegen = is_degen(N)
+    is_degenerate = is_degen(N)
     non_degenerate_base, ops = decompose_degen(N)
     print("Non-degenerate base matrix:", non_degenerate_base)
     print("Sequence of degeneracy operations:", ops)
-    assert np.allclose(isDegen 
+    assert np.allclose(is_degenerate 
                        and np.array_equal( non_degenerate_base, matrix_n(3))
                        and comp_op_seq(ops, 
                                           [(np.array([[0., 0., 1., 1., 1.],
@@ -506,7 +520,9 @@ def test_counterexample_with_degenerate_boundary() -> None:
     
     
 def test_normed_bdry() -> None:
-    A = np.random.randint(low=-11, high=73, size=(5, 7, 9, 11))   
+    seed = 2030405  # Set the seed value
+    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
+    A = rng.integers(low=-11, high=73, size=(5, 7, 9, 11), dtype=np.int16)
     expected_bdry_bdry = np.zeros((3,5,7,9))
     assert np.allclose(bdry_n(bdry_n(A)), expected_bdry_bdry)
 
@@ -545,7 +561,10 @@ if __name__ == "__main__":
     # Custom pretty print
     pretty_print_coefficients(coefficients)
 
-    X = np.random.randint(low=-11, high=11, size=(11,11))
+    seed = 2030405  # Set the seed value
+    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
+    X = rng.integers(low=-11, high=11, size=(11, 11), dtype=np.int16)
+
     print(X)
     print(np.linalg.matrix_rank(X))
     
@@ -562,6 +581,6 @@ if __name__ == "__main__":
     print(np.linalg.matrix_rank(Z))  
     
     
-   # for i in range(3):
-   #     for j in range(3):
-   #         print( bdry(standard_basis_matrix(3,3,i,j)) )
+    for i in range(3):
+        for j in range(3):
+            print( bdry(standard_basis_matrix(3,3,i,j)) )
