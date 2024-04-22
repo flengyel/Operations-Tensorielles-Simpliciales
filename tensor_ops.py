@@ -206,13 +206,13 @@ def cobdry(m: np.ndarray) -> np.ndarray:
            a = np.subtract(a, degen(m, i))
     return a
 
-# Fonction de cornet, donnée une matrice M et un indice k, 0 <= k <= min(M.shape)
+# Fonction de cornet, donnée une matrice M et un indice k, 0 <= k <= s_dim(M)+1 = min(M.shape).
 # Ceci retourne la liste des faces diagonales de M en ordre à l'exception de la k-ème.
 # La k-ème matrice est la matrice zéro de dimension (M.shape[0]-1)x(M.shape[1]-1)
 def horn(m: np.ndarray, k: int) -> np.ndarray:
-    d = min(m.shape)
-    if k < 0 or k >= d:
-        raise ValueError(k, "must be nonnegative and less than dim", d)
+    d = s_dim(m)+1 
+    if k < 0 or k > d:
+        raise ValueError(k, "must be nonnegative and less than or equal to s-dim+1", d)
     return np.array([face(m,i) if i != k else np.zeros(np.subtract(m.shape, np.array([1]))) for i in range(d)])
 
 # check the Kan condition
@@ -254,14 +254,14 @@ def standard_basis_matrix(m: int, n: int, i: int, j: int) -> np.ndarray:
 # Definition: the degree of a tensor t is the number of dimensions of t.
 
 # The n-hypergroupoid conjecture. Let t be a (generic) non-degenerate hypermatrix
-# with non-degenerate boundary. Then the inner horns of t are unique if and only if 
+# with non-degenerate boundary. Then the (inner) horns of t are unique if and only if 
 # the degree of t is less than its simplicial dimension: deg(t) < s_dim(t).
 def n_hypergroupoid_conjecture(shape: Tuple[int], verbose: bool = False) -> bool:
     deg = len(shape)
     s_dimension = min(shape)-1 # simplicial dimension
     conjecture = deg < s_dimension
     if verbose:
-        print(f"shape:{shape} rank:{deg} {'<' if conjecture else '>='} s-dim:{s_dimension}")
+        print(f"shape:{shape} degree:{deg} {'<' if conjecture else '>='} s-dim:{s_dimension}")
     return conjecture
 
 # custom exception for simplicial tensors
@@ -270,11 +270,13 @@ class SimplicialException(Exception):
 
 # Conjecture. Supppse that neither a, nor bdry(a) is degenerate. 
 # Then every inner horn of a has a unique filler if and only if deg(a) < s_dim(a)
-def n_hypergroupoid_comparison(a: np.ndarray, verbose: bool = False) -> bool:
+# We added the parameter outer_horns to allow for the comparison of outer horns as well.
+def n_hypergroupoid_comparison(a: np.ndarray, outer_horns: bool = False, verbose: bool = False) -> bool:
     if is_degen(a):
         raise SimplicialException("Matrix is degenerate.")
     sdim = s_dim(a)
-    for i in range(1,sdim+1):
+    # if outer_horns is True, then we need to check the outer horns as well
+    for i in range(0 if outer_horns else 1, sdim+1 if outer_horns else sdim):
         h = horn(a, i)
         b = filler(h, i)
         hprime = horn(b, i)
@@ -282,7 +284,7 @@ def n_hypergroupoid_comparison(a: np.ndarray, verbose: bool = False) -> bool:
             raise SimplicialException("Original horn and filler horn disagree!")
         if not np.array_equal(a, b):
             if verbose:
-                print("There exist at least two fillers.")
+                print(f"There exist at least two fillers for omitted face {i}.")
             return False
     if verbose:
         print("Unique filler.")

@@ -25,12 +25,16 @@ from tensor_ops import horn, filler, bdry, degen, is_degen
 
 def random_shape(n: int) -> Tuple[int]:
     # The degree of a hypermatrix is its number of dimensions. Defined as len(S.shape). 
-    degree = random.randint(2, n // 2)  # Length of at least two and bounded by 10
-    return tuple(random.randint(2, n) for _ in range(degree))  # Positive integers at least two and bounded by n
+    degree = random.randint(2, n // 2)  # Length of at least two and bounded by n // 2
+    return tuple(random.randint(3, n) for _ in range(degree))  # number of elements per axis >= 3 and bounded by n
 
 # force_degeneracy: if True, force random tensor A to be a degeneracy
 # skip_degeneracies: if True, skip degeneracies. No effect if force_degeneracy is True.
-def rank_dim_conjecture(tests: int, maxdim:int, force_degeneracy:bool=False, skip_degeneracies:bool=False) -> bool:    
+def rank_dim_conjecture(tests: int, 
+                        maxdim:int, 
+                        force_degeneracy:bool=False, 
+                        skip_degeneracies:bool=False, 
+                        outer_horns:bool = False) -> bool:    
     non_unique_horns = 0
     unique_horns = 0
     seed = 123  # Set the seed value
@@ -46,7 +50,7 @@ def rank_dim_conjecture(tests: int, maxdim:int, force_degeneracy:bool=False, ski
             while is_degen(A) or is_degen(bdry(A)):
                 A = rng.integers(low=1, high=10, size=shape, dtype=np.int16)  # Generate random integers    
         conjecture = n_hypergroupoid_conjecture(shape, verbose=True)
-        comparison = n_hypergroupoid_comparison(A, verbose=True)
+        comparison = n_hypergroupoid_comparison(A, outer_horns=outer_horns, verbose=True)
         if comparison != conjecture:
             print(f"Counterexample of shape: {A.shape} with tensor: {A}")
             print(f"Conjecture: {conjecture} Comparison: {comparison}")
@@ -59,29 +63,9 @@ def rank_dim_conjecture(tests: int, maxdim:int, force_degeneracy:bool=False, ski
         else:
             non_unique_horns += 1
     print(f"Conjecture verified for {tests} shapes.") 
-    print(f"Inner horns w/ unique fillers: {unique_horns}") 
-    print(f"Inner horns w/ non-unique fillers: {non_unique_horns}")
+    print(f"Horns w/ unique fillers: {unique_horns}") 
+    print(f"Horns w/ non-unique fillers: {non_unique_horns}")
     return True
 
 if __name__ == "__main__":
-    rank_dim_conjecture(750, 14, force_degeneracy=False, skip_degeneracies=True)
-    counterexample = np.array( [[8, 8, 7],
-                                [3, 2, 1],
-                                [6, 5, 4],
-                                [8, 5, 4],
-                                [4, 4, 1],
-                                [1, 4, 8],
-                                [6, 5, 6],
-                                [6, 2, 5]] ).transpose()
-    print(f"Counterexample with degenerate boundary: {counterexample}")
-    print(f"bdry(counterexample): {bdry(counterexample)}")
-    print(f"is_degen(bdry(counterexample)): {is_degen(bdry(counterexample))}")
-    comparison = n_hypergroupoid_comparison(counterexample, verbose=True)
-    conjecture = n_hypergroupoid_conjecture(counterexample.shape, verbose=True)
-    print("Conjecture:", conjecture, "Comparison:", comparison)
-    h = horn(counterexample, 1)
-    print("Horn:", h)
-    f = filler(h, 1)
-    print("Filler:", f)
-    print("Counterexample and filler agree:", np.array_equal(counterexample,f))
-
+    rank_dim_conjecture(750, 12, force_degeneracy=False, skip_degeneracies=True)
