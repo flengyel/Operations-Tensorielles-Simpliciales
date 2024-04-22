@@ -30,7 +30,7 @@ def random_shape(n: int) -> Tuple[int]:
 
 # force_degeneracy: if True, force random tensor A to be a degeneracy
 # skip_degeneracies: if True, skip degeneracies. No effect if force_degeneracy is True.
-def rank_dim_conjecture(tests: int, 
+def run_n_hypergroupoid_conjecture(tests: int, 
                         maxdim:int, 
                         force_degeneracy:bool=False, 
                         skip_degeneracies:bool=False, 
@@ -68,4 +68,4 @@ def rank_dim_conjecture(tests: int,
     return True
 
 if __name__ == "__main__":
-    rank_dim_conjecture(750, 12, force_degeneracy=False, skip_degeneracies=True)
+    run_n_hypergroupoid_conjecture(750, 12, force_degeneracy=False, skip_degeneracies=True)

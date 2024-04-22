@@ -401,7 +401,7 @@ def test_n_hypergroupoid_conjecture() -> None:
     import random
     def random_shape() -> Tuple[int]:
         length = random.randint(2, 10)  # Length of at least two and bounded by 10
-        return tuple(random.randint(2, 10) for _ in range(length))  # Positive integers at least two and bounded by 10
+        return tuple(random.randint(3, 12) for _ in range(length))  # Positive integers at least 3 and bounded by 10
 
     shape = random_shape()
     # create a random non-zero tensor of the given shape
@@ -437,7 +437,7 @@ def test_manvel_stockmeyer() -> None:
 
     # Since the set S of principal submatrices of A equals the set of principal 
     # submatrices of B, A and B cannot be reconstructed from S. However, A and B
-    # can be reconstructed from their inner horns.
+    # can be reconstructed from their (inner) horns.
 
     A = np.array([[2, 4, 3, 4], 
                   [5, 2, 3, 3],
