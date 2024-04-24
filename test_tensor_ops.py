@@ -245,8 +245,6 @@ def h_module2(a: ndarray, l: ndarray, b: ndarray) -> bool:
     return True
 
 def test_h_module2() -> None:
-    seed = 12345  # Set the seed value
-    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
     A = random_tensor((8,5), low=-11, high=73)
     L = random_tensor((5,5), low=-133, high=103)
     B = random_tensor((5,14), low=44, high=83)

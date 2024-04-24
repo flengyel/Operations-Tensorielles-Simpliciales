@@ -277,8 +277,8 @@ class SimplicialException(Exception):
 # Conjecture. Supppse that neither a, nor bdry(a) is degenerate. 
 # Then every inner horn of a has a unique filler if and only if deg(a) < s_dim(a)
 # We added the parameter outer_horns to allow for the comparison of outer horns as well.
-def n_hypergroupoid_comparison(a: np.ndarray, outer_horns: bool = False, verbose: bool = False) -> bool:
-    if is_degen(a):
+def n_hypergroupoid_comparison(a: np.ndarray, outer_horns: bool = False, verbose: bool = False, allow_degen=False) -> bool:
+    if not allow_degen and is_degen(a):
         raise SimplicialException("Matrix is degenerate.")
     sdim = s_dim(a)
     # if outer_horns is True, then we need to check the outer horns as well

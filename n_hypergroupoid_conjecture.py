@@ -21,7 +21,8 @@ import numpy as np
 import random
 from typing import Tuple # , List, Union, Any
 from tensor_ops import n_hypergroupoid_conjecture, n_hypergroupoid_comparison
-from tensor_ops import horn, filler, bdry, degen, is_degen, ___SEED___, random_tensor    
+from tensor_ops import bdry, degen, is_degen, ___SEED___, random_tensor    
+from tensor_ops import degree, s_dim, face 
 
 
 random.seed(___SEED___) # Set seed for reproducibility
@@ -69,5 +70,69 @@ def run_n_hypergroupoid_conjecture(tests: int,
     print(f"Horns w/ non-unique fillers: {non_unique_horns}")
     return True
 
+def verify_unique_down_to_degree(shape: Tuple[int] = (19, 18, 17, 19), outer_horns:bool = False) -> bool:
+    
+    A = random_tensor(shape, low=1, high=10)  
+    
+    # ensure nondegeneracy of A and bdry(A)
+    while is_degen(A) or is_degen(bdry(A)):
+        A = random_tensor(shape, low=1, high=10)  # Generate random integers
+
+    initial_shape = A.shape
+  
+    deg = initial_degree = degree(A)
+    sdim = top_sdim = s_dim(A)
+
+    print(f"Initial tensor has shape: {initial_shape}, degree: {initial_degree}, and s-dimension: {top_sdim}.")
+
+    conjecture = n_hypergroupoid_conjecture(shape, verbose=True)
+    print(f"Unique filler for degree {deg} and s-dimension {sdim}")
+    print(f"Checking comparison for tensor of shape: {A.shape}")
+            
+    comparison = n_hypergroupoid_comparison(A, outer_horns=outer_horns, verbose=False)
+    
+    if not conjecture:
+        print(f"Random tensor has non-unique filler for shape: {A.shape}. Start over.")
+        return False
+
+    if comparison != conjecture:
+        print(f"Counterexample of shape: {A.shape} with tensor: {A}")
+        print(f"Conjecture: {conjecture} Comparison: {comparison}")
+        print(f"A is a degeneracy: {is_degen(A)}")
+        print(f"bdry(A): {bdry(A)}")
+        print(f"boundary is a degeneracy: {is_degen(bdry(A))}")
+        return False
+
+    # the comparison and conjecture are both True
+    # so that degree < sdim and the s-diomension can be reduced 
+    while deg < sdim:
+        A = face(A, 0)
+        deg = degree(A)
+        sdim = s_dim(A) # reduce s-dimension
+        shape = A.shape
+
+        conjecture = n_hypergroupoid_conjecture(shape, verbose=True)
+        if conjecture:
+            print(f"Unique filler for degree {deg} and s-dimension {sdim}")
+            print(f"Checking comparison for tensor of shape: {A.shape}")
+            comparison = n_hypergroupoid_comparison(A, outer_horns=outer_horns, verbose=False)
+            if not comparison:
+                print(f"Oh shit: comparison failed for tensor of shape: {A.shape}")
+                return False
+        else:
+            print(f"non-unique filler for degree {deg} and s-dimension {sdim}")
+            print(f"Tensor of shape {initial_shape} generates unique fillers from s-dimension {deg+1} to s-dimension {top_sdim}.")    
+            print(f"Tensors of higher dimensions can be adjoined to the generated simplicial object to obtain a {deg}-hypergroupoid.")
+            return True
+        
+
 if __name__ == "__main__":
-    run_n_hypergroupoid_conjecture(750, 12, force_degeneracy=False, skip_degeneracies=True)
+#   run_n_hypergroupoid_conjecture(750, 12, force_degeneracy=False, skip_degeneracies=True)
+    #verify_unique_down_to_degree()
+    verify_unique_down_to_degree(shape=(5,5))
+    verify_unique_down_to_degree(shape=(6,6))
+    verify_unique_down_to_degree(shape=(7,7))
+
+    verify_unique_down_to_degree(shape=(5,5,5))
+    verify_unique_down_to_degree(shape=(6,6,6))
+    verify_unique_down_to_degree(shape=(7,7,7))
