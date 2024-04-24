@@ -24,6 +24,12 @@ import logging
 # Set up logging
 logging.basicConfig(level=logging.WARNING)
 
+___SEED___ = 123  # Set the seed value for reproducibility
+np.random.seed(___SEED___)  # Set the seed value for reproducibility
+rng = np.random.default_rng(___SEED___)  # Create a random number generator with the seed
+
+def random_tensor(shape: Tuple[int], low: int = 1, high: int = 10) -> np.ndarray:
+    return rng.integers(low=low, high=high, size=shape, dtype=np.int16)
 
 def s_dim(t: np.ndarray) -> int:
     """

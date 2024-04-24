@@ -26,7 +26,7 @@ from tensor_ops import SimplicialException, face, hface, vface, bdry, hbdry, vbd
 from tensor_ops import degen, hdegen, vdegen, horn, kan_condition, filler
 from tensor_ops import standard_basis_matrix, cobdry
 from tensor_ops import n_hypergroupoid_comparison, n_hypergroupoid_conjecture
-from tensor_ops import is_degen, decompose_degen, max_norm, bdry_n, s_dim
+from tensor_ops import is_degen, decompose_degen, max_norm, bdry_n, s_dim, random_tensor
 
 Z = np.arange(7*9)
 Z = Z.reshape(7,9)
@@ -78,9 +78,8 @@ def test_bdry_hbdry() -> None:
 # https://doi.org/10.1016/0040-9383(66)90016-4. The application to matrices
 # appears new, though it was implicit in Quillen's first paper.
 
-seed = 1234  # Set the seed value
-rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
-W = rng.integers(low=-10, high=73, size=(73,109), dtype=np.int16)  # Generate random matrix
+# W = rng.integers(low=-10, high=73, size=(73,109), dtype=np.int16)  # Generate random matrix
+# W = random_tensor((73, 109), -10, 73)
 
 def facecommute(a)  -> bool:
     d = s_dim(a) # simplicial dimension of a
@@ -93,7 +92,7 @@ def facecommute(a)  -> bool:
 # the diagonal face operation is the composite of vertical and horizontal face operations
 # This is given axiomatically in 
 def test_facecommute() -> None:
-    assert np.allclose(facecommute(W), True)
+    assert np.allclose(facecommute(random_tensor((73, 109), low=-10, high=33)), True)
 
 def transcommute(a) -> bool:
     d = s_dim(a) 
@@ -104,7 +103,7 @@ def transcommute(a) -> bool:
 
 # The face operation preserves transposition
 def test_transcommute() -> None:
-    assert np.allclose(transcommute(W), True)
+    assert np.allclose(transcommute(random_tensor((73, 109), low=10, high=43)), True)
 
 # Verify that degen(A,j) = hdegen(vdegen(A,j),j) = vdegen(hdegen(A,j),j)
 # This is how Daniel Quillen defines the degeneracy operation of the
@@ -121,10 +120,9 @@ def degencommute(a) -> bool:
     return True
 
 def test_degencommute() -> None:
-    assert np.allclose(degencommute(W), True) 
+    assert np.allclose(degencommute(random_tensor((73, 109), low=-10,high=73)), True) 
 
 # degeneracies commute with transpose
-
 def degentranscommute(t) -> bool:
     d = s_dim(t) # simplicial dimension of t
     for j in range(d+1):
@@ -133,7 +131,7 @@ def degentranscommute(t) -> bool:
     return True
 
 def test_degentranscommute() -> None:
-    assert np.allclose(degentranscommute(W), True)
+    assert np.allclose(degentranscommute(random_tensor((73, 109), low=-10, high=73)), True)
 
 # The five simplicial identities for the diagonal simplicial operations 
 
@@ -147,7 +145,7 @@ def test_first_identity() -> None:
                 if not np.array_equal(X, Y):
                     return False
         return True
-    assert np.allclose(first_identity(W), True)       
+    assert np.allclose(first_identity(random_tensor((73, 109), -10, 73)), True)       
 
 def test_second_identity() -> None:
     def second_identity(t) -> bool:
@@ -159,7 +157,7 @@ def test_second_identity() -> None:
                 if not np.array_equal(X, Y):
                     return False
         return True
-    assert np.allclose(second_identity(W), True)
+    assert np.allclose(second_identity(random_tensor((73, 109), -10, 73)), True)
 
 def test_third_identity() -> None:
     def third_identity(t) -> bool:
@@ -170,7 +168,7 @@ def test_third_identity() -> None:
             if ((not np.array_equal(X, Y)) or (not np.array_equal(X ,t)) or (not np.array_equal(Y, t))):
                 return False
         return True    
-    assert np.allclose(third_identity(W), True)
+    assert np.allclose(third_identity(random_tensor((73, 109), 10, 73)), True)
 
 def test_fourth_identity() -> None:
     def fourth_identity(m) -> bool:
@@ -183,7 +181,7 @@ def test_fourth_identity() -> None:
                     if not np.array_equal(X , Y):
                         return False
         return True
-    assert np.allclose(fourth_identity(W), True)
+    assert np.allclose(fourth_identity(random_tensor((73, 109), -10, 73)), True)
 
 def test_fifth_identity() -> None:
     def fifth_identity(m) -> bool:
@@ -195,7 +193,7 @@ def test_fifth_identity() -> None:
                 if not np.array_equal(X, Y):
                     return False
         return True
-    assert np.allclose(fifth_identity(W), True)
+    assert np.allclose(fifth_identity(random_tensor((73, 109), -10, 73)), True)
 
 # module structure (horizontal)
 
@@ -219,11 +217,9 @@ def h_module(a: ndarray, t: ndarray, b: ndarray) -> bool:
     return True
 
 def test_h_module() -> None:
-    seed = 12345  # Set the seed value
-    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
-    A = rng.integers(low=-11, high=73, size=(7,5), dtype=np.int16)
-    L = rng.integers(low=-133, high=103, size=(5,5), dtype=np.int16)
-    B = rng.integers(low=44, high=83, size=(5,13), dtype=np.int16)
+    A = random_tensor((7,5), low=-11, high=73)
+    L = random_tensor((5,5), low=-133, high=103)
+    B = random_tensor((5,13),low=44, high=83)
     assert np.allclose(h_module(A,L,B), True)
 
 def h_module2(a: ndarray, l: ndarray, b: ndarray) -> bool:
@@ -248,9 +244,9 @@ def h_module2(a: ndarray, l: ndarray, b: ndarray) -> bool:
 def test_h_module2() -> None:
     seed = 12345  # Set the seed value
     rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
-    A = rng.integers(low=-11, high=73, size=(8,5), dtype=np.int16)
-    L = rng.integers(low=-133, high=103, size=(5,5), dtype=np.int16)
-    B = rng.integers(low=44, high=83, size=(5,14), dtype=np.int16)
+    A = random_tensor((8,5), low=-11, high=73)
+    L = random_tensor((5,5), low=-133, high=103)
+    B = random_tensor((5,14), low=44, high=83)
     assert np.allclose(h_module2(A,L,B), True)
 
 # face and degeneracy operations commute with the hadamard product
@@ -264,10 +260,8 @@ def hadamard_face(a: ndarray, b: ndarray) -> bool:
     return True
 
 def test_hadamard_face() -> None:
-    seed = 10101  # Set the seed value
-    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
-    A = rng.integers(low=-11, high=73, size=(7,11), dtype=np.int16)
-    B = rng.integers(low=1, high=43, size=(7,11), dtype=np.int16)
+    A = random_tensor((7,11), low=-11, high=73)
+    B = random_tensor((7,11), low=1, high=43)
     assert np.allclose(hadamard_face(A, B), True)
 
 def hadamard_degen(a: ndarray, b: ndarray) -> bool:
@@ -280,10 +274,8 @@ def hadamard_degen(a: ndarray, b: ndarray) -> bool:
     return True
 
 def test_hadamard_degen() -> None:
-    seed = 10101  # Set the seed value
-    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
-    A = rng.integers(low=-11, high=73, size=(7,11), dtype=np.int16)
-    B = rng.integers(low=1, high=43, size=(7,11), dtype=np.int16)
+    A = random_tensor((7,11), low=-11, high=73)
+    B = random_tensor((7,11), low=1, high=43)
     assert np.allclose(hadamard_degen(A, B), True)
 
 # The transpose of the boundary is the boundary of the transpose
@@ -291,18 +283,14 @@ def test_transpose_bdry() -> None:
     def transpose_bdry(a) -> bool:
         return(np.array_equal(np.transpose(bdry(a)), bdry(np.transpose(a))))
 
-    seed = 1010101  # Set the seed value
-    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
-    A = rng.integers(low=-11, high=73, size=(7,11,5), dtype=np.int16)
+    A = random_tensor((7,11,5), low=-11, high=73)
     assert np.allclose(transpose_bdry(A), True)
 
 # The face operations are linear and commute with hermitian transpose as well
 def test_linear_map() -> None:
     def linear_map() -> bool:
-        seed = 10101  # Set the seed value
-        rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
-        A = rng.integers(low=-11, high=73, size=(7,11), dtype=np.int16)
-        B = rng.integers(low=1, high=43, size=(7,11), dtype=np.int16)
+        A = random_tensor((7,12), low=-11, high=73)
+        B = random_tensor((7,12), low=1, high=43)
 
         d = s_dim(A) # simplicial dimension of A
         for i in range(d+1):
@@ -322,10 +310,7 @@ def test_linear_map() -> None:
 
 def test_kan_condition() -> None:
     def _kan_condition() -> bool:
-        seed = 2010101  # Set the seed value
-        rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
-        X = rng.integers(low=-11, high=11, size=(21,21), dtype=np.int16)
-
+        X = random_tensor((21,21), low=-11, high=11)
         d = s_dim(X) # simplicial dimension of X
         for k in range(d+1):
             H = horn(X, k)
@@ -347,18 +332,14 @@ def test_filler_dimension2() -> None:
 
 # in dimension 3 and higher, the filler is unique
 def test_filler_dimension3() -> None:
-    seed = 2010101  # Set the seed value
-    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
-    X = rng.integers(low=-11, high=73, size=(8,4), dtype=np.int16)
+    X = random_tensor((8,4), low=-11, high=73)
     H = horn(X, 1)
     Y = filler(H, 1)
     assert np.allclose(np.array_equal(X, Y), True)
 
 # in dimension 10 the filler is unique
 def test_filler_dimension10() -> None:
-    seed = 2010101  # Set the seed value
-    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
-    X = rng.integers(low=-11, high=11, size=(11,11), dtype=np.int16)
+    X = random_tensor((11,11), low=-11, high=11)
     H = horn(X, 2)
     Y = filler(H, 2)
     assert np.allclose(np.array_equal(X, Y), True)
@@ -376,9 +357,7 @@ def test_standard_basis_matrix() -> None:
     assert np.allclose(m_ij, B)
 
 def test_coboundary() -> None:
-    seed = 2010101  # Set the seed value
-    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
-    X = rng.integers(low=-11, high=11, size=(11,11), dtype=np.int16)
+    X = random_tensor((11,11), low=-11, high=11)
     Y = bdry(X)
     Z = cobdry(bdry(Y))    
     print(Z)
@@ -386,9 +365,7 @@ def test_coboundary() -> None:
 
 def test_tensor_kan_condition() -> None:
     def _kan_condition() -> bool:
-        seed = 2010101  # Set the seed value
-        rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
-        X = rng.integers(low=-11, high=11, size=(4,4,4,4), dtype=np.int16)
+        X = random_tensor((4,4,4,4), low=-11, high=11)
         d = s_dim(X)
         for k in range(d+1):
             H = horn(X, k)
@@ -404,15 +381,13 @@ def test_n_hypergroupoid_conjecture() -> None:
         return tuple(random.randint(3, 12) for _ in range(length))  # Positive integers at least 3 and bounded by 10
 
     shape = random_shape()
+
     # create a random non-zero tensor of the given shape
-   
-    seed = 2010101  # Set the seed value
-    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
-    A = rng.integers(low=1, high=10, size=shape, dtype=np.int16)
+    A = random_tensor(shape, low=1, high=10)
    
     # exclude known counterexamples
     while is_degen(A) or is_degen(bdry(A)):
-        A = rng.integers(low=1, high=10, size=shape, dtype=np.int16)
+        A = random_tensor(shape, low=1, high=10)
    
     assert np.allclose(n_hypergroupoid_comparison(A),
                        n_hypergroupoid_conjecture(shape))
@@ -520,9 +495,7 @@ def test_counterexample_with_degenerate_boundary() -> None:
     
     
 def test_normed_bdry() -> None:
-    seed = 2030405  # Set the seed value
-    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
-    A = rng.integers(low=-11, high=73, size=(5, 7, 9, 11), dtype=np.int16)
+    A = random_tensor((5, 7, 9, 11), low=-11, high=73)    
     expected_bdry_bdry = np.zeros((3,5,7,9))
     assert np.allclose(bdry_n(bdry_n(A)), expected_bdry_bdry)
 
