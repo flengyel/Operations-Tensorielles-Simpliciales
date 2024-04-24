@@ -81,9 +81,6 @@ def test_bdry_hbdry() -> None:
 # https://doi.org/10.1016/0040-9383(66)90016-4. The application to matrices
 # appears new, though it was implicit in Quillen's first paper.
 
-# W = rng.integers(low=-10, high=73, size=(73,109), dtype=np.int16)  # Generate random matrix
-# W = random_tensor((73, 109), -10, 73)
-
 def facecommute(a)  -> bool:
     d = s_dim(a) # simplicial dimension of a
     for j in range(d+1):
