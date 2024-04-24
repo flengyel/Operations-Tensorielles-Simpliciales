@@ -26,7 +26,10 @@ from tensor_ops import SimplicialException, face, hface, vface, bdry, hbdry, vbd
 from tensor_ops import degen, hdegen, vdegen, horn, kan_condition, filler
 from tensor_ops import standard_basis_matrix, cobdry
 from tensor_ops import n_hypergroupoid_comparison, n_hypergroupoid_conjecture
-from tensor_ops import is_degen, decompose_degen, max_norm, bdry_n, s_dim, random_tensor
+from tensor_ops import is_degen, decompose_degen, max_norm, bdry_n, s_dim, random_tensor, ___SEED___
+import random
+
+random.seed(___SEED___) # Set seed for reproducibility
 
 Z = np.arange(7*9)
 Z = Z.reshape(7,9)
@@ -375,7 +378,6 @@ def test_tensor_kan_condition() -> None:
     assert np.allclose(_kan_condition(), True)
 
 def test_n_hypergroupoid_conjecture() -> None:
-    import random
     def random_shape() -> Tuple[int]:
         length = random.randint(2, 10)  # Length of at least two and bounded by 10
         return tuple(random.randint(3, 12) for _ in range(length))  # Positive integers at least 3 and bounded by 10

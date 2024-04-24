@@ -21,8 +21,12 @@ import numpy as np
 import random
 from typing import Tuple # , List, Union, Any
 from tensor_ops import n_hypergroupoid_conjecture, n_hypergroupoid_comparison
-from tensor_ops import horn, filler, bdry, degen, is_degen    
+from tensor_ops import horn, filler, bdry, degen, is_degen, ___SEED___, random_tensor    
 
+
+random.seed(___SEED___) # Set seed for reproducibility
+
+# random_shape: generates a random shape for a hypermatrix
 def random_shape(n: int) -> Tuple[int]:
     # The degree of a hypermatrix is its number of dimensions. Defined as len(S.shape). 
     degree = random.randint(2, n // 2)  # Length of at least two and bounded by n // 2
@@ -37,18 +41,16 @@ def run_n_hypergroupoid_conjecture(tests: int,
                         outer_horns:bool = False) -> bool:    
     non_unique_horns = 0
     unique_horns = 0
-    seed = 123  # Set the seed value
-    rng = np.random.default_rng(seed=seed)  # Create a random number generator with the seed
 
     for i in range(tests):
         print(f"{i+1}: generating random hypermatrix")
         shape = random_shape(maxdim)
-        A = rng.integers(low=1, high=10, size=shape, dtype=np.int16)  # Generate random integers
+        A = random_tensor(shape, low=1, high=10)  # Generate random integers
         if force_degeneracy:
             A = degen(A, 0) # force A to be a degeneracy
         if not force_degeneracy and skip_degeneracies:
             while is_degen(A) or is_degen(bdry(A)):
-                A = rng.integers(low=1, high=10, size=shape, dtype=np.int16)  # Generate random integers    
+                A = random_tensor(shape, low=1, high=10)  # Generate random integers    
         conjecture = n_hypergroupoid_conjecture(shape, verbose=True)
         comparison = n_hypergroupoid_comparison(A, outer_horns=outer_horns, verbose=True)
         if comparison != conjecture:
