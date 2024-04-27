@@ -20,16 +20,38 @@
 import numpy as np
 from typing import Tuple, List, Union, Any
 import logging
+import random
 
 # Set up logging
 logging.basicConfig(level=logging.WARNING)
 
 ___SEED___ = 123  # Set the seed value for reproducibility
-np.random.seed(___SEED___)  # Set the seed value for reproducibility
+random.seed(___SEED___)  # Set the seed value for random library 
+np.random.seed(___SEED___)  # Set the seed value for np.random library
 rng = np.random.default_rng(___SEED___)  # Create a random number generator with the seed
+
+## Tensor construction functions
 
 def random_tensor(shape: Tuple[int], low: int = 1, high: int = 10) -> np.ndarray:
     return rng.integers(low=low, high=high, size=shape, dtype=np.int16)
+
+# create a tensor with a given shape and values from 0 to n-1,
+# where n is the product of the shape dimensions
+def range_tensor(shape: Tuple[int]) -> np.ndarray:
+    return np.arange(np.prod(shape)).reshape(shape)
+
+def get_index(j: int, shape: Tuple[int]) -> Tuple[int]:
+    """
+    Returns the multi-dimensional index of the element in a tensor of specified shape that corresponds to the flat index j.
+    
+    :param j: int, flat index within the array produced by np.arange(prod(shape))
+    :param shape: tuple of ints, shape of the tensor
+    :return: tuple of ints, multi-dimensional index in the tensor
+    """
+    if j < 0 or j >= np.prod(shape):
+        raise ValueError("Index out of bounds")
+    return np.unravel_index(j, shape)
+
 
 def s_dim(t: np.ndarray) -> int:
     """
@@ -313,6 +335,16 @@ def bdry_n(h: np.ndarray) -> np.ndarray:
     else:  # Return bdry(h) directly if it is all zeros
         return bdry(h)
 
+def principal_diagonal(tensor):
+    """
+    Extracts the principal diagonal from a tensor based on its simplex dimension.
+    Works for tensors of any dimensionality.
+    """
+    sdim = s_dim(tensor)
+    # Generate indices (i, i, ..., i) where i ranges from 0 to sdim
+    indices = [tuple([i] * len(tensor.shape)) for i in range(sdim + 1)]
+    return np.array([tensor[index] for index in indices])
+
 if __name__ == "__main__":
   
     # more counterexamples from manvel and stockmeyer 1971
@@ -405,3 +437,38 @@ if __name__ == "__main__":
     print(f"bdry_n(hypermatrix) = {bdry_n(hypermatrix)}")
     print(f"bdry_n(hypermatrix) = {bdry_n(hypermatrix)}")
     print(f"bdry_n(bdry_n(hypermatrix)) = {bdry_n(bdry_n(hypermatrix))}")
+
+    shape = (3, 3)
+    print(f"Constructing a = range_tensor({shape})")
+    a = random_tensor(shape, low=0, high=3)
+    print(f"range_tensor({shape}) =\n{a}")
+    #for i in range(np.prod(shape)):
+    #    print(f"get_index({i}, {shape}) = {get_index(i, shape)}")
+    print("")
+    k = 1
+    print(f"Constructing the {k}-horn of a")
+    h = horn(a, k)
+    print(f"horn(a, {k}) =\n{h}")
+    
+    #print(f"length(h): {len(h)}")
+
+    # compute the occurrence matrix of the horn fillers
+    
+    occurrence_tensor = np.zeros(a.shape)
+    shape_face = np.subtract(a.shape, np.array([1]))
+    z = np.zeros(shape_face)
+    for j in range(len(h)):
+        b = h[j]
+        if not np.equal(b, z).all():
+            for i in range(np.prod(b.shape)):
+                element = int(b[get_index(i, b.shape)]) # get the element at index i
+                occurrence_tensor[get_index(element, a.shape)] += 1
+
+    #print(f"Occurrence matrix:\n{occurrence_matrix}")
+    k = np.argmax(principal_diagonal(occurrence_tensor))
+    print(f"Index of the omitted matrix of the horn: {k}")
+    c = filler(h,1)
+    print(f"original tensor a:\n{a}")
+    print(f"Filler of the horn:\n{c}")
+    # check if a and c are equal
+    print(f"np.array_equal(a, c): {np.array_equal(a, c)}")
