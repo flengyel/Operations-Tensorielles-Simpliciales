@@ -26,50 +26,75 @@ from tensor_ops import SimplicialException, face, hface, vface, bdry, hbdry, vbd
 from tensor_ops import degen, hdegen, vdegen, horn, kan_condition, filler
 from tensor_ops import standard_basis_matrix, cobdry
 from tensor_ops import n_hypergroupoid_comparison, n_hypergroupoid_conjecture
-from tensor_ops import is_degen, decompose_degen, max_norm, bdry_n, s_dim, random_tensor, ___SEED___
+from tensor_ops import is_degen, decompose_degen, max_norm, bdry_n, s_dim 
+from tensor_ops import ___SEED___, random_tensor, range_tensor
 import random
 
 random.seed(___SEED___) # Set seed for reproducibility
 
-Z = np.arange(7*9)
-Z = Z.reshape(7,9)
+
+
+Z = range_tensor((9,7))
+
+def test_range_tensor() -> None:
+    expected_range = np.array([[ 0,  1,  2,  3,  4,  5,  6],
+                                [ 7,  8,  9, 10, 11, 12, 13],
+                                [14, 15, 16, 17, 18, 19, 20],
+                                [21, 22, 23, 24, 25, 26, 27],
+                                [28, 29, 30, 31, 32, 33, 34],
+                                [35, 36, 37, 38, 39, 40, 41],
+                                [42, 43, 44, 45, 46, 47, 48],
+                                [49, 50, 51, 52, 53, 54, 55],
+                                [56, 57, 58, 59, 60, 61, 62]])
+    assert np.allclose(Z, expected_range)    
+
+def test_range_tensor2() -> None:
+    z2 = range_tensor((7,9,11))
+    expected_range2 = np.arange(7*9*11).reshape(7,9,11) 
+    assert np.allclose(z2, expected_range2)
 
 def test_face() -> None:
-    expected_face = np.array([[ 0,  1,  2,  3,  4,  6,  7,  8],
-                              [ 9, 10, 11, 12, 13, 15, 16, 17],
-                              [18, 19, 20, 21, 22, 24, 25, 26],
-                              [27, 28, 29, 30, 31, 33, 34, 35],
-                              [36, 37, 38, 39, 40, 42, 43, 44],
-                              [54, 55, 56, 57, 58, 60, 61, 62]])
+    expected_face = np.array([[ 0,  1,  2,  3,  4,  6],
+                              [ 7,  8,  9, 10, 11, 13],
+                              [14, 15, 16, 17, 18, 20],
+                              [21, 22, 23, 24, 25, 27],
+                              [28, 29, 30, 31, 32, 34],
+                              [42, 43, 44, 45, 46, 48],
+                              [49, 50, 51, 52, 53, 55],
+                              [56, 57, 58, 59, 60, 62]])
     assert np.allclose(face(Z,5), expected_face)
 
 def test_hface() -> None:
-    expected_hface = np.array( [[ 0,  1,  2,  3,  4,  5,  6,  7,  8],
-                                [ 9, 10, 11, 12, 13, 14, 15, 16, 17],
-                                [18, 19, 20, 21, 22, 23, 24, 25, 26],
-                                [36, 37, 38, 39, 40, 41, 42, 43, 44],
-                                [45, 46, 47, 48, 49, 50, 51, 52, 53],
-                                [54, 55, 56, 57, 58, 59, 60, 61, 62]])
+    expected_hface = np.array([[ 0,  1,  2,  3,  4,  5,  6],
+                                [ 7,  8,  9, 10, 11, 12, 13],
+                                [14, 15, 16, 17, 18, 19, 20],
+                                [28, 29, 30, 31, 32, 33, 34],
+                                [35, 36, 37, 38, 39, 40, 41],
+                                [42, 43, 44, 45, 46, 47, 48],
+                                [49, 50, 51, 52, 53, 54, 55],
+                                [56, 57, 58, 59, 60, 61, 62]])
     assert np.allclose(hface(Z,3), expected_hface)  
        
 def test_hbdry_hbdry() -> None:
-    expected_hbdry_hbdry = np.zeros((5,9))
+    expected_hbdry_hbdry = np.zeros((7,7))
     assert np.allclose(hbdry(hbdry(Z)), expected_hbdry_hbdry)   
 
 def test_vbdry_vbdry() -> None:
-    expected_vbdry_vbdry = np.zeros((7,7))  
+    expected_vbdry_vbdry = np.zeros((9,5))  
     assert np.allclose(vbdry(vbdry(Z)), expected_vbdry_vbdry)
 
 def test_bdry_bdry() -> None:
-    expected_bdry_bdry = np.zeros((5,7))  
+    expected_bdry_bdry = np.zeros((7,5))  
     assert np.allclose(bdry(bdry(Z)), expected_bdry_bdry)   
 
 def test_bdry_hbdry() -> None:
-    expected_bdry_hbdry = np.array([[1., 0., 1., 0., 1., 0., 0., 0.],
-                                    [1., 0., 1., 0., 1., 0., 0., 0.],
-                                    [1., 0., 1., 0., 1., 0., 0., 0.],
-                                    [1., 0., 1., 0., 1., 0., 0., 0.],
-                                    [1., 0., 1., 0., 1., 0., 0., 0.]])
+    expected_bdry_hbdry = np.array([[ 8.,  8., 10., 10., 12., 12.],
+                                    [ 8.,  8., 10., 10., 12., 12.],
+                                    [22., 22., 24., 24., 26., 26.],
+                                    [22., 22., 24., 24., 26., 26.],
+                                    [36., 36., 38., 38., 40., 40.],
+                                    [36., 36., 38., 38., 40., 40.],
+                                    [50., 50., 52., 52., 54., 54.]])
     assert np.allclose(bdry(hbdry(Z)), expected_bdry_hbdry) 
 
 ## Tests of basic properties of the simplicial operations
@@ -258,8 +283,8 @@ def hadamard_face(a: ndarray, b: ndarray) -> bool:
     return True
 
 def test_hadamard_face() -> None:
-    A = random_tensor((7,11), low=-11, high=73)
-    B = random_tensor((7,11), low=1, high=43)
+    A = random_tensor((7,11,14), low=-11, high=73)
+    B = random_tensor((7,11,14), low=1, high=43)
     assert np.allclose(hadamard_face(A, B), True)
 
 def hadamard_degen(a: ndarray, b: ndarray) -> bool:
@@ -272,8 +297,8 @@ def hadamard_degen(a: ndarray, b: ndarray) -> bool:
     return True
 
 def test_hadamard_degen() -> None:
-    A = random_tensor((7,11), low=-11, high=73)
-    B = random_tensor((7,11), low=1, high=43)
+    A = random_tensor((7,11,22), low=-11, high=73)
+    B = random_tensor((7,11,22), low=1, high=43)
     assert np.allclose(hadamard_degen(A, B), True)
 
 # The transpose of the boundary is the boundary of the transpose
@@ -287,8 +312,8 @@ def test_transpose_bdry() -> None:
 # The face operations are linear and commute with hermitian transpose as well
 def test_linear_map() -> None:
     def linear_map() -> bool:
-        A = random_tensor((7,12), low=-11, high=73)
-        B = random_tensor((7,12), low=1, high=43)
+        A = random_tensor((7,9,11), low=-11, high=73)
+        B = random_tensor((7,9,11), low=1, high=43)
 
         d = s_dim(A) # simplicial dimension of A
         for i in range(d+1):
@@ -308,7 +333,7 @@ def test_linear_map() -> None:
 
 def test_kan_condition() -> None:
     def _kan_condition() -> bool:
-        X = random_tensor((21,21), low=-11, high=11)
+        X = random_tensor((11,16,23), low=-11, high=11)
         d = s_dim(X) # simplicial dimension of X
         for k in range(d+1):
             H = horn(X, k)
@@ -337,7 +362,7 @@ def test_filler_dimension3() -> None:
 
 # in dimension 10 the filler is unique
 def test_filler_dimension10() -> None:
-    X = random_tensor((11,11), low=-11, high=11)
+    X = random_tensor((16,11), low=-11, high=11)
     H = horn(X, 2)
     Y = filler(H, 2)
     assert np.allclose(np.array_equal(X, Y), True)

@@ -438,17 +438,21 @@ if __name__ == "__main__":
     print(f"bdry_n(hypermatrix) = {bdry_n(hypermatrix)}")
     print(f"bdry_n(bdry_n(hypermatrix)) = {bdry_n(bdry_n(hypermatrix))}")
 
-    shape = (3, 5)
+    shape = (7, 7, 7)
 
-    print(f"Constructing a = random_tensor({shape})")
+    print(f"Constructing a = range_tensor({shape})")
     a = random_tensor(shape, low=0, high=np.prod(shape))
-    print(f"random_tensor({shape}) =\n{a}")
+    a = range_tensor(shape)
+    print(f"range_tensor({shape}) =\n{a}")
     print("")
-    k = 1
+    k = 0
     print(f"Constructing the {k}-horn of a")
     h = horn(a, k)
     print(f"horn(a, {k}) =\n{h}")
     
+    conjecture = n_hypergroupoid_conjecture(shape, verbose=True)
+    print(f"Conjecture: {conjecture}")
+
     #print(f"length(h): {len(h)}")
     # compute the occurrence matrix of the horn fillers
     
@@ -462,12 +466,17 @@ if __name__ == "__main__":
                 element = int(b[get_index(i, b.shape)]) # get the element at index i
                 occurrence_tensor[get_index(element, a.shape)] += 1
 
-    # print(f"Occurrence matrix:\n{occurrence_matrix}")
+    print(f"Occurrence tensor:\n{occurrence_tensor}")
     # This works for range_tensor() by construction
     # but not for random_tensor() because the values are not unique
-    # k = np.argmax(principal_diagonal(occurrence_tensor))
+    print(f"principal_diagonal(occurrence_tensor): {principal_diagonal(occurrence_tensor)}")
+    q = np.argmax(principal_diagonal(occurrence_tensor))
+    # the argmax of the principal diagonal of the occurrence tensor
+    # is the index of the omitted face of the horn for a range tensor
+    # and for a generic tensor in np.prod(shape) variables    
+    print(f"Argmax of the principal diagonal of the occurrence tensor: {q}")
     
-    print(f"Index of the omitted matrix of the horn: {k}")
+    
     c = filler(h,k)
     print(f"original tensor a:\n{a}")
     print(f"Filler of the horn:\n{c}")
