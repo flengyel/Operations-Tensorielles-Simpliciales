@@ -140,4 +140,4 @@ if __name__ == "__main__":
     #verify_unique_down_to_degree(shape=(7,7))
     #verify_unique_down_to_degree(shape=(5,5,5))
     #verify_unique_down_to_degree(shape=(6,6,6))
-    verify_unique_down_to_degree(shape=(7,23,43))
+    verify_unique_down_to_degree(shape=(7,11,23,43))

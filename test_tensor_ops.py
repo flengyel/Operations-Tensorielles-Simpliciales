@@ -27,7 +27,7 @@ from tensor_ops import degen, hdegen, vdegen, horn, kan_condition, filler
 from tensor_ops import standard_basis_matrix, cobdry
 from tensor_ops import n_hypergroupoid_comparison, n_hypergroupoid_conjecture
 from tensor_ops import is_degen, decompose_degen, max_norm, bdry_n, s_dim 
-from tensor_ops import ___SEED___, random_tensor, range_tensor
+from tensor_ops import ___SEED___, random_tensor, range_tensor, reconstruct_range_tensor_from_any_horn
 import random
 
 random.seed(___SEED___) # Set seed for reproducibility
@@ -520,6 +520,13 @@ def test_normed_bdry() -> None:
     A = random_tensor((5, 7, 9, 11), low=-11, high=73)    
     expected_bdry_bdry = np.zeros((3,5,7,9))
     assert np.allclose(bdry_n(bdry_n(A)), expected_bdry_bdry)
+
+def test_max_norm() -> None:
+    A = range_tensor((7, 9))    
+    assert np.allclose(max_norm(A), 62)
+
+def test_reconstruct_range_tensor_from_any_horn() -> None:
+    assert np.allclose(reconstruct_range_tensor_from_any_horn((8, 10, 12)), True)
 
 if __name__ == "__main__":
     pytest.main([__file__])

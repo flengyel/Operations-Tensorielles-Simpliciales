@@ -345,8 +345,48 @@ def principal_diagonal(tensor):
     indices = [tuple([i] * len(tensor.shape)) for i in range(sdim + 1)]
     return np.array([tensor[index] for index in indices])
 
+# The function reconstruct_range_tensor_from_horn() checks whether 
+# a range tensor t satisfies degree(t) < s-dim(t). If so, each horn of t 
+# has unique fillers (this is the n-hypergroupoid conjecture). Each horn
+# of t is computed and the occurrence tensor is used to find the index of
+# the omitted face. If the index is incorrect, the function returns false.
+# Otherwise, the function computes the filler of the horn and checks whether
+# the filler agrees with the original tensor. If for every horn, the filler
+# agrees with the original tensor, the function returns true. Otherwise, it
+# returns false.      
+def reconstruct_range_tensor_from_any_horn(shape: Tuple[int]) -> bool:
+    t = range_tensor(shape)
+    # check whether the horns of t have unique fillers
+    conjecture = n_hypergroupoid_conjecture(shape, verbose=True)
+    if not conjecture:
+        print(f"Shape does not satisfy the n-hypergroupoid conjecture: {shape}")
+        return False
+    s = s_dim(t)
+    # Check every horn of t
+    shape_face = np.subtract(shape, np.array([1]))
+    for i in range(1, s+1):
+        h = horn(t, i)
+        occurrence_tensor = np.zeros(shape)
+        z = np.zeros(shape_face)
+        for j in range(len(h)):
+            b = h[j]
+            if not np.equal(b, z).all():
+                for j in range(np.prod(shape_face)):
+                    element = int(b[get_index(j, shape_face)]) # get the element at index i
+                    occurrence_tensor[get_index(element, shape)] += 1
+        if i != principal_diagonal(occurrence_tensor).argmax():
+            print(f"Counterexample with index disagreement: {shape}")
+            return False
+        # Compute the filler of the horn
+        f = filler(h, i)
+        if not np.array_equal(t, f):
+            print(f"Counterexample with filler unequal to original tensor of: {shape}")
+            return False
+    return True
+
+
+
 if __name__ == "__main__":
-  
     # more counterexamples from manvel and stockmeyer 1971
     __NONDEGENERATE_BASE__ = "Non-degenerate base matrix:"
     __DEGENERACY_OPERATIONS__ = "Sequence of degeneracy operations:"
@@ -399,86 +439,9 @@ if __name__ == "__main__":
     print(__NONDEGENERATE_BASE__, non_degenerate_base)
     print(__DEGENERACY_OPERATIONS__, ops)
 
-    a = np.array([0, 1, 2])
-    b = np.array([3, 4])
-    c = np.array([5, 6])
-
-    # Create an empty 3D array to store the tensor product
-    tensor = np.zeros((3, 2, 2), dtype=int)
-
-    # Fill the tensor by taking the pairwise product of elements from the 1D arrays
-    for i in range(3):
-        for j in range(2):
-            for k in range(2):
-                tensor[i, j, k] = a[i] * b[j] * c[k]
-    print(tensor)
-    n_hypergroupoid_comparison(tensor, verbose=True)
-    # now compute the inner horn of the tensor one step at a time
-    deg = degree(tensor)
-    sdim = s_dim(tensor)
-    print(f"shape {tensor.shape} degree {deg} s-dim {sdim}")
-    for i in range(1, sdim+1):
-        H = horn(tensor, i)
-        B = filler(H, i)
-        Hprime = horn(B, i)
-        print("tensor:", tensor)
-        print("B:", B)
-        print("Hprime:", Hprime)
-        print("np.array_equal(H,Hprime):", np.array_equal(H,Hprime))
-        print("np.array_equal(tensor, B):", np.array_equal(tensor, B))
-
-    hypermatrix = np.array([[[1, -2, 3], [4, -5, 6], [7, 8, -9]],
-                        [[-1, 2, -3], [-4, 5, -6], [-7, -8, 9]],
-                        [[10, -11, 12], [-13, 14, -15], [16, 17, -18]]])
-
-    print(f"hypermatrix: {hypermatrix}")
-    print(f"Max norm of hypermatrix: {max_norm(hypermatrix)}")
-
-    print(f"bdry_n(hypermatrix) = {bdry_n(hypermatrix)}")
-    print(f"bdry_n(hypermatrix) = {bdry_n(hypermatrix)}")
-    print(f"bdry_n(bdry_n(hypermatrix)) = {bdry_n(bdry_n(hypermatrix))}")
-
-    shape = (7, 7, 7)
-
-    print(f"Constructing a = range_tensor({shape})")
-    a = random_tensor(shape, low=0, high=np.prod(shape))
-    a = range_tensor(shape)
-    print(f"range_tensor({shape}) =\n{a}")
-    print("")
-    k = 0
-    print(f"Constructing the {k}-horn of a")
-    h = horn(a, k)
-    print(f"horn(a, {k}) =\n{h}")
-    
-    conjecture = n_hypergroupoid_conjecture(shape, verbose=True)
-    print(f"Conjecture: {conjecture}")
-
-    #print(f"length(h): {len(h)}")
-    # compute the occurrence matrix of the horn fillers
-    
-    occurrence_tensor = np.zeros(a.shape)
-    shape_face = np.subtract(a.shape, np.array([1]))
-    z = np.zeros(shape_face)
-    for j in range(len(h)):
-        b = h[j]
-        if not np.equal(b, z).all():
-            for i in range(np.prod(b.shape)):
-                element = int(b[get_index(i, b.shape)]) # get the element at index i
-                occurrence_tensor[get_index(element, a.shape)] += 1
-
-    print(f"Occurrence tensor:\n{occurrence_tensor}")
-    # This works for range_tensor() by construction
-    # but not for random_tensor() because the values are not unique
-    print(f"principal_diagonal(occurrence_tensor): {principal_diagonal(occurrence_tensor)}")
-    q = np.argmax(principal_diagonal(occurrence_tensor))
-    # the argmax of the principal diagonal of the occurrence tensor
-    # is the index of the omitted face of the horn for a range tensor
-    # and for a generic tensor in np.prod(shape) variables    
-    print(f"Argmax of the principal diagonal of the occurrence tensor: {q}")
     
     
-    c = filler(h,k)
-    print(f"original tensor a:\n{a}")
-    print(f"Filler of the horn:\n{c}")
-    # check if a and c are equal
-    print(f"np.array_equal(a, c): {np.array_equal(a, c)}")
+    shape = (7, 9, 11, 12)
+    can_reconstruct = reconstruct_range_tensor_from_any_horn(shape)
+    print(f"Range tensor of shape {shape} can be reconstructed from any horn: {can_reconstruct}") 
+    
