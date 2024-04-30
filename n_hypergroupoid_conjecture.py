@@ -39,21 +39,32 @@ def run_n_hypergroupoid_conjecture(tests: int,
                         maxdim:int, 
                         force_degeneracy:bool=False, 
                         skip_degeneracies:bool=False, 
-                        outer_horns:bool = False) -> bool:    
+                        outer_horns:bool = False,
+                        single_shape: Tuple[int] = (0,0)) -> bool:    
     non_unique_horns = 0
     unique_horns = 0
 
+    shape = single_shape
     for i in range(tests):
-        print(f"{i+1}: generating random hypermatrix")
-        shape = random_shape(maxdim)
+        print(f"{i+1}: generating random hypermatrix")    
+        if single_shape == (0,0):
+            shape = random_shape(maxdim)
+
         A = random_tensor(shape, low=1, high=10)  # Generate random integers
+        
         if force_degeneracy:
             A = degen(A, 0) # force A to be a degeneracy
+        
         if not force_degeneracy and skip_degeneracies:
-            while is_degen(A) or is_degen(bdry(A)):
+            # previously checked if A is a degeneracy
+            # now all that matters is if bdry(A) is a degeneracy
+            while is_degen(bdry(A)):
+                print(f"Regenerating random tensor of shape: {A.shape}")
                 A = random_tensor(shape, low=1, high=10)  # Generate random integers    
+        
         conjecture = n_hypergroupoid_conjecture(shape, verbose=True)
         comparison = n_hypergroupoid_comparison(A, outer_horns=outer_horns, verbose=True)
+        
         if comparison != conjecture:
             print(f"Counterexample of shape: {A.shape} with tensor: {A}")
             print(f"Conjecture: {conjecture} Comparison: {comparison}")
@@ -61,6 +72,7 @@ def run_n_hypergroupoid_conjecture(tests: int,
             print(f"bdry(A): {bdry(A)}")
             print(f"boundary is a degeneracy: {is_degen(bdry(A))}")
             return False
+        
         if comparison:
             unique_horns += 1
         else:
@@ -133,11 +145,16 @@ def verify_unique_down_to_degree(shape: Tuple[int] = (19, 18, 17, 19), outer_hor
         
 
 if __name__ == "__main__":
-#   run_n_hypergroupoid_conjecture(750, 12, force_degeneracy=False, skip_degeneracies=True)
-    #verify_unique_down_to_degree()
-    #verify_unique_down_to_degree(shape=(5,5))
-    #verify_unique_down_to_degree(shape=(6,6))
-    #verify_unique_down_to_degree(shape=(7,7))
-    #verify_unique_down_to_degree(shape=(5,5,5))
+    run_n_hypergroupoid_conjecture(750, 12, 
+                                   force_degeneracy=False, 
+                                   skip_degeneracies=False, 
+                                   outer_horns=True,
+                                   single_shape=(4,4))
+    run_n_hypergroupoid_conjecture(750, 12, 
+                                   force_degeneracy=False, 
+                                   skip_degeneracies=False, 
+                                   outer_horns=True,
+                                   single_shape=(6,6,6))
+
     #verify_unique_down_to_degree(shape=(6,6,6))
-    verify_unique_down_to_degree(shape=(7,11,23,43))
+    #verify_unique_down_to_degree(shape=(7,11,23,43))

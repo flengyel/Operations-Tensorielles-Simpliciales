@@ -281,9 +281,9 @@ def standard_basis_matrix(m: int, n: int, i: int, j: int) -> np.ndarray:
 
 # Definition: the degree of a tensor t is the number of dimensions of t.
 
-# The n-hypergroupoid conjecture. Let t be a (generic) non-degenerate hypermatrix
-# with non-degenerate boundary. Then the (inner) horns of t are unique if and only if 
-# the degree of t is less than its simplicial dimension: deg(t) < s_dim(t).
+# The n-hypergroupoid conjecture. Let t be a (non-degenerate?) hypermatrix
+# with non-degenerate boundary (necessary). Then the (inner) horns of t are unique 
+# if and only if the degree of t is less than its simplicial dimension: deg(t) < s_dim(t).
 def n_hypergroupoid_conjecture(shape: Tuple[int], verbose: bool = False) -> bool:
     deg = len(shape)
     s_dimension = min(shape)-1 # simplicial dimension
@@ -354,33 +354,57 @@ def principal_diagonal(tensor):
 # the filler agrees with the original tensor. If for every horn, the filler
 # agrees with the original tensor, the function returns true. Otherwise, it
 # returns false.      
-def reconstruct_range_tensor_from_any_horn(shape: Tuple[int]) -> bool:
-    t = range_tensor(shape)
-    # check whether the horns of t have unique fillers
+def check_conjecture(shape: Tuple[int], proceed_anyway: bool) -> bool:
     conjecture = n_hypergroupoid_conjecture(shape, verbose=True)
     if not conjecture:
         print(f"Shape does not satisfy the n-hypergroupoid conjecture: {shape}")
+        if not proceed_anyway:
+            return False
+    return True
+
+def check_nondegenerate_boundary(t: np.ndarray, proceed_anyway: bool, verbose: bool = False) -> bool:
+    b = bdry(t)
+    if is_degen(b):
+        print("Boundary of the tensor is degenerate.")
+        if verbose:
+            print("Boundary of the tensor:")
+            print(b)
+        if not proceed_anyway:
+            return False
+    return True
+
+def check_horn(t: np.ndarray, shape: Tuple[int], shape_face: np.ndarray, z: np.ndarray, i: int) -> bool:
+    h = horn(t, i)
+    occurrence_tensor = np.zeros(shape)
+    for j in range(len(h)):
+        b = h[j]
+        if not np.equal(b, z).all():
+            for j in range(np.prod(shape_face)):
+                element = int(b[get_index(j, shape_face)]) # get the element at index i
+                occurrence_tensor[get_index(element, shape)] += 1
+
+    if i != principal_diagonal(occurrence_tensor).argmax():
+        print(f"Counterexample with index disagreement: {shape}")
+        return False
+
+    # Compute the filler of the horn
+    f = filler(h, i)
+    if not np.array_equal(t, f):
+        print(f"Counterexample with filler unequal to original tensor of: {shape}")
+        return False
+    return True
+
+def reconstruct_range_tensor_from_horn(shape: Tuple[int], proceed_anyway: bool = False, verbose: bool =False) -> bool:
+    t = range_tensor(shape)
+    if not check_conjecture(shape, proceed_anyway):
+        return False
+    if not check_nondegenerate_boundary(t, proceed_anyway, verbose=verbose):
         return False
     s = s_dim(t)
-    # Check every horn of t
     shape_face = np.subtract(shape, np.array([1]))
+    z = np.zeros(shape_face)
     for i in range(1, s+1):
-        h = horn(t, i)
-        occurrence_tensor = np.zeros(shape)
-        z = np.zeros(shape_face)
-        for j in range(len(h)):
-            b = h[j]
-            if not np.equal(b, z).all():
-                for j in range(np.prod(shape_face)):
-                    element = int(b[get_index(j, shape_face)]) # get the element at index i
-                    occurrence_tensor[get_index(element, shape)] += 1
-        if i != principal_diagonal(occurrence_tensor).argmax():
-            print(f"Counterexample with index disagreement: {shape}")
-            return False
-        # Compute the filler of the horn
-        f = filler(h, i)
-        if not np.array_equal(t, f):
-            print(f"Counterexample with filler unequal to original tensor of: {shape}")
+        if not check_horn(t, shape, shape_face, z, i):
             return False
     return True
 
@@ -442,6 +466,6 @@ if __name__ == "__main__":
     
     
     shape = (7, 9, 11, 12)
-    can_reconstruct = reconstruct_range_tensor_from_any_horn(shape)
+    can_reconstruct = reconstruct_range_tensor_from_horn(shape, proceed_anyway=True)
     print(f"Range tensor of shape {shape} can be reconstructed from any horn: {can_reconstruct}") 
     

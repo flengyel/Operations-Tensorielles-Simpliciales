@@ -27,7 +27,7 @@ from tensor_ops import degen, hdegen, vdegen, horn, kan_condition, filler
 from tensor_ops import standard_basis_matrix, cobdry
 from tensor_ops import n_hypergroupoid_comparison, n_hypergroupoid_conjecture
 from tensor_ops import is_degen, decompose_degen, max_norm, bdry_n, s_dim 
-from tensor_ops import ___SEED___, random_tensor, range_tensor, reconstruct_range_tensor_from_any_horn
+from tensor_ops import ___SEED___, random_tensor, range_tensor, reconstruct_range_tensor_from_horn
 import random
 
 random.seed(___SEED___) # Set seed for reproducibility
@@ -342,7 +342,7 @@ def test_kan_condition() -> None:
         return True
     assert np.allclose(_kan_condition(), True)
 
-# The filler is not unique in dimension 2 (a 3x3 matrix has dimension max(shape)-1)
+# The filler is not unique in dimension 2 (a 3x3 matrix has dimension min(shape)-1 = 2)
 def test_filler_dimension2() -> None:
     X = np.array([[-6,  5,  7],
                   [-5,  4,  8],
@@ -525,8 +525,8 @@ def test_max_norm() -> None:
     A = range_tensor((7, 9))    
     assert np.allclose(max_norm(A), 62)
 
-def test_reconstruct_range_tensor_from_any_horn() -> None:
-    assert np.allclose(reconstruct_range_tensor_from_any_horn((8, 10, 12)), True)
+def test_reconstruct_range_tensor_from_horn() -> None:
+    assert np.allclose(reconstruct_range_tensor_from_horn((8, 10, 12)), True)
 
 if __name__ == "__main__":
     pytest.main([__file__])
