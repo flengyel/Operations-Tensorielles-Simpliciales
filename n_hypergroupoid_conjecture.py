@@ -33,6 +33,18 @@ def random_shape(n: int) -> Tuple[int]:
     degree = random.randint(2, n // 2)  # Length of at least two and bounded by n // 2
     return tuple(random.randint(3, n) for _ in range(degree))  # number of elements per axis >= 3 and bounded by n
 
+
+def generate_tensor(shape: Tuple[int], force_degeneracy: bool, skip_degeneracies: bool) -> np.ndarray:
+    A = random_tensor(shape, low=1, high=10)  # Generate random integers
+    if force_degeneracy:
+        A = degen(A, 0)
+        shape = A.shape
+    if not force_degeneracy and skip_degeneracies:
+        while is_degen(bdry(A)):
+            print(f"Regenerating random tensor of shape: {A.shape}")
+            A = random_tensor(shape, low=1, high=10)  # Generate random integers
+    return A
+
 # force_degeneracy: if True, force random tensor A to be a degeneracy
 # skip_degeneracies: if True, skip degeneracies. No effect if force_degeneracy is True.
 def run_n_hypergroupoid_conjecture(tests: int, 
@@ -50,18 +62,8 @@ def run_n_hypergroupoid_conjecture(tests: int,
         if single_shape == (0,0):
             shape = random_shape(maxdim)
 
-        A = random_tensor(shape, low=1, high=10)  # Generate random integers
-        
-        if force_degeneracy:
-            A = degen(A, 0) # force A to be a degeneracy
-        
-        if not force_degeneracy and skip_degeneracies:
-            # previously checked if A is a degeneracy
-            # now all that matters is if bdry(A) is a degeneracy
-            while is_degen(bdry(A)):
-                print(f"Regenerating random tensor of shape: {A.shape}")
-                A = random_tensor(shape, low=1, high=10)  # Generate random integers    
-        
+        A = generate_tensor(shape, force_degeneracy, skip_degeneracies)
+
         conjecture = n_hypergroupoid_conjecture(shape, verbose=True)
         comparison = n_hypergroupoid_comparison(A, outer_horns=outer_horns, verbose=True)
         
@@ -147,14 +149,14 @@ def verify_unique_down_to_degree(shape: Tuple[int] = (19, 18, 17, 19), outer_hor
 if __name__ == "__main__":
     run_n_hypergroupoid_conjecture(750, 12, 
                                    force_degeneracy=False, 
-                                   skip_degeneracies=False, 
-                                   outer_horns=True,
-                                   single_shape=(4,4))
-    run_n_hypergroupoid_conjecture(750, 12, 
-                                   force_degeneracy=False, 
-                                   skip_degeneracies=False, 
-                                   outer_horns=True,
-                                   single_shape=(6,6,6))
+                                   skip_degeneracies=True, 
+                                   outer_horns=False,
+                                   single_shape=(3,3))
+    #run_n_hypergroupoid_conjecture(750, 12, 
+    #                               force_degeneracy=False, 
+    #                               skip_degeneracies=False, 
+    #                               outer_horns=True,
+    #                               single_shape=(6,6,6))
 
-    #verify_unique_down_to_degree(shape=(6,6,6))
-    #verify_unique_down_to_degree(shape=(7,11,23,43))
+    verify_unique_down_to_degree(shape=(6,6,6))
+    verify_unique_down_to_degree(shape=(7,11,23,43))

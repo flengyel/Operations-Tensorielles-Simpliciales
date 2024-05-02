@@ -511,7 +511,7 @@ def test_counterexample_with_degenerate_boundary() -> None:
                                 [6, 5, 7, 7, 1, 8, 4, 9]])
     is_degenerate = is_degen(counterexample2)
     bdry_is_degen = is_degen(bdry(counterexample2))
-    comparison = n_hypergroupoid_comparison(counterexample2, verbose=True)
+    comparison = n_hypergroupoid_comparison(counterexample2, verbose=True, allow_degen=True)
     conjecture = n_hypergroupoid_conjecture(counterexample2.shape, verbose=True)
     assert np.allclose(not is_degenerate and bdry_is_degen and comparison and not conjecture, True)
     
