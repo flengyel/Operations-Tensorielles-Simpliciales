@@ -20,9 +20,8 @@
 import numpy as np
 import random
 from typing import Tuple # , List, Union, Any
-from tensor_ops import n_hypergroupoid_conjecture, n_hypergroupoid_comparison
-from tensor_ops import bdry, degen, is_degen, ___SEED___, random_tensor    
-from tensor_ops import degree, s_dim, face 
+from tensor_ops import (n_hypergroupoid_conjecture, n_hypergroupoid_comparison, 
+                        bdry, degen, is_degen, ___SEED___, random_tensor,degree, s_dim, face) 
 
 
 random.seed(___SEED___) # Set seed for reproducibility
