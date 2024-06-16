@@ -22,17 +22,15 @@ from numpy import ndarray
 import pytest
 from typing import Tuple
 
-from tensor_ops import SimplicialException, face, hface, vface, bdry, hbdry, vbdry 
-from tensor_ops import degen, hdegen, vdegen, horn, kan_condition, filler
-from tensor_ops import standard_basis_matrix, cobdry
-from tensor_ops import n_hypergroupoid_comparison, n_hypergroupoid_conjecture
-from tensor_ops import is_degen, decompose_degen, max_norm, bdry_n, s_dim 
-from tensor_ops import ___SEED___, random_tensor, range_tensor, reconstruct_range_tensor_from_horn
+from tensor_ops import (SimplicialException, face, hface, vface, bdry, hbdry, vbdry, 
+                        degen, hdegen, vdegen, horn, kan_condition, filler,
+                        standard_basis_matrix, cobdry, n_hypergroupoid_comparison, 
+                        n_hypergroupoid_conjecture, is_degen, decompose_degen, max_norm, 
+                        bdry_n, s_dim, ___SEED___, random_tensor, range_tensor, 
+                        reconstruct_range_tensor_from_horn)
 import random
 
 random.seed(___SEED___) # Set seed for reproducibility
-
-
 
 Z = range_tensor((9,7))
 
