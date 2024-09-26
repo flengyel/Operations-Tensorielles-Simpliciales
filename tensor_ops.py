@@ -32,8 +32,20 @@ rng = np.random.default_rng(___SEED___)  # Create a random number generator with
 
 ## Tensor construction functions
 
-def random_tensor(shape: Tuple[int], low: int = 1, high: int = 10) -> np.ndarray:
-    return rng.integers(low=low, high=high, size=shape, dtype=np.int16)
+def random_tensor(shape: Tuple[int], low: int = 1, high: int = 10, seed: int = ___SEED___) -> np.ndarray:
+    if seed != ___SEED___:
+        rng_to_use = np.random.default_rng(seed)
+    else:
+        rng_to_use = rng  # Use the global rng defined with ___SEED___
+    return rng_to_use.integers(low=low, high=high, size=shape, dtype=np.int16)
+
+def random_real_tensor(shape: Tuple[int], mean: float = 0.0, std: float = 1.0, seed: int = ___SEED___) -> np.ndarray:
+    if seed != ___SEED___:
+        rng_to_use = np.random.default_rng(seed)
+    else:
+        rng_to_use = rng  # Use the global rng defined with ___SEED___
+    return rng_to_use.normal(loc=mean, scale=std, size=shape)
+
 
 # create a tensor with a given shape and values from 0 to n-1,
 # where n is the product of the shape dimensions
