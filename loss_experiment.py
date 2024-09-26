@@ -1,28 +1,38 @@
-# loss_experiment.py
+# main_experiment.py
+
+import matplotlib
+matplotlib.use('TkAgg')  # Set the backend before importing pyplot
 
 import numpy as np
 from scipy import stats
 import csv
-from typing import Tuple
-from tensor_ops import random_real_tensor, bdry, ___SEED___  # Ensure tensor_ops.py is in the same directory
+from typing import Tuple, List
+from tensor_ops import random_real_tensor, bdry, degen, ___SEED___  # Ensure tensor_ops.py is in the same directory
 from tqdm import tqdm  # For progress bars
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import logging
-from multiprocessing import Pool, cpu_count
+import ast  # For safe evaluation of strings to lists
 
 # ----------------------------
 # Logging Configuration
 # ----------------------------
 
+# Define the log file path
+log_file_path = os.path.join(os.getcwd(), "experiment.log")
+
+# Reset any existing logging handlers to avoid duplication
+for handler in logging.root.handlers[:]:
+    logging.root.removeHandler(handler)
+
 # Configure logging to output to both console and a log file
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.INFO,  # Capture INFO and above messages
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("experiment.log", mode='w', encoding='utf-8'),
+        logging.FileHandler(log_file_path, mode='w', encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
@@ -33,7 +43,7 @@ logging.basicConfig(
 
 def reconstruct_T_from_S(S: np.ndarray, T_shape: Tuple[int, ...]) -> np.ndarray:
     """
-    Reconstruct an approximation of T from S by padding S with zeros.
+    Reconstruct an approximation of T from S by degenerating (duplicating) elements along each axis.
 
     Parameters:
         S (np.ndarray): Tensor of shape (a_1 - 1, a_2 - 1, ..., a_k - 1)
@@ -42,21 +52,13 @@ def reconstruct_T_from_S(S: np.ndarray, T_shape: Tuple[int, ...]) -> np.ndarray:
     Returns:
         np.ndarray: Reconstructed tensor of shape T_shape
     """
-    pad_widths = []
-    for t_dim, s_dim in zip(T_shape, S.shape):
-        pad_total = t_dim - s_dim
-        if pad_total < 0:
-            raise ValueError("S has larger dimensions than T in at least one axis.")
-        pad_before = pad_total // 2
-        pad_after = pad_total - pad_before
-        pad_widths.append((pad_before, pad_after))
+    # Apply degen with k=0 to duplicate the 0-th hypercolumn along each axis
+    T_hat = degen(S, 0)
     
-    # If T has more dimensions than S, pad the additional dimensions with zeros
-    if len(T_shape) > len(S.shape):
-        for _ in range(len(T_shape) - len(S.shape)):
-            pad_widths.append((0, 0))  # No padding for extra dimensions
-
-    T_hat = np.pad(S, pad_width=pad_widths, mode='constant', constant_values=0)
+    # After degeneracy, ensure that T_hat matches T_shape
+    if T_hat.shape != T_shape:
+        raise ValueError(f"Reconstructed tensor shape {T_hat.shape} does not match target shape {T_shape}.")
+    
     return T_hat
 
 def compute_loss(T: np.ndarray, S: np.ndarray) -> float:
@@ -77,46 +79,17 @@ def compute_loss(T: np.ndarray, S: np.ndarray) -> float:
     return loss
 
 # ----------------------------
-# Experiment Execution with Parallel Processing
+# Experiment Execution
 # ----------------------------
 
-def single_trial(args):
-    """
-    Execute a single trial of the experiment.
-
-    Parameters:
-        args (tuple): Contains (trial, tensor_shape, mean, std)
-
-    Returns:
-        tuple: (loss_S, loss_boundary)
-    """
-    trial, tensor_shape, mean, std = args
-    seed_T = trial + 12345  # Unique seed for T to ensure reproducibility
-    
-    # Generate T with real values from standard normal distribution
-    T = random_real_tensor(shape=tensor_shape, mean=mean, std=std, seed=seed_T)
-    
-    # Compute the boundary tensor ∂T
-    partial_T = bdry(T)
-    S_shape = partial_T.shape
-
-    # Generate S using the global RNG without specifying a seed to ensure independence
-    S = random_real_tensor(shape=S_shape, mean=mean, std=std, seed=___SEED___)  # Uses global_rng
-
-    # Compute losses
-    loss_S = compute_loss(T, S)
-    loss_boundary = compute_loss(T, partial_T)
-    
-    return loss_S, loss_boundary
-
-def run_experiment_parallel(
+def run_experiment(
     tensor_shape: Tuple[int, ...],
     num_trials: int = 10000,
     mean: float = 0.0,
     std: float = 1.0
 ) -> dict:
     """
-    Run the experiment in parallel for a specific tensor shape.
+    Run the experiment for a specific tensor shape.
 
     Parameters:
         tensor_shape (Tuple[int, ...]): Shape of tensor T.
@@ -127,14 +100,27 @@ def run_experiment_parallel(
     Returns:
         dict: A dictionary containing experiment results.
     """
-    args = [(trial, tensor_shape, mean, std) for trial in range(num_trials)]
-    logging.info(f"Starting parallel processing for tensor shape: {tensor_shape}")
-
-    with Pool(processes=cpu_count()) as pool:
-        results = list(tqdm(pool.imap(single_trial, args), total=num_trials, desc=f"Tensor Shape {tensor_shape}"))
-
-    # Separate the results
-    losses_S, losses_boundary = zip(*results)
+    logging.info(f"Starting experiments for tensor shape: {tensor_shape}")
+    losses_S = []
+    losses_boundary = []
+    for trial in tqdm(range(num_trials), desc=f"Tensor Shape {tensor_shape}", unit="trial"):
+        # Unique seed for T to ensure reproducibility
+        seed_T = trial + 12345
+        T = random_real_tensor(shape=tensor_shape, mean=mean, std=std, seed=seed_T)
+        
+        # Compute the boundary tensor ∂T
+        partial_T = bdry(T)
+        S_shape = partial_T.shape
+        
+        # Generate S using the global RNG without specifying a seed to ensure independence
+        S = random_real_tensor(shape=S_shape, mean=mean, std=std, seed=___SEED___)
+        
+        # Compute losses
+        loss_S = compute_loss(T, S)
+        loss_boundary = compute_loss(T, partial_T)
+        
+        losses_S.append(loss_S)
+        losses_boundary.append(loss_boundary)
 
     # Convert to numpy arrays for efficient computation
     losses_S = np.array(losses_S)
@@ -144,6 +130,7 @@ def run_experiment_parallel(
     avg_loss_S = np.mean(losses_S)
     avg_loss_boundary = np.mean(losses_boundary)
     inequality_holds = np.sum(losses_S >= losses_boundary)
+    inequality_percentage = (inequality_holds / num_trials) * 100
     std_loss_S = np.std(losses_S, ddof=1)
     std_loss_boundary = np.std(losses_boundary, ddof=1)
     t_statistic, p_value = stats.ttest_rel(losses_S, losses_boundary)
@@ -151,18 +138,21 @@ def run_experiment_parallel(
     pooled_std = np.sqrt((std_loss_S ** 2 + std_loss_boundary ** 2) / 2)
     cohen_d = mean_diff / pooled_std if pooled_std != 0 else np.inf
 
-    # Determine number of axes and axis parity
-    num_axes = len(tensor_shape)
-    axis_parity = 'Odd' if num_axes % 2 != 0 else 'Even'
+    # Determine per-axis parity
+    axis_parities = ['Even' if dim % 2 == 0 else 'Odd' for dim in tensor_shape]
+    num_even_axes = axis_parities.count('Even')
+    num_odd_axes = axis_parities.count('Odd')
 
     # Compile results into a dictionary
     results_dict = {
         'Tensor Shape': tensor_shape,
-        'Number of Axes': num_axes,
-        'Axis Parity': axis_parity,
+        'Number of Axes': len(tensor_shape),
+        'Axis Parities': axis_parities,
+        'Number of Even Axes': num_even_axes,
+        'Number of Odd Axes': num_odd_axes,
         'Average Loss T & S': avg_loss_S,
         'Average Loss T & ∂T': avg_loss_boundary,
-        'Inequality Holds (%)': (inequality_holds / num_trials) * 100,
+        'Inequality Holds (%)': inequality_percentage,
         'Standard Deviation Loss S': std_loss_S,
         'Standard Deviation Loss ∂T': std_loss_boundary,
         'Paired t-test Statistic': t_statistic,
@@ -171,6 +161,18 @@ def run_experiment_parallel(
     }
 
     logging.info(f"Completed experiments for tensor shape: {tensor_shape}")
+    logging.info(f"  Number of Even Axes: {num_even_axes}")
+    logging.info(f"  Number of Odd Axes: {num_odd_axes}")
+    logging.info(f"  Average Loss between T and S: {avg_loss_S:.6f}")
+    logging.info(f"  Average Loss between T and ∂T: {avg_loss_boundary:.6f}")
+    logging.info(f"  Inequality Loss(T, S) ≥ Loss(T, ∂T) holds in {inequality_percentage:.2f}% of trials")
+    logging.info(f"  Standard Deviation of Loss(T, S): {std_loss_S:.6f}")
+    logging.info(f"  Standard Deviation of Loss(∂T): {std_loss_boundary:.6f}")
+    logging.info(f"  Paired t-test Statistic: {t_statistic:.6f}")
+    logging.info(f"  p-value: {p_value}")
+    logging.info(f"  Cohen's d (Effect Size): {cohen_d:.6f}")
+    logging.info("-" * 60)
+
     return results_dict
 
 # ----------------------------
@@ -195,14 +197,21 @@ def plot_results(csv_file: str):
     # Ensure that 'Tensor Shape' is treated as a categorical variable
     df['Tensor Shape'] = df['Tensor Shape'].astype(str)
 
-    # Add a column for the number of axes
-    df['Number of Axes'] = df['Tensor Shape'].apply(lambda x: x.count(',')) + 1
+    # Parse axis parities from the 'Axis Parities' column safely
+    df['Axis Parity List'] = df['Axis Parities'].apply(lambda x: ast.literal_eval(x))
 
-    # Categorize tensor shapes based on even or odd number of axes
-    df['Axis Parity'] = df['Number of Axes'].apply(lambda x: 'Even' if x % 2 == 0 else 'Odd')
+    # Calculate the number of even and odd axes
+    df['Number of Even Axes'] = df['Axis Parity List'].apply(lambda x: x.count('Even'))
+    df['Number of Odd Axes'] = df['Axis Parity List'].apply(lambda x: x.count('Odd'))
 
     # Set plot style
     sns.set(style="whitegrid")
+
+    # Create 'plots' directory if it doesn't exist
+    plots_dir = os.path.join(os.getcwd(), "plots")
+    if not os.path.exists(plots_dir):
+        os.makedirs(plots_dir)
+        logging.info(f"Created 'plots' directory at {plots_dir}")
 
     # ----------------------------
     # Plot 1: Average Loss Comparison
@@ -217,88 +226,125 @@ def plot_results(csv_file: str):
     plt.xticks(rotation=45)
     plt.legend(title="Condition")
     plt.tight_layout()
-    plt.savefig("average_loss_comparison.png")
+    plot_path = os.path.join(plots_dir, "average_loss_comparison.png")
+    plt.savefig(plot_path)
+    plt.show(block=True)  # Display the plot window
     plt.close()
-    logging.info("Plot 'average_loss_comparison.png' has been saved.")
+    logging.info(f"Plot 'average_loss_comparison.png' has been saved to {plots_dir} and displayed on screen.")
 
     # ----------------------------
-    # Plot 2: Inequality Holding Percentage by Axis Parity
+    # Plot 2: Inequality Holding Percentage vs. Number of Even Axes
     # ----------------------------
     plt.figure(figsize=(14, 7))
-    sns.barplot(x="Tensor Shape", y="Inequality Holds (%)", hue="Axis Parity", data=df, palette="viridis")
-    plt.title("Percentage of Trials Where Loss(T, S) ≥ Loss(T, ∂T) by Axis Parity")
-    plt.xlabel("Tensor Shape")
-    plt.ylabel("Percentage (%)")
-    plt.ylim(0, 100)
-    plt.xticks(rotation=45)
-    plt.legend(title="Axis Parity")
+    sns.scatterplot(x="Number of Even Axes", y="Inequality Holds (%)", hue="Number of Odd Axes",
+                    palette="viridis", size="Number of Odd Axes", sizes=(50, 200), data=df, alpha=0.7)
+    plt.title("Inequality Holds (%) vs. Number of Even Axes")
+    plt.xlabel("Number of Even Axes")
+    plt.ylabel("Inequality Holds (%)")
+    plt.legend(title="Number of Odd Axes", bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
-    plt.savefig("inequality_holds_percentage_axis_parity.png")
+    plot_path = os.path.join(plots_dir, "inequality_holds_vs_even_axes.png")
+    plt.savefig(plot_path)
+    plt.show(block=True)
     plt.close()
-    logging.info("Plot 'inequality_holds_percentage_axis_parity.png' has been saved.")
+    logging.info(f"Plot 'inequality_holds_vs_even_axes.png' has been saved to {plots_dir} and displayed on screen.")
 
     # ----------------------------
-    # Plot 3: Paired t-test Statistic and Cohen's d by Axis Parity
+    # Plot 3: Paired t-test Statistic and Cohen's d vs. Number of Even Axes
     # ----------------------------
     plt.figure(figsize=(14, 7))
-    df_plot = df[['Tensor Shape', 'Paired t-test Statistic', 'Cohen\'s d', 'Axis Parity']]
+    df_plot = df[['Tensor Shape', 'Paired t-test Statistic', 'Cohen\'s d', 'Number of Even Axes']]
     # Melt for easier plotting
-    df_plot_melted = df_plot.melt(id_vars=['Tensor Shape', 'Axis Parity'], value_vars=['Paired t-test Statistic', 'Cohen\'s d'],
+    df_plot_melted = df_plot.melt(id_vars=['Tensor Shape', 'Number of Even Axes'], value_vars=['Paired t-test Statistic', 'Cohen\'s d'],
                                   var_name='Metric', value_name='Value')
-    sns.barplot(x='Tensor Shape', y='Value', hue='Metric', data=df_plot_melted, palette=["salmon", "lightblue"])
-    plt.title("Paired t-test Statistic and Cohen's d Across Tensor Shapes")
-    plt.xlabel("Tensor Shape")
+    sns.barplot(x='Number of Even Axes', y='Value', hue='Metric', data=df_plot_melted, palette=["salmon", "lightblue"])
+    plt.title("Paired t-test Statistic and Cohen's d vs. Number of Even Axes")
+    plt.xlabel("Number of Even Axes")
     plt.ylabel("Metric Value")
     plt.xticks(rotation=45)
-    plt.legend(title="Metric")
+    plt.legend(title="Metric", bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
-    plt.savefig("statistical_metrics_comparison.png")
+    plot_path = os.path.join(plots_dir, "statistical_metrics_vs_even_axes.png")
+    plt.savefig(plot_path)
+    plt.show(block=True)
     plt.close()
-    logging.info("Plot 'statistical_metrics_comparison.png' has been saved.")
+    logging.info(f"Plot 'statistical_metrics_vs_even_axes.png' has been saved to {plots_dir} and displayed on screen.")
 
     # ----------------------------
-    # Plot 4: Cohen's d (Effect Size) Across Tensor Shapes by Axis Parity
+    # Plot 4: Cohen's d (Effect Size) vs. Number of Even Axes
     # ----------------------------
     plt.figure(figsize=(14, 7))
-    sns.barplot(x="Tensor Shape", y="Cohen's d", hue="Axis Parity", data=df, palette="Set2")
-    plt.title("Cohen's d (Effect Size) Across Tensor Shapes by Axis Parity")
-    plt.xlabel("Tensor Shape")
+    sns.scatterplot(x="Number of Even Axes", y="Cohen's d", hue="Number of Odd Axes",
+                    palette="Set2", size="Number of Odd Axes", sizes=(50, 200), data=df, alpha=0.7)
+    plt.title("Cohen's d (Effect Size) vs. Number of Even Axes")
+    plt.xlabel("Number of Even Axes")
     plt.ylabel("Cohen's d")
-    plt.xticks(rotation=45)
-    plt.legend(title="Axis Parity")
+    plt.legend(title="Number of Odd Axes", bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
-    plt.savefig("cohens_d_distribution_axis_parity.png")
+    plot_path = os.path.join(plots_dir, "cohens_d_vs_even_axes.png")
+    plt.savefig(plot_path)
+    plt.show(block=True)
     plt.close()
-    logging.info("Plot 'cohens_d_distribution_axis_parity.png' has been saved.")
+    logging.info(f"Plot 'cohens_d_vs_even_axes.png' has been saved to {plots_dir} and displayed on screen.")
 
     # ----------------------------
-    # Plot 5: Cohen's d (Effect Size) vs. Number of Axes
+    # Plot 5: Distribution of Axis Parity
     # ----------------------------
-    plt.figure(figsize=(14, 7))
-    sns.scatterplot(x="Number of Axes", y="Cohen's d", hue="Axis Parity", style="Axis Parity", data=df, s=100)
-    plt.title("Cohen's d (Effect Size) vs. Number of Axes")
-    plt.xlabel("Number of Axes")
-    plt.ylabel("Cohen's d")
-    plt.legend(title="Axis Parity")
-    plt.tight_layout()
-    plt.savefig("cohens_d_vs_axes.png")
-    plt.close()
-    logging.info("Plot 'cohens_d_vs_axes.png' has been saved.")
-
-    # ----------------------------
-    # Plot 6: Distribution of Axis Parity in Tensor Shapes
-    # ----------------------------
-    plt.figure(figsize=(8, 6))
-    sns.countplot(x="Axis Parity", data=df, palette="Set3")
-    plt.title("Distribution of Axis Parity in Tensor Shapes")
+    plt.figure(figsize=(10, 6))
+    # Create a single list of all axis parities
+    all_parities = [parity for sublist in df['Axis Parity List'] for parity in sublist]
+    sns.countplot(x=all_parities)  # Removed 'palette' to fix warnings
+    plt.title("Distribution of Axis Parity Across All Tensor Axes")
     plt.xlabel("Axis Parity")
     plt.ylabel("Count")
     plt.tight_layout()
-    plt.savefig("axis_parity_distribution.png")
+    plot_path = os.path.join(plots_dir, "axis_parity_distribution.png")
+    plt.savefig(plot_path)
+    plt.show(block=True)
     plt.close()
-    logging.info("Plot 'axis_parity_distribution.png' has been saved.")
+    logging.info(f"Plot 'axis_parity_distribution.png' has been saved to {plots_dir} and displayed on screen.")
 
-    logging.info("All plots have been generated and saved.")
+    # ----------------------------
+    # Plot 6: Average Loss vs. Number of Even Axes
+    # ----------------------------
+    plt.figure(figsize=(14, 7))
+    sns.boxplot(x="Number of Even Axes", y="Average Loss T & S", data=df, showfliers=False, color='skyblue')
+    sns.boxplot(x="Number of Even Axes", y="Average Loss T & ∂T", data=df, showfliers=False, color='lightgreen')
+    plt.title("Average Loss vs. Number of Even Axes")
+    plt.xlabel("Number of Even Axes")
+    plt.ylabel("Average Loss")
+    plt.legend(labels=["Average Loss T & S", "Average Loss T & ∂T"], bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+    plot_path = os.path.join(plots_dir, "average_loss_vs_even_axes.png")
+    plt.savefig(plot_path)
+    plt.show(block=True)
+    plt.close()
+    logging.info(f"Plot 'average_loss_vs_even_axes.png' has been saved to {plots_dir} and displayed on screen.")
+
+    # ----------------------------
+    # Plot 7: Heat Map of Effect Sizes (Cohen's d)
+    # ----------------------------
+    plt.figure(figsize=(10, 8))
+    # Pivot the data to create a matrix suitable for heatmap
+    # Rows: Number of Even Axes
+    # Columns: Number of Odd Axes
+    # Values: Average Cohen's d
+    heatmap_data = df.groupby(['Number of Even Axes', 'Number of Odd Axes'])['Cohen\'s d'].mean().reset_index()
+    heatmap_pivot = heatmap_data.pivot(index='Number of Even Axes', columns='Number of Odd Axes', values='Cohen\'s d')
+    
+    # Create the heatmap
+    sns.heatmap(heatmap_pivot, annot=True, fmt=".2f", cmap="YlGnBu", cbar_kws={'label': "Cohen's d"})
+    plt.title("Heat Map of Effect Sizes (Cohen's d)")
+    plt.xlabel("Number of Odd Axes")
+    plt.ylabel("Number of Even Axes")
+    plt.tight_layout()
+    plot_path = os.path.join(plots_dir, "effect_size_heatmap.png")
+    plt.savefig(plot_path)
+    plt.show(block=True)
+    plt.close()
+    logging.info(f"Plot 'effect_size_heatmap.png' has been saved to {plots_dir} and displayed on screen.")
+
+    logging.info("All plots have been generated, saved to the 'plots' directory, and displayed on screen.")
 
 # ----------------------------
 # Main Execution Function
@@ -308,63 +354,61 @@ def main():
     """
     Main function to execute the experiments, save results, and generate plots.
     """
-    # Define the tensor shapes to test (both isotropic and anisotropic)
-    tensor_shapes = [
-        (5, 5, 5),
-        (5, 5, 7),
-        (5, 7, 9),
-        (7, 7, 7),
-        (7, 7, 7, 7),
-        (9, 9, 9),
-        (7, 9, 11),
-        (5, 7, 9, 11)  # Note: This tensor has 4 axes (even) and will be categorized accordingly
-    ]
-
-    num_trials = 10000  # Number of trials per tensor shape
-    mean = 0.0           # Mean of the normal distribution
-    std = 1.0            # Standard deviation of the normal distribution
-
-    all_results = []     # List to store results for all tensor shapes
-
-    for shape in tensor_shapes:
-        logging.info(f"Running experiment for tensor shape: {shape}")
-        result = run_experiment_parallel(tensor_shape=shape, num_trials=num_trials, mean=mean, std=std)
-        all_results.append(result)
-        
-        # Display the results for the current tensor shape
-        logging.info(f"Results for tensor shape {shape}:")
-        logging.info(f"  Average Loss between T and S: {result['Average Loss T & S']:.6f}")
-        logging.info(f"  Average Loss between T and ∂T: {result['Average Loss T & ∂T']:.6f}")
-        logging.info(f"  Inequality Loss(T, S) ≥ Loss(T, ∂T) holds in {result['Inequality Holds (%)']:.2f}% of trials")
-        logging.info(f"  Standard Deviation of Loss(T, S): {result['Standard Deviation Loss S']:.6f}")
-        logging.info(f"  Standard Deviation of Loss(∂T): {result['Standard Deviation Loss ∂T']:.6f}")
-        logging.info(f"  Paired t-test Statistic: {result['Paired t-test Statistic']:.6f}")
-        logging.info(f"  p-value: {result['p-value']}")
-        logging.info(f"  Cohen's d (Effect Size): {result['Cohen\'s d']:.6f}")
-        logging.info("-" * 60)
-
-    # Save all_results to a CSV file for further analysis
-    csv_file = 'experiment_results.csv'
-    csv_columns = ['Tensor Shape', 'Number of Axes', 'Axis Parity', 'Average Loss T & S', 'Average Loss T & ∂T',
-                  'Inequality Holds (%)', 'Standard Deviation Loss S',
-                  'Standard Deviation Loss ∂T', 'Paired t-test Statistic',
-                  'p-value', 'Cohen\'s d']
-
     try:
-        with open(csv_file, 'w', newline='', encoding='utf-8') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
-            writer.writeheader()
-            for data in all_results:
-                # Convert tuple to string for CSV compatibility
-                data_copy = data.copy()
-                data_copy['Tensor Shape'] = str(data_copy['Tensor Shape'])
-                writer.writerow(data_copy)
-        logging.info(f"All results have been saved to {csv_file}")
-    except IOError:
-        logging.error("I/O error while trying to write the CSV file.")
+        # Define the tensor shapes to test (both isotropic and anisotropic)
+        tensor_shapes = [
+            (5, 5, 5),       # 0 even axes
+            (4, 5, 5),       # 1 even axis
+            (5, 6, 7),       # 1 even axis
+            (4, 6, 8),       # 3 even axes
+            (5, 5, 5),       # 0 even axes
+            (6, 7, 8, 9),    # 2 even axes
+            (8, 9, 10),      # 2 even axes
+            (5, 7, 9, 10),   # 1 even axis
+            (5,7,9,11),
+            (6, 6, 6, 6),      # 4 even axes
+            (7,7,7,7),
+            (9,9,9),
+            (9,9,11,11)
+        ]
 
-    # Generate plots based on the saved CSV
-    plot_results(csv_file)
+        num_trials = 10000  # Number of trials per tensor shape
+        mean = 0.0           # Mean of the normal distribution
+        std = 1.0            # Standard deviation of the normal distribution
+
+        all_results = []     # List to store results for all tensor shapes
+
+        for shape in tensor_shapes:
+            result = run_experiment(tensor_shape=shape, num_trials=num_trials, mean=mean, std=std)
+            all_results.append(result)
+        
+        # Save all_results to a CSV file for further analysis
+        csv_file = 'experiment_results.csv'
+        csv_columns = ['Tensor Shape', 'Number of Axes', 'Axis Parities', 'Number of Even Axes', 'Number of Odd Axes',
+                      'Average Loss T & S', 'Average Loss T & ∂T',
+                      'Inequality Holds (%)', 'Standard Deviation Loss S',
+                      'Standard Deviation Loss ∂T', 'Paired t-test Statistic',
+                      'p-value', 'Cohen\'s d']
+
+        try:
+            with open(csv_file, 'w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
+                writer.writeheader()
+                for data in all_results:
+                    # Convert tuple to string for CSV compatibility
+                    data_copy = data.copy()
+                    data_copy['Tensor Shape'] = str(data_copy['Tensor Shape'])
+                    writer.writerow(data_copy)
+            logging.info(f"All results have been saved to {csv_file}")
+        except IOError:
+            logging.error("I/O error while trying to write the CSV file.")
+
+        # Generate plots based on the saved CSV
+        plot_results(csv_file)
+
+    except Exception as e:
+        logging.exception("An unexpected error occurred during the experiments.")
+        print("An error occurred. Check experiment.log for details.")
 
 if __name__ == "__main__":
     main()

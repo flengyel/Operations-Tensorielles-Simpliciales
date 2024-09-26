@@ -219,7 +219,9 @@ def main():
         (5, 7, 9),
         (7, 7, 7),
         (7, 7, 7, 7),
-        (9,9,9)
+        (9,9,9),
+        (5,7,9,11),
+        (7,7,11,11)
     ]
 
     num_trials = 10000  # Number of trials per tensor shape
