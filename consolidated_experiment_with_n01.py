@@ -160,7 +160,7 @@ def run_experiment_with_initialization(tensor_shape: Tuple[int, ...], init_metho
 # ----------------------------
 
 initialization_methods = ['glorot', 'he', 'orthogonal', 'n01']
-selected_tensor_shapes_final = [(128, 64), (32, 3, 3, 3)]
+selected_tensor_shapes_final = [(512,256),(128, 64), (32, 3, 3, 3)]
 
 def main():
     penalty_adjusted_results_with_initializations = []
