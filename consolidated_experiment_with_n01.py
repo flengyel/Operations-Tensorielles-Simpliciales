@@ -1,9 +1,21 @@
+# Generate random weight tensor T using various weight initialization methods
+# Compute bdry(T)
+# Generate a random tensor S of shape bdry(T).shape
+# Reconstruct T from bdry(T) by computing degen(bdry(T),0)
+# Also reconstruct T from degen(S,0) but penalize S by 1+Norm(bdry(S))
+# In general, a random S will not satisfy bdry(S) = 0 (it won't be a chain)
+# However, we always have bdry(bdry(T)) == 0.
+# We compute the normalized losses of these reconstructions
+# The penalized loss function of the reconstruction by a random S can large to enormous
+# for more complicated shapes, including those common in neural nets
+
 
 import numpy as np
 from scipy import stats
 import logging
 from typing import Tuple
 from scipy.stats import truncnorm
+from tensor_ops import degen, bdry
 
 # Set up logging
 logging.basicConfig(level=logging.WARNING)
@@ -18,45 +30,7 @@ def random_tensor(shape: Tuple[int], low: int = 1, high: int = 10) -> np.ndarray
 def random_real_tensor(shape: Tuple[int], mean: float = 0.0, std: float = 1.0) -> np.ndarray:
     return np.random.normal(loc=mean, scale=std, size=shape)
 
-# ----------------------------
-# Boundary, Face, and Degeneracy Operations
-# ----------------------------
 
-def s_dim(t: np.ndarray) -> int:
-    return min(t.shape) - 1
-
-def degree(t: np.ndarray) -> int:
-    return len(t.shape)
-
-def _dims(m: np.ndarray) -> Tuple[np.ndarray]:
-    return tuple([np.arange(dim_size) for dim_size in m.shape])
-
-def _face(m: np.ndarray, axes: Tuple[np.ndarray], i: int) -> np.ndarray:
-    indices = [np.delete(axis, i) if len(axis) > i else axis for axis in axes]
-    grid = np.ix_(*indices)
-    return m[grid]
-
-def face(m: np.ndarray, i: int) -> np.ndarray:
-    axes = _dims(m)
-    return _face(m, axes, i)
-
-def degen(z: np.ndarray, k: int) -> np.ndarray:
-    for axis in range(z.ndim):
-        slices = [slice(None)] * z.ndim
-        slices[axis] = k
-        z = np.insert(z, k, z[tuple(slices)], axis=axis)
-    return z
-
-def bdry(m: np.ndarray) -> np.ndarray:
-    d = np.min(m.shape)
-    axes = _dims(m)
-    a = np.zeros(np.subtract(m.shape, np.array([1])))
-    for i in range(d):
-       if i % 2 == 0:
-           a = np.add(a, _face(m, axes, i))
-       else:
-           a = np.subtract(a, _face(m, axes, i))
-    return a
 
 # ----------------------------
 # Penalty Adjustment and Loss Computation
