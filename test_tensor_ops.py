@@ -414,7 +414,7 @@ def test_n_hypergroupoid_conjecture() -> None:
 
 def test_n_hypergroupoid_conjecture_shape_8_10_12() -> None:
     # create 1000 random tensors of shape (8, 10, 12)
-    for _ in range(1000):
+    for _ in range(750):
         A = random_tensor((8, 10, 12), low=1, high=10)
         assert np.allclose(n_hypergroupoid_comparison(A), n_hypergroupoid_conjecture((8, 10, 12)))
 

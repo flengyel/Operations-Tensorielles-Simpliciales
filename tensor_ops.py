@@ -347,26 +347,22 @@ def bdry_n(h: np.ndarray) -> np.ndarray:
     else:  # Return bdry(h) directly if it is all zeros
         return bdry(h)
 
-def principal_diagonal(tensor):
+def principal_diagonal(tensor: np.ndarray) -> np.ndarray:
     """
-    Extracts the principal diagonal from a tensor based on its simplex dimension.
-    Works for tensors of any dimensionality.
+    Extracts the principal (simplicial) diagonal from a tensor given its dimension.
+    Returns all elements (i, i, ..., i) for i in [0..dimen(tensor)].
     """
     sdim = dimen(tensor)
-    # Generate indices (i, i, ..., i) where i ranges from 0 to sdim
+    # Generate indices (i, i, ..., i) for i in range(sdim + 1)
     indices = [tuple([i] * len(tensor.shape)) for i in range(sdim + 1)]
-    return np.array([tensor[index] for index in indices])
+    return np.array([tensor[idx] for idx in indices])
 
-# The function reconstruct_range_tensor_from_horn() checks whether 
-# a range tensor t satisfies order(t) < s-dim(t). If so, each horn of t 
-# has unique fillers (this is the n-hypergroupoid conjecture). Each horn
-# of t is computed and the occurrence tensor is used to find the index of
-# the omitted face. If the index is incorrect, the function returns false.
-# Otherwise, the function computes the filler of the horn and checks whether
-# the filler agrees with the original tensor. If for every horn, the filler
-# agrees with the original tensor, the function returns true. Otherwise, it
-# returns false.      
+
 def check_conjecture(shape: Tuple[int], proceed_anyway: bool) -> bool:
+    """
+    Checks whether the given shape satisfies the n-hypergroupoid conjecture.
+    If not, prints a warning and returns False unless proceed_anyway is True.
+    """
     conjecture = n_hypergroupoid_conjecture(shape, verbose=True)
     if not conjecture:
         print(f"Shape does not satisfy the n-hypergroupoid conjecture: {shape}")
@@ -374,7 +370,12 @@ def check_conjecture(shape: Tuple[int], proceed_anyway: bool) -> bool:
             return False
     return True
 
+
 def check_nondegenerate_boundary(t: np.ndarray, proceed_anyway: bool, verbose: bool = False) -> bool:
+    """
+    Checks that the boundary of tensor t is non-degenerate.
+    If degenerate and proceed_anyway is False, returns False.
+    """
     b = bdry(t)
     if is_degen(b):
         print("Boundary of the tensor is degenerate.")
@@ -385,41 +386,78 @@ def check_nondegenerate_boundary(t: np.ndarray, proceed_anyway: bool, verbose: b
             return False
     return True
 
-def check_horn(t: np.ndarray, shape: Tuple[int], shape_face: np.ndarray, z: np.ndarray, i: int) -> bool:
+
+def check_horn(t: np.ndarray,
+               shape: Tuple[int],
+               shape_face: np.ndarray,
+               z: np.ndarray,
+               i: int) -> bool:
+    """
+    Checks if the horn of dimension i in tensor t correctly identifies
+    the missing face, and that the filler matches the original tensor.
+    """
     h = horn(t, i)
-    occurrence_tensor = np.zeros(shape)
-    for j in range(len(h)):
-        b = h[j]
+    occurrence_tensor = np.zeros(shape, dtype=int)
+
+    # Outer loop: iterate over each face in the horn
+    for face_idx in range(len(h)):
+        b = h[face_idx]
+        # If b is not the zero face
         if not np.equal(b, z).all():
-            for j in range(np.prod(shape_face)):
-                element = int(b[get_index(j, shape_face)]) # get the element at index i
+            # Inner loop: track occurrences of each element in b
+            # Use a different variable name to avoid overshadowing face_idx
+            num_face_elems = np.prod(shape_face)
+            for elem_idx in range(num_face_elems):
+                element = int(b[get_index(elem_idx, shape_face)])
+                # Increment occurrence count for that element index in occurrence_tensor
                 occurrence_tensor[get_index(element, shape)] += 1
 
-    if i != principal_diagonal(occurrence_tensor).argmax():
-        print(f"Counterexample with index disagreement: {shape}")
+    # Check if the principal diagonal's largest index matches i
+    diag_argmax = principal_diagonal(occurrence_tensor).argmax()
+    if i != diag_argmax:
+        print(f"Counterexample with index disagreement: {shape}. Expected {i}, got {diag_argmax}.")
         return False
 
     # Compute the filler of the horn
     f = filler(h, i)
     if not np.array_equal(t, f):
-        print(f"Counterexample with filler unequal to original tensor of: {shape}")
+        print(f"Counterexample: filler != original tensor for shape {shape}")
         return False
+
     return True
 
-def reconstruct_range_tensor_from_horn(shape: Tuple[int], proceed_anyway: bool = False, verbose: bool =False) -> bool:
+
+def reconstruct_range_tensor_from_horn(shape: Tuple[int],
+                                       proceed_anyway: bool = False,
+                                       verbose: bool = False) -> bool:
+    """
+    Attempts to reconstruct a range tensor of given shape from its horns.
+    If the n-hypergroupoid conjecture and non-degenerate boundary checks pass,
+    it validates each dimension's horn.
+    """
     t = range_tensor(shape)
+
+    # 1. Check the n-hypergroupoid conjecture
     if not check_conjecture(shape, proceed_anyway):
         return False
+
+    # 2. Check that the boundary is non-degenerate
     if not check_nondegenerate_boundary(t, proceed_anyway, verbose=verbose):
         return False
+
+    # 3. Reconstruct from horns
     s = dimen(t)
     shape_face = np.subtract(shape, np.array([1]))
     z = np.zeros(shape_face)
-    for i in range(1, s+1):
+
+    for i in range(1, s + 1):
         if not check_horn(t, shape, shape_face, z, i):
             return False
-    return True
 
+    # If all horns pass, the reconstruction is correct
+    # Optionally print a success message:
+    # print(f"Reconstruction successful for shape {shape}")
+    return True
 
 
 if __name__ == "__main__":

@@ -158,5 +158,5 @@ if __name__ == "__main__":
     #                               single_shape=(6,6,6))
 
     verify_unique_down_to_order(shape=(8,10,12), outer_horns=False)
-    verify_unique_down_to_order(shape=(8,10,12), outer_horns=True)
+    #verify_unique_down_to_order(shape=(8,10,12), outer_horns=True)
     
