@@ -43,6 +43,8 @@ class OriginalNet(nn.Module):
         x = self.fc6(x)
         return x
 
+FC5_WEIGHT = 'fc5.weight'
+
 class BoundaryAugmentedNet(OriginalNet):
     def __init__(self, input_size, hidden_sizes, output_size, boundary_scale=5e-4, operation='multiply', layers_to_augment=None):
         """
@@ -54,13 +56,13 @@ class BoundaryAugmentedNet(OriginalNet):
             output_size (int): Size of the output layer.
             boundary_scale (float): Scaling factor for boundary augmentation.
             operation (str): 'add' for addition or 'multiply' for Hadamard product.
-            layers_to_augment (list of str): List of layer names to augment (e.g., ['fc5.weight']).
+            layers_to_augment (list of str): List of layer names to augment (e.g., [FC5_WEIGHT]).
         """
         super(BoundaryAugmentedNet, self).__init__(input_size, hidden_sizes, output_size)
         self.boundary_scale = boundary_scale
         self.operation = operation  # 'add' or 'multiply'
         if layers_to_augment is None:
-            self.layers_to_augment = ['fc5.weight']  # Default to fc5
+            self.layers_to_augment = [FC5_WEIGHT]  # Default to fc5
         else:
             self.layers_to_augment = layers_to_augment
 
@@ -74,7 +76,7 @@ class BoundaryAugmentedNet(OriginalNet):
                     boundary_degen_tensor = torch.from_numpy(boundary_degen).to(param.device).type(param.dtype)
 
                     # Normalize the boundary tensor to avoid large updates
-                    norm = torch.norm(boundary_degen_tensor)
+                    norm = torch.norm(boundary_degen_tensor, dim=0)
                     if norm != 0:  # Prevent division by zero
                         boundary_degen_tensor = boundary_degen_tensor / norm
 
@@ -100,13 +102,13 @@ class RandomTensorAugmentedNet(OriginalNet):
             output_size (int): Size of the output layer.
             random_tensor_scale (float): Scaling factor for random tensor augmentation.
             operation (str): 'add' for addition or 'multiply' for Hadamard product.
-            layers_to_augment (list of str): List of layer names to augment (e.g., ['fc5.weight']).
+            layers_to_augment (list of str): List of layer names to augment (e.g., [FC5_WEIGHT]).
         """
         super(RandomTensorAugmentedNet, self).__init__(input_size, hidden_sizes, output_size)
         self.random_tensor_scale = random_tensor_scale
         self.operation = operation  # 'add' or 'multiply'
         if layers_to_augment is None:
-            self.layers_to_augment = ['fc5.weight']  # Default to fc5
+            self.layers_to_augment = [FC5_WEIGHT]  # Default to fc5
         else:
             self.layers_to_augment = layers_to_augment
 
@@ -116,13 +118,14 @@ class RandomTensorAugmentedNet(OriginalNet):
                 if name in self.layers_to_augment:
                     original_shape = param.detach().cpu().numpy().shape
                     boundary_shape = tuple(dim - 1 for dim in original_shape)
-                    random_tensor = np.random.randn(*boundary_shape)
+                    rng = np.random.default_rng(seed=42)
+                    random_tensor = rng.standard_normal(boundary_shape)
                     k = min(boundary_shape) // 2
                     random_degen_tensor = degen(random_tensor, k)
                     random_degen_tensor = torch.from_numpy(random_degen_tensor).to(param.device).type(param.dtype)
 
                     # Normalize the random tensor to avoid large updates
-                    norm = torch.norm(random_degen_tensor)
+                    norm = torch.norm(random_degen_tensor, dim=0)
                     if norm != 0:  # Prevent division by zero
                         random_degen_tensor = random_degen_tensor / norm
 
@@ -323,10 +326,9 @@ def main():
     criterion = nn.CrossEntropyLoss()
 
     # ----------------------------
-    # Training Boundary-Augmented Network with Multiple Layers and Hadamard Multiplication
-    # ----------------------------
     print("\nTraining Boundary-Augmented Network with ReLU (Hadamard multiplication on multiple layers):")
-    boundary_layers = ['fc5.weight']  # Start with augmenting only fc5
+    print("\nTraining Boundary-Augmented Network with ReLU (Hadamard multiplication on multiple layers):")
+    boundary_layers = [FC5_WEIGHT]  # Start with augmenting only fc5
     boundary_augmented_net = BoundaryAugmentedNet(
         input_size,
         hidden_sizes,

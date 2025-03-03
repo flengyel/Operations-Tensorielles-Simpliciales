@@ -8,15 +8,52 @@ from torch.utils.data import DataLoader
 from tensor_ops import bdry, degen  # Ensure tensor_ops.py is correctly implemented and accessible
 import matplotlib.pyplot as plt
 import logging
+import os
 
 # ----------------------------
-# Configure Logging
+# Logger Initialization
 # ----------------------------
-logging.basicConfig(filename='weight_monitor.log', level=logging.INFO, format='%(message)s')
+
+def get_weight_logger(log_file='weight_monitor.log'):
+    """
+    Initialize and return a dedicated logger named 'weight_monitor'.
+    Ensures that only one FileHandler is attached to prevent duplicate logs.
+    
+    Args:
+        log_file (str): Path to the log file.
+    
+    Returns:
+        logging.Logger: Configured logger.
+    """
+    logger = logging.getLogger('weight_monitor')
+    logger.setLevel(logging.INFO)  # Set the logging level to INFO
+
+    # Check if a FileHandler for the specified log file already exists
+    if not any(isinstance(handler, logging.FileHandler) and handler.baseFilename.endswith(log_file) for handler in logger.handlers):
+        # Create a file handler that writes to 'weight_monitor.log'
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(logging.INFO)  # Set the handler's logging level to INFO
+
+        # Create a formatter and set it for the handler
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(formatter)
+
+        # Add the handler to the dedicated logger
+        logger.addHandler(file_handler)
+
+        # Log the initialization message once
+        logger.info("Weight monitor logging initialized.")
+
+    return logger
+
+# Initialize the logger
+weight_logger = get_weight_logger()
 
 # ----------------------------
 # Network Classes
 # ----------------------------
+
+FC5_WEIGHT = 'fc5.weight'
 
 class OriginalNet(nn.Module):
     def __init__(self, input_size, hidden_sizes, output_size, negative_slope=0.01):
@@ -64,9 +101,9 @@ class BoundaryAugmentedNet(OriginalNet):
         """
         super(BoundaryAugmentedNet, self).__init__(input_size, hidden_sizes, output_size)
         self.boundary_scale = boundary_scale
-        self.operation = operation  # 'add' or 'multiply'
+        self.layers_to_augment = [FC5_WEIGHT]  # Default to fc5
         if layers_to_augment is None:
-            self.layers_to_augment = ['fc5.weight']  # Default to fc5
+            self.layers_to_augment = [FC5_WEIGHT]  # Default to fc5
         else:
             self.layers_to_augment = layers_to_augment
 
@@ -80,7 +117,7 @@ class BoundaryAugmentedNet(OriginalNet):
                     boundary_degen_tensor = torch.from_numpy(boundary_degen).to(param.device).type(param.dtype)
 
                     # Normalize the boundary tensor to avoid large updates
-                    norm = torch.norm(boundary_degen_tensor)
+                    norm = torch.norm(boundary_degen_tensor, dim=0)
                     if norm != 0:  # Prevent division by zero
                         boundary_degen_tensor = boundary_degen_tensor / norm
 
@@ -94,9 +131,6 @@ class BoundaryAugmentedNet(OriginalNet):
                         param.data *= (1 + self.boundary_scale * boundary_degen_tensor)
                     else:
                         raise ValueError(f"Unsupported operation '{self.operation}'. Use 'add' or 'multiply'.")
-
-                    # Optional: Normalize weights to prevent growth
-                    # param.data = torch.nn.functional.normalize(param.data, p=2, dim=1)
 
 class RandomTensorAugmentedNet(OriginalNet):
     def __init__(self, input_size, hidden_sizes, output_size, random_tensor_scale=7e-3, operation='add', layers_to_augment=None):
@@ -125,13 +159,14 @@ class RandomTensorAugmentedNet(OriginalNet):
                 if name in self.layers_to_augment:
                     original_shape = param.detach().cpu().numpy().shape
                     boundary_shape = tuple(dim - 1 for dim in original_shape)
-                    random_tensor = np.random.randn(*boundary_shape)
+                    rng = np.random.default_rng(seed=42)
+                    random_tensor = rng.standard_normal(boundary_shape)
                     k = min(boundary_shape) // 2
                     random_degen_tensor = degen(random_tensor, k)
                     random_degen_tensor = torch.from_numpy(random_degen_tensor).to(param.device).type(param.dtype)
 
                     # Normalize the random tensor to avoid large updates
-                    norm = torch.norm(random_degen_tensor)
+                    norm = torch.norm(random_degen_tensor, dim=0)
                     if norm != 0:  # Prevent division by zero
                         random_degen_tensor = random_degen_tensor / norm
 
@@ -169,11 +204,16 @@ def load_data(batch_size=32):
 # ----------------------------
 
 def monitor_weights(net):
+    print("Logging weights...")  # Confirm the function is called
+    weight_logger.info("Logging weights...")  # Log the action
+    
     for name, param in net.named_parameters():
         if param.requires_grad:
             max_val = param.data.max().item()
             min_val = param.data.min().item()
-            logging.info(f"{name}: min={min_val}, max={max_val}")
+            mean_val = param.data.mean().item()
+            std_val = param.data.std().item()
+            weight_logger.info(f"{name}: min={min_val}, max={max_val}, mean={mean_val}, std={std_val}")
 
 # ----------------------------
 # Unified Training and Evaluation Function
@@ -192,76 +232,186 @@ def train_and_evaluate_network(net, train_loader, test_loader, criterion, optimi
     epochs_no_improve = 0
 
     for epoch in range(num_epochs):
-        net.train()
-        total_loss = 0
-        correct = 0
-        total = 0
-
-        for inputs, labels in train_loader:
-            inputs, labels = inputs.to(device), labels.to(device)
-
-            outputs = net(inputs)
-            loss = criterion(outputs, labels)
-
-            optimizer.zero_grad()
-            loss.backward()
-
-            torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm=1.0)
-            optimizer.step()
-
-            total_loss += loss.item()
-
-            # Calculate accuracy
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+        train_loss, train_accuracy = train_one_epoch(net, train_loader, criterion, optimizer, device)
+        val_loss, val_accuracy = validate_one_epoch(net, test_loader, criterion, device)
 
         # Apply augmentation once per epoch
-        if augment_type == 'boundary' and isinstance(net, BoundaryAugmentedNet):
-            net.integrate_boundary()
-            if verbose:
-                monitor_weights(net)  # Log weights to file
-        elif augment_type == 'random' and isinstance(net, RandomTensorAugmentedNet):
-            net.integrate_random_tensor()
-            if verbose:
-                monitor_weights(net)  # Log weights to file
+        apply_augmentation(net, augment_type, verbose)
 
-        scheduler.step()
-        train_accuracy = 100 * correct / total
-        avg_loss = total_loss / len(train_loader)
+        # Scheduler step
+        if isinstance(scheduler, optim.lr_scheduler.ReduceLROnPlateau):
+            scheduler.step(val_loss)
+        else:
+            scheduler.step()
 
-        # Validation phase
-        net.eval()
-        val_loss = 0
-        val_correct = 0
-        val_total = 0
-
-        with torch.no_grad():
-            for val_inputs, val_labels in test_loader:
-                val_inputs, val_labels = val_inputs.to(device), val_labels.to(device)
-                val_outputs = net(val_inputs)
-                v_loss = criterion(val_outputs, val_labels)
-                val_loss += v_loss.item()
-
-                _, val_predicted = torch.max(val_outputs.data, 1)
-                val_total += val_labels.size(0)
-                val_correct += (val_predicted == val_labels).sum().item()
-
-        val_accuracy = 100 * val_correct / val_total
-        avg_val_loss = val_loss / len(test_loader)
-
-        history['train_loss'].append(avg_loss)
+        history['train_loss'].append(train_loss)
         history['train_acc'].append(train_accuracy)
-        history['val_loss'].append(avg_val_loss)
+        history['val_loss'].append(val_loss)
         history['val_acc'].append(val_accuracy)
 
         print(f"Epoch [{epoch+1}/{num_epochs}], "
-              f"Train Loss: {avg_loss:.6f}, Train Acc: {train_accuracy:.2f}%, "
-              f"Val Loss: {avg_val_loss:.6f}, Val Acc: {val_accuracy:.2f}%")
+              f"Train Loss: {train_loss:.6f}, Train Acc: {train_accuracy:.2f}%, "
+              f"Val Loss: {val_loss:.6f}, Val Acc: {val_accuracy:.2f}%")
 
         # Early Stopping Check
-        if avg_val_loss < best_val_loss:
-            best_val_loss = avg_val_loss
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            epochs_no_improve = 0
+        else:
+            epochs_no_improve += 1
+            if epochs_no_improve >= patience:
+                print(f"Early stopping triggered after {epoch+1} epochs.")
+                break
+
+    return history
+
+def train_one_epoch(net, train_loader, criterion, optimizer, device):
+    net.train()
+    total_loss = 0
+    correct = 0
+    total = 0
+
+    for inputs, labels in train_loader:
+        inputs, labels = inputs.to(device), labels.to(device)
+
+        outputs = net(inputs)
+        loss = criterion(outputs, labels)
+
+        optimizer.zero_grad()
+        loss.backward()
+
+        torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm=1.0)
+        optimizer.step()
+
+        total_loss += loss.item()
+
+        # Calculate accuracy
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+
+    train_accuracy = 100 * correct / total
+    avg_loss = total_loss / len(train_loader)
+    return avg_loss, train_accuracy
+
+def validate_one_epoch(net, test_loader, criterion, device):
+    net.eval()
+    val_loss = 0
+    val_correct = 0
+    val_total = 0
+
+    with torch.no_grad():
+        for val_inputs, val_labels in test_loader:
+            val_inputs, val_labels = val_inputs.to(device), val_labels.to(device)
+            val_outputs = net(val_inputs)
+            v_loss = criterion(val_outputs, val_labels)
+            val_loss += v_loss.item()
+
+            _, val_predicted = torch.max(val_outputs.data, 1)
+            val_total += val_labels.size(0)
+            val_correct += (val_predicted == val_labels).sum().item()
+
+    val_accuracy = 100 * val_correct / val_total
+    avg_val_loss = val_loss / len(test_loader)
+    return avg_val_loss, val_accuracy
+
+def apply_augmentation(net, augment_type, verbose):
+    if augment_type == 'boundary' and isinstance(net, BoundaryAugmentedNet):
+        net.integrate_boundary()
+        if verbose:
+            monitor_weights(net)  # Log weights to file
+    elif augment_type == 'random' and isinstance(net, RandomTensorAugmentedNet):
+        net.integrate_random_tensor()
+        if verbose:
+            monitor_weights(net)  # Log weights to file
+
+def train_one_epoch_with_augmentation(net, train_loader, criterion, optimizer, augment_type, verbose, device):
+    net.train()
+    total_loss = 0
+    correct = 0
+    total = 0
+
+    for inputs, labels in train_loader:
+        inputs, labels = inputs.to(device), labels.to(device)
+
+        outputs = net(inputs)
+        loss = criterion(outputs, labels)
+
+        optimizer.zero_grad()
+        loss.backward()
+
+        torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm=1.0)
+        optimizer.step()
+
+        total_loss += loss.item()
+
+        # Calculate accuracy
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+
+    # Apply augmentation once per epoch
+    apply_augmentation(net, augment_type, verbose)
+
+    train_accuracy = 100 * correct / total
+    avg_loss = total_loss / len(train_loader)
+    return avg_loss, train_accuracy
+
+def validate_one_epoch_with_augmentation(net, test_loader, criterion, device):
+    net.eval()
+    val_loss = 0
+    val_correct = 0
+    val_total = 0
+
+    with torch.no_grad():
+        for val_inputs, val_labels in test_loader:
+            val_inputs, val_labels = val_inputs.to(device), val_labels.to(device)
+            val_outputs = net(val_inputs)
+            v_loss = criterion(val_outputs, val_labels)
+            val_loss += v_loss.item()
+
+            _, val_predicted = torch.max(val_outputs.data, 1)
+            val_total += val_labels.size(0)
+            val_correct += (val_predicted == val_labels).sum().item()
+
+    val_accuracy = 100 * val_correct / val_total
+    avg_val_loss = val_loss / len(test_loader)
+    return avg_val_loss, val_accuracy
+
+def train_and_evaluate_network(net, train_loader, test_loader, criterion, optimizer, scheduler, num_epochs=40, augment_type=None, device='cpu', verbose=True, patience=10):
+    net.to(device)  # Ensure the network is on the correct device
+    history = {
+        'train_loss': [],
+        'train_acc': [],
+        'val_loss': [],
+        'val_acc': []
+    }
+
+    best_val_loss = float('inf')
+    epochs_no_improve = 0
+
+    for epoch in range(num_epochs):
+        train_loss, train_accuracy = train_one_epoch_with_augmentation(net, train_loader, criterion, optimizer, augment_type, verbose, device)
+        val_loss, val_accuracy = validate_one_epoch_with_augmentation(net, test_loader, criterion, device)
+
+        # Scheduler step
+        if isinstance(scheduler, optim.lr_scheduler.ReduceLROnPlateau):
+            scheduler.step(val_loss)
+        else:
+            scheduler.step()
+
+        history['train_loss'].append(train_loss)
+        history['train_acc'].append(train_accuracy)
+        history['val_loss'].append(val_loss)
+        history['val_acc'].append(val_accuracy)
+
+        print(f"Epoch [{epoch+1}/{num_epochs}], "
+              f"Train Loss: {train_loss:.6f}, Train Acc: {train_accuracy:.2f}%, "
+              f"Val Loss: {val_loss:.6f}, Val Acc: {val_accuracy:.2f}%")
+
+        # Early Stopping Check
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
             epochs_no_improve = 0
         else:
             epochs_no_improve += 1
@@ -301,38 +451,40 @@ def evaluate_model(net, test_loader, criterion, device='cpu'):
 # Plotting Function
 # ----------------------------
 
-def plot_learning_curves(history, num_epochs=40):
-    epochs = range(1, num_epochs + 1)
-    train_losses = history['train_loss']
-    val_losses = history['val_loss']
-    train_acc = history['train_acc']
-    val_acc = history['val_acc']
+def plot_learning_curves(histories, titles=None):
+    plt.figure(figsize=(14, 6))
 
-    plt.figure(figsize=(12, 5))
-
+    # Plot Loss
     plt.subplot(1, 2, 1)
-    plt.plot(epochs, train_losses, 'g', label='Training loss')
-    plt.plot(epochs, val_losses, 'b', label='Validation loss')
+    for i, history in enumerate(histories):
+        epochs = range(1, len(history['train_loss']) + 1)
+        plt.plot(epochs, history['train_loss'], label=f'Train Loss {titles[i]}')
+        plt.plot(epochs, history['val_loss'], linestyle='--', label=f'Val Loss {titles[i]}')
     plt.title('Training and Validation Loss')
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.legend()
 
+    # Plot Accuracy
     plt.subplot(1, 2, 2)
-    plt.plot(epochs, train_acc, 'g', label='Training Accuracy')
-    plt.plot(epochs, val_acc, 'b', label='Validation Accuracy')
+    for i, history in enumerate(histories):
+        epochs = range(1, len(history['train_acc']) + 1)
+        plt.plot(epochs, history['train_acc'], label=f'Train Acc {titles[i]}')
+        plt.plot(epochs, history['val_acc'], linestyle='--', label=f'Val Acc {titles[i]}')
     plt.title('Training and Validation Accuracy')
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy (%)')
     plt.legend()
 
+    plt.tight_layout()
     plt.show()
 
 # ----------------------------
-# Main Experiment with Adjustments
+# Main Experiment with Baselines
 # ----------------------------
 
 def main():
+    print("Current Working Directory:", os.getcwd())  # Confirm the working directory
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # Select device dynamically
 
     # Define network parameters
@@ -347,10 +499,38 @@ def main():
     criterion = nn.CrossEntropyLoss()
 
     # ----------------------------
-    # Training Boundary-Augmented Network with Multiple Layers and Hadamard Multiplication
+    # 1. Train Original Network
     # ----------------------------
+    print("\nTraining Original Network:")
+    original_net = OriginalNet(
+        input_size,
+        hidden_sizes,
+        output_size
+    ).to(device)
+    original_optimizer = optim.Adam(
+        original_net.parameters(),
+        lr=0.001,
+        weight_decay=1e-4  # Increased weight decay for consistency
+    )
+    original_scheduler = optim.lr_scheduler.StepLR(original_optimizer, step_size=20, gamma=0.1)
+    original_history = train_and_evaluate_network(
+        original_net,
+        train_loader,
+        test_loader,
+        criterion,
+        original_optimizer,
+        original_scheduler,
+        num_epochs=40,
+        augment_type=None,  # No augmentation
+        device=device,
+        verbose=True,  # Enable weight monitoring logs
+        patience=10  # Early stopping patience
+    )
+
+    # ----------------------------
+    # 2. Train Boundary-Augmented Network
     print("\nTraining Boundary-Augmented Network with ReLU (Hadamard multiplication on multiple layers):")
-    boundary_layers = ['fc5.weight']  # Augment only fc5 to start
+    boundary_layers = [FC5_WEIGHT]  # Augment only fc5 to start
     boundary_augmented_net = BoundaryAugmentedNet(
         input_size,
         hidden_sizes,
@@ -375,26 +555,13 @@ def main():
         num_epochs=40,
         augment_type='boundary',
         device=device,
-        verbose=False,  # Set to True to enable weight monitoring logs
+        verbose=True,  # Enable weight monitoring logs
         patience=10  # Early stopping patience
     )
 
     # ----------------------------
-    # Evaluate Boundary-Augmented Network on Test Data
+    # 3. Train Random Tensor Augmented Network
     # ----------------------------
-    print("\nEvaluating Boundary-Augmented Network on Test Data:")
-    evaluate_model(boundary_augmented_net, test_loader, criterion, device=device)
-
-    # ----------------------------
-    # Plot Learning Curves
-    # ----------------------------
-    plot_learning_curves(boundary_history, num_epochs=40)
-
-    # ----------------------------
-    # Training Random Tensor Augmented Network with Addition on Multiple Layers (if desired)
-    # ----------------------------
-    # Uncomment below to train the Random Tensor Augmented Network
-    """
     print("\nTraining Random Tensor Augmented Network with ReLU (Addition on multiple layers):")
     random_layers = ['fc2.weight', 'fc4.weight']  # Specify layers to augment
     random_tensor_augmented_net = RandomTensorAugmentedNet(
@@ -421,21 +588,28 @@ def main():
         num_epochs=40,
         augment_type='random',
         device=device,
-        verbose=False,  # Set to True to enable weight monitoring logs
+        verbose=True,  # Enable weight monitoring logs
         patience=10  # Early stopping patience
     )
 
     # ----------------------------
-    # Evaluate Random Tensor Augmented Network on Test Data
+    # 4. Evaluate All Models on Test Data
     # ----------------------------
+    print("\nEvaluating Original Network on Test Data:")
+    evaluate_model(original_net, test_loader, criterion, device=device)
+
+    print("\nEvaluating Boundary-Augmented Network on Test Data:")
+    evaluate_model(boundary_augmented_net, test_loader, criterion, device=device)
+
     print("\nEvaluating Random Tensor Augmented Network on Test Data:")
     evaluate_model(random_tensor_augmented_net, test_loader, criterion, device=device)
 
     # ----------------------------
-    # Plot Learning Curves
+    # 5. Plot Learning Curves
     # ----------------------------
-    plot_learning_curves(random_history, num_epochs=40)
-    """
+    histories = [original_history, boundary_history, random_history]
+    titles = ['Original', 'Boundary-Augmented', 'Random Tensor Augmented']
+    plot_learning_curves(histories, titles=titles)
 
 if __name__ == "__main__":
     main()

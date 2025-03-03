@@ -26,7 +26,7 @@ from tensor_ops import (SimplicialException, face, hface, vface, bdry, hbdry, vb
                         degen, hdegen, vdegen, horn, kan_condition, filler,
                         standard_basis_matrix, cobdry, n_hypergroupoid_comparison, 
                         n_hypergroupoid_conjecture, is_degen, decompose_degen, max_norm, 
-                        bdry_n, s_dim, ___SEED___, random_tensor, range_tensor, 
+                        bdry_n, dimen, ___SEED___, random_tensor, range_tensor, 
                         reconstruct_range_tensor_from_horn)
 import random
 
@@ -105,7 +105,7 @@ def test_bdry_hbdry() -> None:
 # appears new, though it was implicit in Quillen's first paper.
 
 def facecommute(a)  -> bool:
-    d = s_dim(a) # simplicial dimension of a
+    d = dimen(a) # simplicial dimension of a
     for j in range(d+1):
         B = face(a,j); # face operation of diagonal module
         if not np.array_equal(B, hface(vface(a,j),j)) or not np.array_equal(B, vface(hface(a,j),j)):
@@ -118,7 +118,7 @@ def test_facecommute() -> None:
     assert np.allclose(facecommute(random_tensor((73, 109), low=-10, high=33)), True)
 
 def transcommute(a) -> bool:
-    d = s_dim(a) 
+    d = dimen(a) 
     for j in range(d+1):
         if not np.array_equal(face(np.transpose(a), j), np.transpose(face(a, j))):
             return False
@@ -135,7 +135,7 @@ def test_transcommute() -> None:
 # https://doi.org/10.1016/0040-9383(66)90016-4.
 
 def degencommute(a) -> bool:
-    d = s_dim(a)
+    d = dimen(a)
     for j in range(d+1):
         B = degen(a,j);
         if not np.array_equal(B, hdegen(vdegen(a,j),j)) or not np.array_equal(B, vdegen(hdegen(a,j),j)):
@@ -147,7 +147,7 @@ def test_degencommute() -> None:
 
 # degeneracies commute with transpose
 def degentranscommute(t) -> bool:
-    d = s_dim(t) # simplicial dimension of t
+    d = dimen(t) # simplicial dimension of t
     for j in range(d+1):
         if not np.array_equal(degen(np.transpose(t), j), np.transpose(degen(t, j))):
             return False
@@ -160,7 +160,7 @@ def test_degentranscommute() -> None:
 
 def test_first_identity() -> None:
     def first_identity(t) -> bool:
-        d = s_dim(t) # simplicial dimension of t
+        d = dimen(t) # simplicial dimension of t
         for j in range(d+1):
             for i in range(j):  # i < j here
                 X = face(face(t, j), i)
@@ -172,7 +172,7 @@ def test_first_identity() -> None:
 
 def test_second_identity() -> None:
     def second_identity(t) -> bool:
-        d = s_dim(t) # simplicial dimension of t
+        d = dimen(t) # simplicial dimension of t
         for j in range(d+1):
             for i in range(j):
                 X = face(degen(t, j), i)
@@ -184,7 +184,7 @@ def test_second_identity() -> None:
 
 def test_third_identity() -> None:
     def third_identity(t) -> bool:
-        d = s_dim(t) # simplicial dimension of t
+        d = dimen(t) # simplicial dimension of t
         for j in range(d+1):
             X = face(degen(t,j), j)
             Y = face(degen(t,j), j+1)
@@ -195,7 +195,7 @@ def test_third_identity() -> None:
 
 def test_fourth_identity() -> None:
     def fourth_identity(m) -> bool:
-        d = s_dim(m) # d is the simplicial dimension of m
+        d = dimen(m) # d is the simplicial dimension of m
         for i in range(d+1):
             for j in range(i+1):
                 if j+1 < i:
@@ -208,7 +208,7 @@ def test_fourth_identity() -> None:
 
 def test_fifth_identity() -> None:
     def fifth_identity(m) -> bool:
-        d = s_dim(m) # d is the dimension
+        d = dimen(m) # d is the dimension
         for j in range(d+1):
             for i in range(j+1):
                 X = degen(degen(m, j), i)
@@ -274,7 +274,7 @@ def test_h_module2() -> None:
 def hadamard_face(a: ndarray, b: ndarray) -> bool:
     if a.shape != b.shape:
         return False
-    d = s_dim(a) # simplicial dimension of a
+    d = dimen(a) # simplicial dimension of a
     for i in range(d+1):
         if not np.array_equal(face(np.multiply(a, b), i), np.multiply(face(a,i), face(b, i)) ):
             return False
@@ -288,7 +288,7 @@ def test_hadamard_face() -> None:
 def hadamard_degen(a: ndarray, b: ndarray) -> bool:
     if a.shape != b.shape:
         return False
-    d = s_dim(a) # simplicial dimension of a
+    d = dimen(a) # simplicial dimension of a
     for i in range(d+1):
         if not np.array_equal(degen(np.multiply(a, b), i), np.multiply(degen(a,i), degen(b, i)) ):
             return False
@@ -313,7 +313,7 @@ def test_linear_map() -> None:
         A = random_tensor((7,9,11), low=-11, high=73)
         B = random_tensor((7,9,11), low=1, high=43)
 
-        d = s_dim(A) # simplicial dimension of A
+        d = dimen(A) # simplicial dimension of A
         for i in range(d+1):
             if not np.array_equal(face(np.add(A, B), i), np.add(face(A,i), face(B,i))):
                 return False
@@ -332,7 +332,7 @@ def test_linear_map() -> None:
 def test_kan_condition() -> None:
     def _kan_condition() -> bool:
         X = random_tensor((11,16,23), low=-11, high=11)
-        d = s_dim(X) # simplicial dimension of X
+        d = dimen(X) # simplicial dimension of X
         for k in range(d+1):
             H = horn(X, k)
             if not kan_condition(H, k):
@@ -387,7 +387,7 @@ def test_coboundary() -> None:
 def test_tensor_kan_condition() -> None:
     def _kan_condition() -> bool:
         X = random_tensor((4,4,4,4), low=-11, high=11)
-        d = s_dim(X)
+        d = dimen(X)
         for k in range(d+1):
             H = horn(X, k)
             if not kan_condition(H, k):
@@ -412,12 +412,19 @@ def test_n_hypergroupoid_conjecture() -> None:
     assert np.allclose(n_hypergroupoid_comparison(A),
                        n_hypergroupoid_conjecture(shape))
 
+def test_n_hypergroupoid_conjecture_shape_8_10_12() -> None:
+    # create 1000 random tensors of shape (8, 10, 12)
+    for _ in range(1000):
+        A = random_tensor((8, 10, 12), low=1, high=10)
+        assert np.allclose(n_hypergroupoid_comparison(A), n_hypergroupoid_conjecture((8, 10, 12)))
+
+
 def test_manvel_stockmeyer() -> None:
     # Counterexample from On Reconstruction of Matrices
     # Bennet Manvel and Paul K. Stockmeyer
     # Mathematics Magazine , Sep., 1971, Vol. 44, No. 4 (Sep., 1971), pp. 218-221 
     def check_reconstruction(a: np.ndarray) -> bool:
-        dim  = s_dim(a)  
+        dim  = dimen(a)  
         for i in range(dim+1):
             h = horn(a, i)
             b = filler(h, i)

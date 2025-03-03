@@ -21,16 +21,16 @@ import numpy as np
 import random
 from typing import Tuple # , List, Union, Any
 from tensor_ops import (n_hypergroupoid_conjecture, n_hypergroupoid_comparison, 
-                        bdry, degen, is_degen, ___SEED___, random_tensor,degree, s_dim, face) 
+                        bdry, degen, is_degen, ___SEED___, random_tensor, order, dimen, face) 
 
 
 random.seed(___SEED___) # Set seed for reproducibility
 
 # random_shape: generates a random shape for a hypermatrix
 def random_shape(n: int) -> Tuple[int]:
-    # The degree of a hypermatrix is its number of dimensions. Defined as len(S.shape). 
-    degree = random.randint(2, n // 2)  # Length of at least two and bounded by n // 2
-    return tuple(random.randint(3, n) for _ in range(degree))  # number of elements per axis >= 3 and bounded by n
+    # The order of a hypermatrix is its number of dimensions. Defined as len(S.shape). 
+    order = random.randint(2, n // 2)  # Length of at least two and bounded by n // 2
+    return tuple(random.randint(3, n) for _ in range(order))  # number of elements per axis >= 3 and bounded by n
 
 
 def generate_tensor(shape: Tuple[int], force_degeneracy: bool, skip_degeneracies: bool) -> np.ndarray:
@@ -83,7 +83,7 @@ def run_n_hypergroupoid_conjecture(tests: int,
     print(f"Horns w/ non-unique fillers: {non_unique_horns}")
     return True
 
-def verify_unique_down_to_degree(shape: Tuple[int] = (19, 18, 17, 19), outer_horns:bool = False) -> bool:
+def verify_unique_down_to_order(shape: Tuple[int] = (19, 18, 17, 19), outer_horns:bool = False) -> bool:
     
     A = random_tensor(shape, low=1, high=10)  
     
@@ -100,13 +100,13 @@ def verify_unique_down_to_degree(shape: Tuple[int] = (19, 18, 17, 19), outer_hor
     initial_shape = A.shape
     shape = A.shape # update shape of the tensor after adding degeneracies
   
-    deg = initial_degree = degree(A)
-    sdim = top_sdim = s_dim(A)
+    _order = initial_order = order(A)
+    dim = top_dim = dimen(A)
 
-    print(f"Initial tensor has shape: {initial_shape}, degree: {initial_degree}, and s-dimension: {top_sdim}.")
+    print(f"Initial tensor has shape: {initial_shape}, order: {initial_order}, and s-dimension: {top_dim}.")
 
     conjecture = n_hypergroupoid_conjecture(shape, verbose=True)
-    print(f"Unique filler for degree {deg} and s-dimension {sdim}")
+    print(f"Unique filler for order {_order}and s-dimension {dim}")
             
     comparison = n_hypergroupoid_comparison(A, outer_horns=outer_horns, verbose=True, allow_degen=True)
     print(f"Checking comparison for tensor of shape: {A.shape}: {comparison}")
@@ -124,24 +124,24 @@ def verify_unique_down_to_degree(shape: Tuple[int] = (19, 18, 17, 19), outer_hor
         return False
 
     # the comparison and conjecture are both True
-    # so that degree < sdim and the s-diomension can be reduced 
-    while deg < sdim:
+    # so that _order < dim and the dimension can be reduced 
+    while _order < dim:
         A = face(A, 0)
-        deg = degree(A)
-        sdim = s_dim(A) # reduce s-dimension
+        _order = order(A)
+        dim = dimen(A) # reduce dimension
         shape = A.shape
 
         conjecture = n_hypergroupoid_conjecture(shape, verbose=True)
         if conjecture:
-            print(f"Unique filler for degree {deg} and s-dimension {sdim}")
+            print(f"Unique filler for order {_order} and dimension {dim}")
             comparison = n_hypergroupoid_comparison(A, outer_horns=outer_horns, verbose=True, allow_degen=True)
             print(f"Checking comparison for tensor of shape: {A.shape}: {comparison}")
             if not comparison:
                 print(f"CRAP! Comparison failed for tensor of shape: {A.shape}")
                 return False
         else:
-            print(f"non-unique filler for degree {deg} and s-dimension {sdim}")
-            print(f"Tensor of shape {initial_shape} generates unique fillers from s-dimension {deg+1} to s-dimension {top_sdim} and beyond.")    
+            print(f"non-unique filler for order {_order} and s-dimension {dim}")
+            print(f"Tensor of shape {initial_shape} generates unique fillers from dimension {_order+1} to dimension {top_dim} and beyond.")    
             return True
         
 
@@ -150,12 +150,13 @@ if __name__ == "__main__":
                                    force_degeneracy=False, 
                                    skip_degeneracies=True, 
                                    outer_horns=False,
-                                   single_shape=(3,3))
+                                   single_shape=(8,10, 12))
     #run_n_hypergroupoid_conjecture(750, 12, 
     #                               force_degeneracy=False, 
     #                               skip_degeneracies=False, 
     #                               outer_horns=True,
     #                               single_shape=(6,6,6))
 
-    verify_unique_down_to_degree(shape=(6,6,6))
-    verify_unique_down_to_degree(shape=(7,11,23,43))
+    verify_unique_down_to_order(shape=(8,10,12), outer_horns=False)
+    verify_unique_down_to_order(shape=(8,10,12), outer_horns=True)
+    
