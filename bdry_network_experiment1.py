@@ -118,7 +118,7 @@ def main():
     # ----------------------------
     print("Training Original Network:")
     original_net = OriginalNet(input_size, hidden_sizes, output_size)
-    original_optimizer = optim.Adam(original_net.parameters(), lr=0.001)
+    original_optimizer = optim.Adam(original_net.parameters(), lr=0.001, weight_decay=0.01)
     train_network(original_net, criterion, original_optimizer)
 
     # ----------------------------
@@ -126,7 +126,7 @@ def main():
     # ----------------------------
     print("\nTraining Boundary-Augmented Network:")
     boundary_augmented_net = BoundaryAugmentedNet(input_size, hidden_sizes, output_size)
-    boundary_augmented_optimizer = optim.Adam(boundary_augmented_net.parameters(), lr=0.001)
+    boundary_augmented_optimizer = optim.Adam(boundary_augmented_net.parameters(), lr=0.001, weight_decay=0.01)
     train_network(boundary_augmented_net, criterion, boundary_augmented_optimizer)
 
 if __name__ == "__main__":

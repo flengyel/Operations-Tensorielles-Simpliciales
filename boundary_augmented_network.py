@@ -74,7 +74,8 @@ class RandomTensorAugmentedNet(OriginalNet):
                     boundary_shape = tuple(dim - 1 for dim in original_shape)
                     
                     # Generate a random tensor of boundary shape
-                    random_tensor = np.random.randn(*boundary_shape)
+                    rng = np.random.default_rng(seed=42)
+                    random_tensor = rng.standard_normal(boundary_shape)
                     
                     # Degenerate the random tensor along the middle axes (like boundary degeneration)
                     k = min(boundary_shape) // 2
@@ -142,7 +143,7 @@ def main():
     # ----------------------------
     print("Training Original Network with Leaky ReLU:")
     original_net = OriginalNet(input_size, hidden_sizes, output_size)
-    original_optimizer = optim.Adam(original_net.parameters(), lr=0.001)
+    original_optimizer = optim.Adam(original_net.parameters(), lr=0.001, weight_decay=0.01)
     original_scheduler = optim.lr_scheduler.StepLR(original_optimizer, step_size=20, gamma=0.1)
     train_network(original_net, criterion, original_optimizer, original_scheduler, num_epochs=40)
 
@@ -151,7 +152,7 @@ def main():
     # ----------------------------
     print("\nTraining Boundary-Augmented Network with Leaky ReLU:")
     boundary_augmented_net = BoundaryAugmentedNet(input_size, hidden_sizes, output_size, boundary_scale=1e-5)
-    boundary_augmented_optimizer = optim.Adam(boundary_augmented_net.parameters(), lr=0.001)
+    boundary_augmented_optimizer = optim.Adam(boundary_augmented_net.parameters(), lr=0.001, weight_decay=0.01)
     boundary_augmented_scheduler = optim.lr_scheduler.StepLR(boundary_augmented_optimizer, step_size=20, gamma=0.1)
     train_network(boundary_augmented_net, criterion, boundary_augmented_optimizer, boundary_augmented_scheduler, num_epochs=40, augment_type='boundary')
 
@@ -160,7 +161,7 @@ def main():
     # ----------------------------
     print("\nTraining Random Tensor Augmented Network with Leaky ReLU:")
     random_tensor_augmented_net = RandomTensorAugmentedNet(input_size, hidden_sizes, output_size, random_tensor_scale=7e-3)
-    random_tensor_augmented_optimizer = optim.Adam(random_tensor_augmented_net.parameters(), lr=0.001)
+    random_tensor_augmented_optimizer = optim.Adam(random_tensor_augmented_net.parameters(), lr=0.001, weight_decay=0.01)
     random_tensor_augmented_scheduler = optim.lr_scheduler.StepLR(random_tensor_augmented_optimizer, step_size=20, gamma=0.1)
     train_network(random_tensor_augmented_net, criterion, random_tensor_augmented_optimizer, random_tensor_augmented_scheduler, num_epochs=40, augment_type='random')
 

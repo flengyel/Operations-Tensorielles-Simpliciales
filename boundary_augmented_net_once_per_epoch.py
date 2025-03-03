@@ -10,6 +10,11 @@ import matplotlib.pyplot as plt
 import logging
 import os
 
+
+# pytorch implementation of max_norm
+def max_norm_pytorch(t: torch.Tensor) -> torch.Tensor:
+    return torch.max(torch.abs(t))
+
 # ----------------------------
 # Logger Initialization
 # ----------------------------

@@ -7,6 +7,11 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from tensor_ops import bdry, degen  # Ensure tensor_ops.py is correctly implemented and accessible
 
+# pytorch implementation of max_norm
+def max_norm_pytorch(t: torch.Tensor) -> torch.Tensor:
+    return torch.max(torch.abs(t))
+
+
 # ----------------------------
 # Network Classes
 # ----------------------------
@@ -47,7 +52,7 @@ class BoundaryAugmentedNet(OriginalNet):
                     boundary_degen_tensor = torch.from_numpy(boundary_degen).to(param.device).type(param.dtype)
 
                     # Normalize the boundary tensor to avoid large updates
-                    norm = torch.norm(boundary_degen_tensor)
+                    norm = max_norm_pytorch(boundary_degen_tensor)
                     if norm != 0:  # Prevent division by zero
                         boundary_degen_tensor = boundary_degen_tensor / norm
 
@@ -71,7 +76,8 @@ class RandomTensorAugmentedNet(OriginalNet):
                 if 'fc5.weight' in name:  # Only modify the fc5 layer
                     original_shape = param.detach().cpu().numpy().shape
                     boundary_shape = tuple(dim - 1 for dim in original_shape)
-                    random_tensor = np.random.randn(*boundary_shape)
+                    rng = np.random.default_rng(seed=42)
+                    random_tensor = rng.standard_normal(boundary_shape)
                     k = min(boundary_shape) // 2
                     random_degen_tensor = degen(random_tensor, k)
                     random_degen_tensor = torch.from_numpy(random_degen_tensor).to(param.device).type(param.dtype)
@@ -91,8 +97,8 @@ def load_data(batch_size=32):
     train_dataset = torchvision.datasets.MNIST(root='./data', train=True, transform=transform, download=True)
     test_dataset = torchvision.datasets.MNIST(root='./data', train=False, transform=transform)
 
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+    test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
     return train_loader, test_loader
 
@@ -139,7 +145,7 @@ def main():
     output_size = 10  # MNIST has 10 classes (digits 0-9)
 
     # Load MNIST data
-    train_loader, test_loader = load_data(batch_size=64)
+    train_loader, _ = load_data(batch_size=64)
 
     # Loss function
     criterion = nn.CrossEntropyLoss()
@@ -158,7 +164,7 @@ def main():
     # ----------------------------
     print("\nTraining Boundary-Augmented Network with ReLU:")
     boundary_augmented_net = BoundaryAugmentedNet(input_size, hidden_sizes, output_size, boundary_scale=7e-3).to(device)
-    boundary_augmented_optimizer = optim.Adam(boundary_augmented_net.parameters(), lr=0.001)
+    boundary_augmented_optimizer = optim.Adam(boundary_augmented_net.parameters(), lr=0.001, weight_decay=1e-5)
     boundary_augmented_scheduler = optim.lr_scheduler.StepLR(boundary_augmented_optimizer, step_size=20, gamma=0.1)
     train_network(boundary_augmented_net, train_loader, criterion, boundary_augmented_optimizer, boundary_augmented_scheduler, num_epochs=40, augment_type='boundary', device=device)
 
@@ -167,7 +173,7 @@ def main():
     # ----------------------------
     print("\nTraining Random Tensor Augmented Network with ReLU:")
     random_tensor_augmented_net = RandomTensorAugmentedNet(input_size, hidden_sizes, output_size, random_tensor_scale=7e-3).to(device)
-    random_tensor_augmented_optimizer = optim.Adam(random_tensor_augmented_net.parameters(), lr=0.001)
+    random_tensor_augmented_optimizer = optim.Adam(random_tensor_augmented_net.parameters(), lr=0.001, weight_decay=1e-5)
     random_tensor_augmented_scheduler = optim.lr_scheduler.StepLR(random_tensor_augmented_optimizer, step_size=20, gamma=0.1)
     train_network(random_tensor_augmented_net, train_loader, criterion, random_tensor_augmented_optimizer, random_tensor_augmented_scheduler, num_epochs=40, augment_type='random', device=device)
 

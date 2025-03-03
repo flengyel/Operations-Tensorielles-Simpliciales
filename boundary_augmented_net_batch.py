@@ -8,6 +8,11 @@ from torch.utils.data import DataLoader
 from tensor_ops import bdry, degen  # Ensure tensor_ops.py is correctly implemented and accessible
 import matplotlib.pyplot as plt
 
+
+# pytorch implementation of max_norm
+def max_norm_pytorch(t: torch.Tensor) -> torch.Tensor:
+    return torch.max(torch.abs(t))
+
 # ----------------------------
 # Network Classes
 # ----------------------------
@@ -76,7 +81,7 @@ class BoundaryAugmentedNet(OriginalNet):
                     boundary_degen_tensor = torch.from_numpy(boundary_degen).to(param.device).type(param.dtype)
 
                     # Normalize the boundary tensor to avoid large updates
-                    norm = torch.norm(boundary_degen_tensor, dim=0)
+                    norm = max_norm_pytorch(boundary_degen_tensor)
                     if norm != 0:  # Prevent division by zero
                         boundary_degen_tensor = boundary_degen_tensor / norm
 
@@ -125,7 +130,7 @@ class RandomTensorAugmentedNet(OriginalNet):
                     random_degen_tensor = torch.from_numpy(random_degen_tensor).to(param.device).type(param.dtype)
 
                     # Normalize the random tensor to avoid large updates
-                    norm = torch.norm(random_degen_tensor, dim=0)
+                    norm = max_norm_pytorch(random_degen_tensor)
                     if norm != 0:  # Prevent division by zero
                         random_degen_tensor = random_degen_tensor / norm
 
