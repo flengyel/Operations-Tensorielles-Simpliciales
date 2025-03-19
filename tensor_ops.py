@@ -459,6 +459,26 @@ def reconstruct_range_tensor_from_horn(shape: Tuple[int],
     # print(f"Reconstruction successful for shape {shape}")
     return True
 
+def bdry_mod1(w: np.ndarray) -> np.ndarray:
+    """
+    Computes the boundary of w and then reduces each entry modulo 1.
+    Returns the result in [0,1), with 1.0 mapped to 0.0
+    """
+    bdry_w = bdry(w)
+    result = bdry_w - np.floor(bdry_w)
+    # Map any 1.0 values (which are actually 0 mod 1) to 0.0
+    result[np.isclose(result, 1.0)] = 0.0
+    return result
+
+def random_real_matrix(shape: Tuple[int], low=-10.0, high=10.0, seed: int = 123) -> np.ndarray:
+    """
+    Generates a real-valued matrix of given 'shape' with values 
+    uniformly distributed in [low, high].
+    """
+    rng = np.random.default_rng(seed)
+    return rng.uniform(low, high, size=shape)
+
+
 
 if __name__ == "__main__":
     # more counterexamples from manvel and stockmeyer 1971
@@ -519,3 +539,9 @@ if __name__ == "__main__":
     can_reconstruct = reconstruct_range_tensor_from_horn(shape, proceed_anyway=True)
     print(f"Range tensor of shape {shape} can be reconstructed from any horn: {can_reconstruct}") 
     
+
+    w = random_real_matrix((7, 9), low=-10, high=10, seed=123)
+    print("w:", w)
+    print("bdry(w):", bdry(w))
+    print("bdry_mod1(w):", bdry_mod1(w))
+    print("bdry_mod1(bdry_mod1(w)):", bdry_mod1(bdry_mod1(w)))

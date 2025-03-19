@@ -27,7 +27,7 @@ from tensor_ops import (SimplicialException, face, hface, vface, bdry, hbdry, vb
                         standard_basis_matrix, cobdry, n_hypergroupoid_comparison, 
                         n_hypergroupoid_conjecture, is_degen, decompose_degen, max_norm, 
                         bdry_n, dimen, ___SEED___, random_tensor, range_tensor, 
-                        reconstruct_range_tensor_from_horn)
+                        reconstruct_range_tensor_from_horn, random_real_matrix,bdry_mod1)
 import random
 
 random.seed(___SEED___) # Set seed for reproducibility
@@ -532,6 +532,28 @@ def test_max_norm() -> None:
 
 def test_reconstruct_range_tensor_from_horn() -> None:
     assert np.allclose(reconstruct_range_tensor_from_horn((8, 10, 12)), True)
+
+def test_bdry_bdry_mod1() -> None:
+    shape = (7, 9)
+    w = random_real_matrix(shape, low=-10, high=10, seed=123)
+
+    # First mod-1 boundary:
+    bdry_w = bdry_mod1(w)
+
+    # Second mod-1 boundary:
+    bdry_bdry_w = bdry_mod1(bdry_w)
+
+    # We expect (bdry_bdry_w) to be all zeros in mod 1 sense, i.e. an integer matrix,
+    # typically all zeros if the chain complex identity holds exactly.
+    # But floating errors might appear if 'bdry' is purely integer-based 
+    # plus floating arithmetic. In exact arithmetic, this should be zero.
+
+    # Let's measure how close it is to integral (near 0.0) or near 1.0
+    eps = 1e-7
+    assert np.all(np.abs(bdry_bdry_w) < eps), "mod 1 boundary^2 did not vanish."
+
+
+
 
 if __name__ == "__main__":
     pytest.main([__file__])
