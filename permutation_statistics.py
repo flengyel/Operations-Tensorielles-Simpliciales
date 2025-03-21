@@ -550,50 +550,70 @@ def test_permutation_matrices(sizes: List[int], verbose: bool = False, seed: int
             print(f"discrepancy norm: {np.linalg.norm(discrepancy):.6f}")
             print(f"discrepancy:\n{discrepancy}")
         
-        matrix_results = []
-        
-        for i in range(n):
-            # Analyze face with explicit parameters
-            face_i = face(p, i)
-            is_perm = is_permutation_matrix(face_i)
-            is_nilp, nilp_index = is_nilpotent(face_i, max_power=n)
-            is_immediately_idempotent = is_idempotent(face_i, tolerance=tolerance)
-            
-            has_cycle, cycle_start, cycle_length, is_eventually_idempotent = check_face_cycles(
-                face_i, is_nilp, is_immediately_idempotent, verbose, max_powers, tolerance)
-            
-            if verbose:
-                print(f"Diagonal entry P[{i},{i}] = {diagonal_entries[i]}")
-                print(f"Face {i} is {'a permutation matrix' if is_perm else 'not a permutation matrix'}")
-                print(f"Face {i} is {'nilpotent (power ' + str(nilp_index) + ')' if is_nilp else 'not nilpotent'}")
-                print(f"Face {i} is {'immediately idempotent' if is_immediately_idempotent else 'not immediately idempotent'}")
-                print(f"Face {i} is {'eventually idempotent' if is_eventually_idempotent else 'not eventually idempotent'}")
-                print(f"Face {i} is {'cyclic' if (has_cycle and cycle_length > 0) else 'not cyclic'}")
-                print(f"Similarity with discrepancy: {similarities[i]:.6f}")
-            
-            result = {
-                'face_index': i,
-                'diagonal_entry': diagonal_entries[i],
-                'is_perm': is_perm,
-                'is_nilp': is_nilp,
-                'nilp_index': nilp_index if is_nilp else 0,
-                'is_immediately_idempotent': is_immediately_idempotent,
-                'is_eventually_idempotent': is_eventually_idempotent,
-                'has_cycle': has_cycle and cycle_length > 0,
-                'cycle_start': cycle_start,
-                'cycle_length': cycle_length,
-                'similarity': similarities[i],
-                'matrix_size': n
-            }
-            
-            matrix_results.append(result)
-            all_results.append(result)
+        matrix_results = analyze_matrix_faces(p, n, similarities, diagonal_entries, verbose, max_powers, tolerance)
+        all_results.extend(matrix_results)
         
         summarize_matrix_results(matrix_results, verbose)
     
     print_overall_statistics(all_results)
     
     return all_results
+
+def analyze_matrix_faces(p: np.ndarray, n: int, similarities: List[float], diagonal_entries: np.ndarray, 
+                         verbose: bool, max_powers: int, tolerance: float) -> List[Dict[str, Any]]:
+    """
+    Analyze the faces of a permutation matrix.
+    
+    Args:
+        p: Permutation matrix
+        n: Size of the matrix
+        similarities: List of similarities with discrepancy
+        diagonal_entries: Diagonal entries of the permutation matrix
+        verbose: Whether to print verbose information
+        max_powers: Maximum number of matrix powers to check for cycles
+        tolerance: Numerical tolerance for matrix comparisons
+        
+    Returns:
+        List of analysis results for each face
+    """
+    matrix_results = []
+    
+    for i in range(n):
+        face_i = face(p, i)
+        is_perm = is_permutation_matrix(face_i)
+        is_nilp, nilp_index = is_nilpotent(face_i, max_power=n)
+        is_immediately_idempotent = is_idempotent(face_i, tolerance=tolerance)
+        
+        has_cycle, cycle_start, cycle_length, is_eventually_idempotent = check_face_cycles(
+            face_i, is_nilp, is_immediately_idempotent, verbose, max_powers, tolerance)
+        
+        if verbose:
+            print(f"Diagonal entry P[{i},{i}] = {diagonal_entries[i]}")
+            print(f"Face {i} is {'a permutation matrix' if is_perm else 'not a permutation matrix'}")
+            print(f"Face {i} is {'nilpotent (power ' + str(nilp_index) + ')' if is_nilp else 'not nilpotent'}")
+            print(f"Face {i} is {'immediately idempotent' if is_immediately_idempotent else 'not immediately idempotent'}")
+            print(f"Face {i} is {'eventually idempotent' if is_eventually_idempotent else 'not eventually idempotent'}")
+            print(f"Face {i} is {'cyclic' if (has_cycle and cycle_length > 0) else 'not cyclic'}")
+            print(f"Similarity with discrepancy: {similarities[i]:.6f}")
+        
+        result = {
+            'face_index': i,
+            'diagonal_entry': diagonal_entries[i],
+            'is_perm': is_perm,
+            'is_nilp': is_nilp,
+            'nilp_index': nilp_index if is_nilp else 0,
+            'is_immediately_idempotent': is_immediately_idempotent,
+            'is_eventually_idempotent': is_eventually_idempotent,
+            'has_cycle': has_cycle and cycle_length > 0,
+            'cycle_start': cycle_start,
+            'cycle_length': cycle_length,
+            'similarity': similarities[i],
+            'matrix_size': n
+        }
+        
+        matrix_results.append(result)
+    
+    return matrix_results
 
 def main():
     """
