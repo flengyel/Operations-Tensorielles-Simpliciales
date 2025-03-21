@@ -91,10 +91,9 @@ def verify_unique_down_to_order(shape: Tuple[int] = (19, 18, 17, 19), outer_horn
     while is_degen(A) or is_degen(bdry(A)):
         A = random_tensor(shape, low=1, high=10)  # Generate random integers
 
-    A = degen(A, 0) # force A to be a degeneracy
-    A = degen(A, 0) # force A to be a degeneracy of a degeneracy
-    A = degen(A, 0) # force A to be a degeneracy of a degeneracy of a degeneracy
-
+    # force A to be a degeneracy of a degeneracy of a degeneracy
+    for _ in range(3):
+        A = degen(A, 0)
     print(f"A is a degeneracy: {is_degen(A)}")
 
     initial_shape = A.shape
@@ -159,4 +158,4 @@ if __name__ == "__main__":
 
     verify_unique_down_to_order(shape=(8,10,12), outer_horns=False)
     #verify_unique_down_to_order(shape=(8,10,12), outer_horns=True)
-    
+    verify_unique_down_to_order(shape=(7,7,7,7,7), outer_horns=False)   
