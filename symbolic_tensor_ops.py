@@ -5,24 +5,26 @@ from tensor_ops import (order, dimen, n_hypergroupoid_conjecture,
                        SimplicialException)  # Import the exception
 
 class SymbolicTensor:
+
     def __init__(self, shape: Tuple[int], tensor=None, init_type: str = 'range'):
         """Initialize a symbolic tensor."""
         self.shape = shape
-        
+
         if tensor is not None:
             self.tensor = tensor
-        elif init_type == 'range':
-            size = np.prod(shape)
-            symbols = [sp.Symbol(f'x_{k}') for k in range(size)]
-            self.tensor = np.array(symbols).reshape(shape)
-        elif init_type == 'zeros':
-            self.tensor = np.zeros(shape, dtype=object)
+        else:
+            self.tensor = np.empty(shape, dtype=object)
             for idx in np.ndindex(shape):
-                self.tensor[idx] = sp.S.Zero
-        elif init_type == 'ones':
-            self.tensor = np.zeros(shape, dtype=object)
-            for idx in np.ndindex(shape):
-                self.tensor[idx] = sp.S.One
+                idx_str = ','.join(map(str, idx))
+                if init_type == 'range':
+                    self.tensor[idx] = sp.Symbol(f'x_{{{idx_str}}}')
+                elif init_type == 'zeros':
+                    self.tensor[idx] = sp.S.Zero
+                elif init_type == 'ones':
+                    self.tensor[idx] = sp.S.One
+                else:
+                    raise ValueError(f"Unsupported init_type: {init_type}")
+
     
     @staticmethod
     def from_tensor(tensor):
