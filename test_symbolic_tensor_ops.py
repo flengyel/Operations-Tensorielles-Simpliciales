@@ -2,7 +2,10 @@ import pytest
 import sympy as sp
 import numpy as np
 from symbolic_tensor_ops import SymbolicTensor, correction_rank
-from tensor_ops import n_hypergroupoid_conjecture, SimplicialException
+from tensor_ops import n_hypergroupoid_conjecture, SimplicialException, ___SEED___
+import random
+
+random.seed(___SEED___)
 
 def test_multiindex_variable_names():
     shape = (2, 3)
@@ -60,47 +63,105 @@ def test_n_hypergroupoid_comparison():
     assert conjecture == result or result is None
 
 def test_bdry_squared_zero():
-    for shape in [(3, 3), (4, 4), (3, 4, 5)]:
+    for _ in range(5):
+        dims = random.randint(2, 3)
+        shape = tuple(random.randint(3, 5) for _ in range(dims))
         T = SymbolicTensor(shape)
         bdry1 = T.bdry()
         bdry2 = bdry1.bdry()
         assert all(sp.simplify(bdry2.tensor[idx]) == 0 for idx in np.ndindex(bdry2.shape))
 
-def test_simplicial_identities():
-    T = SymbolicTensor((4, 4))
-    d = min(T.shape)
-    for i in range(d - 1):
-        for j in range(i + 1, d):
-            # face_i.face_j == face_{j-1}.face_i
-            left = T.face(j).face(i)
-            right = T.face(i).face(j - 1)
-            for idx in np.ndindex(left.shape):
-                assert sp.simplify(left.tensor[idx] - right.tensor[idx]) == 0
-
-    for i in range(d):
-        for j in range(i, d):
-            # degen_i.degen_j == degen_{j+1}.degen_i
-            left = T.degen(i).degen(j + 1)
-            right = T.degen(j).degen(i)
-            for idx in np.ndindex(left.shape):
-                assert sp.simplify(left.tensor[idx] - right.tensor[idx]) == 0
-
-    for i in range(d):
+def test_first_identity():
+    def first_identity(tensor: SymbolicTensor) -> bool:
+        d = min(tensor.shape)
         for j in range(d):
-            if j > i:
-                # face_i.degen_j = degen_{j-1}.face_i
-                left = T.degen(j).face(i)
-                right = T.face(i).degen(j - 1)
-            elif j == i:
-                # Check face_i.degen_j = identity
-                left = T.degen(j).face(i)
-                right = T
-            else:
-                # face_i.degen_j = degen_j.face_{i+1}
-                left = T.degen(j).face(i + 1)
-                right = T.face(i).degen(j)
-            for idx in np.ndindex(left.shape):
-                assert sp.simplify(left.tensor[idx] - right.tensor[idx]) == 0
+            for i in range(j):
+                X = tensor.face(j).face(i)
+                Y = tensor.face(i).face(j - 1)
+                for idx in np.ndindex(X.shape):
+                    if sp.simplify(X.tensor[idx] - Y.tensor[idx]) != 0:
+                        return False
+        return True
+    for _ in range(5):
+        dims = random.randint(2, 3)
+        shape = tuple(random.randint(3, 5) for _ in range(dims))
+        assert first_identity(SymbolicTensor(shape))
+
+def test_second_identity():
+    def second_identity(tensor: SymbolicTensor) -> bool:
+            d = min(tensor.shape)
+            for j in range(d):
+                for i in range(j):
+                    X = tensor.degen(j).face(i)
+                    Y = tensor.face(i).degen(j - 1)
+                    for idx in np.ndindex(X.shape):
+                        if sp.simplify(X.tensor[idx] - Y.tensor[idx]) != 0:
+                            return False
+            return True
+    for _ in range(5):
+        dims = random.randint(2, 3)
+        shape = tuple(random.randint(3, 5) for _ in range(dims))
+        assert second_identity(SymbolicTensor(shape))
+
+def test_third_identity():
+    def third_identity(tensor: SymbolicTensor) -> bool:
+        d = min(tensor.shape)
+        for j in range(d):
+            X = tensor.degen(j).face(j)
+            Y = tensor.degen(j).face(j + 1)
+            for idx in np.ndindex(X.shape):
+                if not (sp.simplify(X.tensor[idx] - tensor.tensor[idx]) == 0 and sp.simplify(Y.tensor[idx] - tensor.tensor[idx]) == 0):
+                    return False
+        return True
+    for _ in range(5):
+        dims = random.randint(2, 3)
+        shape = tuple(random.randint(3, 5) for _ in range(dims))
+        assert third_identity(SymbolicTensor(shape))
+
+def test_fourth_identity():
+    def fourth_identity(tensor: SymbolicTensor) -> bool:
+        d = min(tensor.shape)
+        return all(check_faces(tensor, i) for i in range(d + 1))
+
+    def check_faces(tensor: SymbolicTensor, i: int) -> bool:
+        return all(j + 1 >= i or compare_faces(tensor, i, j) for j in range(i + 1))
+
+    def compare_faces(tensor: SymbolicTensor, i: int, j: int) -> bool:
+        X = tensor.degen(j).face(i)
+        Y = tensor.face(i - 1).degen(j)
+        return all(sp.simplify(X.tensor[idx] - Y.tensor[idx]) == 0 for idx in np.ndindex(X.shape))
+
+    for _ in range(5):
+        dims = random.randint(2, 3)
+        shape = tuple(random.randint(3, 5) for _ in range(dims))
+        assert fourth_identity(SymbolicTensor(shape))
+
+def test_fifth_identity():
+    def fifth_identity(tensor: SymbolicTensor) -> bool:
+        d = min(tensor.shape)
+        for j in range(d):
+            if not check_degens(tensor, j):
+                return False
+        return True
+
+    def check_degens(tensor: SymbolicTensor, j: int) -> bool:
+        for i in range(j + 1):
+            if not compare_degens(tensor, j, i):
+                return False
+        return True
+
+    def compare_degens(tensor: SymbolicTensor, j: int, i: int) -> bool:
+        try:
+            X = tensor.degen(j).degen(i)
+            Y = tensor.degen(i).degen(j + 1)
+        except IndexError:
+            return False
+        return all(sp.simplify(X.tensor[idx] - Y.tensor[idx]) == 0 for idx in np.ndindex(X.shape))
+
+    for _ in range(5):
+        dims = random.randint(2, 3)
+        shape = tuple(random.randint(4, 6) for _ in range(dims))
+        assert fifth_identity(SymbolicTensor(shape))
 
 if __name__ == "__main__":
     pytest.main([__file__])
