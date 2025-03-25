@@ -1,7 +1,29 @@
+#    Opérations Tensorielles Simpliciales
+#    Simplicial Operations on Matrices and Hypermatrices
+#    cochain_complex.py
+#
+#    Copyright (C) 2021-2025 Florian Lengyel
+#    Email: florian.lengyel at cuny edu, florian.lengyel at gmail
+#    Website: https://github.com/flengyel
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
 import sympy as sp
 import itertools
 
-class SimplicialCochainComplex:
+class CochainComplex:
     def __init__(self, shape):
         self.shape = shape
         self.order = len(shape)
@@ -107,7 +129,7 @@ class SimplicialCochainComplex:
         return any(sp.simplify(expr - cob) == 0 for cob in image)
 
 if __name__ == "__main__":
-    complex = SimplicialCochainComplex(shape=(3, 3))
+    complex = CochainComplex(shape=(3, 3))
 
     exprs = [
         sp.Symbol("x_{0,1}") - sp.Symbol("x_{1,1}") + sp.Symbol("x_{1,2}"),
@@ -121,7 +143,7 @@ if __name__ == "__main__":
         print("Is coboundary:", complex.is_coboundary(filler_expr))
         print()
 
-    complex = SimplicialCochainComplex(shape=(4, 4, 4))
+    complex = CochainComplex(shape=(4, 4, 4))
 
     exprs = [
         sp.Symbol("x_{0,1,2}") - sp.Symbol("x_{0,2,2}") + sp.Symbol("x_{0,2,3}") - sp.Symbol("x_{1,1,2}") + sp.Symbol("x_{1,1,3}") + sp.Symbol("x_{1,2,2}") - sp.Symbol("x_{1,2,3}"),

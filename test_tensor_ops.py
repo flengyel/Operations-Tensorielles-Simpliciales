@@ -1,8 +1,10 @@
 #    Opérations Tensorielles Simpliciales
 #    Simplicial Operations on Matrices and Hypermatrices
+#    test_symbolic_tensor_ops.py
 #
-#    Copyright (C) 2021-2024 Florian Lengyel
+#    Copyright (C) 2021-2025 Florian Lengyel
 #    Email: florian.lengyel at cuny edu, florian.lengyel at gmail
+#    Website: https://github.com/flengyel
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
