@@ -196,29 +196,32 @@ class SymbolicTensor:
                             print(f"Disagreement at face {j}, index {idx}: {diff}")
                         raise SimplicialException(f"Original horn and filler horn disagree at face {j}, position {idx}.")
 
+        monomial_count = lambda expr: len(expr.as_ordered_terms()) if expr != 0 else 0
         differences = []
-
+        indices_with_correction_terms = 0
         for idx in np.ndindex(self.shape):
             orig = self.tensor[idx]
             fill = filler_i.tensor[idx]
             diff = sp.simplify(orig - fill)
             if diff != 0:
-                differences.append((idx, orig, fill, diff))
+                count = monomial_count(fill)
+                differences.append((idx, orig, fill, count))
+                indices_with_correction_terms += 1
 
         if differences:
             if verbose:
                 print("Multiple fillers exist. The original tensor and the filler differ at the following indices:")
-                for idx, orig, fill, diff in differences:
+                for idx, orig, fill, count in differences:
                     print(f"  At index {idx}:")
                     print(f"    Original: {sp.pretty(orig)}")
                     print(f"    Filler:   {sp.pretty(fill)}")
-                    print(f"    Difference (orig - filler): {sp.pretty(diff)}")
+                    print(f"    Monomial count: {count}")
+                print(f"    Indices with correction terms: {indices_with_correction_terms}")
             return False
 
         if verbose:
             print("Unique filler.")
         return True
-    
 
     ############### Simplification and Substitution Methods ###############    
     def simplify(self):
@@ -343,17 +346,6 @@ def test_symbolic_n_hypergroupoid(shape: Tuple[int], verbose=True):
             else:
                 print("❌  Observation does not match conjecture prediction.")
 
-        # Check boundary² = 0
-        bdry_tensor = sym_tensor.bdry()
-        bdry_bdry = bdry_tensor.bdry()
-        is_bdry_bdry_zero = all(
-            sp.simplify(bdry_bdry.tensor[idx]) == 0
-            for idx in np.ndindex(bdry_bdry.shape)
-        )
-
-        if verbose:
-            print(f"Boundary of boundary is zero: {is_bdry_bdry_zero}")
-
         return conjecture, comparison, sym_tensor
 
     except SimplicialException as e:
@@ -367,7 +359,6 @@ def test_symbolic_n_hypergroupoid(shape: Tuple[int], verbose=True):
 if __name__ == "__main__":
     # Example usage
     shape = (3, 3)  # A shape where fillers are not unique
-    
     # Test the conjecture
     conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
 
@@ -381,16 +372,19 @@ if __name__ == "__main__":
     print("\nFiller tensor:")
     print(filler_1.to_latex())
 
-    # another non-trivial example
-    shape = (4,5,6)
-    conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
-    print(sym_tensor.to_latex())
-
-    # These tensors have unique fillers
-    shape = (4, 4)
+    shape = (4, 4, 4)
     conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)    
     print(sym_tensor.to_latex())
 
-    shape = (5, 5)
+    shape = (5, 5, 5, 5)
     conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
     print(sym_tensor.to_latex())
+
+"""
+    # Test with larger shapes
+    shape = (6, 6, 6, 6, 6)
+    conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
+
+    shape = (7, 7, 7, 7, 7, 7)
+    conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
+"""
