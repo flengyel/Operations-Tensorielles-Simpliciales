@@ -374,17 +374,14 @@ if __name__ == "__main__":
 
     shape = (4, 4, 4)
     conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)    
-    print(sym_tensor.to_latex())
-
+    shape = (4, 5, 6)
+    conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)    
     shape = (5, 5, 5, 5)
     conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
-    print(sym_tensor.to_latex())
 
-"""
     # Test with larger shapes
     shape = (6, 6, 6, 6, 6)
     conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
 
     shape = (7, 7, 7, 7, 7, 7)
     conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
-"""
