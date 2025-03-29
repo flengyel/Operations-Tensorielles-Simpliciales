@@ -1,18 +1,11 @@
 from sympy import simplify
-<<<<<<< HEAD
 from chain_complex import ChainComplex
-=======
-from cochain_complex_memoized_mod2 import CochainComplex
->>>>>>> ddc767ecb3cb817612baea2d1f4e82f9752866d5
 from symbolic_tensor_ops import SymbolicTensor
 import numpy as np
 from collections import Counter
 
-<<<<<<< HEAD
 # This code is a stub for the actual implementation of the permutation cycle partition function.
 # It relies on SageMath routines for chain and cochain complex computations
-=======
->>>>>>> ddc767ecb3cb817612baea2d1f4e82f9752866d5
 
 def permutation_cycle_partition(perm):
     """
@@ -52,12 +45,8 @@ def test_boundary_conjugation(n: int, seed: int):
     boundary_b = B.bdry()
 
     diff_tensor = boundary_a.tensor - boundary_b.tensor
-<<<<<<< HEAD
 
     cochain_complex = ChainComplex(shape=(n - 1, n - 1))
-=======
-    cochain_complex = CochainComplex(shape=(n - 1, n - 1))
->>>>>>> ddc767ecb3cb817612baea2d1f4e82f9752866d5
 
     nonzero_cocycles = 0
     all_pass = True
