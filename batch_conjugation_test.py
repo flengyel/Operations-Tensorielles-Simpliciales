@@ -1,6 +1,6 @@
 
 from sympy import simplify
-from chain_complex import ChainComplex
+from cochain_complex import CochainComplex
 from symbolic_tensor_ops import SymbolicTensor
 import numpy as np
 
