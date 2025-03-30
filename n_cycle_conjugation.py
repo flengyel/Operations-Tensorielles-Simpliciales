@@ -1,9 +1,9 @@
 # n_cycle_conjugation.py
 
 from sympy import simplify
-from cochain_complex_memoized_mod2 import CochainComplex
 from symbolic_tensor_ops import SymbolicTensor
 import numpy as np
+from chain_complex import ChainComplex
 from collections import Counter
 
 
@@ -49,7 +49,11 @@ def test_conjugation_by_n_cycle(n):
     boundary_b = B.bdry()
 
     diff_tensor = boundary_a.tensor - boundary_b.tensor
-    cochain_complex = CochainComplex(shape=(n - 1, n - 1))
+    print(f"difference tensor {diff_tensor}")
+    
+# bogus code awaiting sage math
+
+    cochain_complex = ChainComplex(shape=(n - 1, n - 1))
 
     nonzero_cocycles = 0
     all_pass = True
@@ -63,7 +67,7 @@ def test_conjugation_by_n_cycle(n):
                     break
         if not all_pass:
             break
-
+    
     return all_pass, nonzero_cocycles, (n - 1) ** 2
 
 

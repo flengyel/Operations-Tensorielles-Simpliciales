@@ -19,7 +19,7 @@ def test_boundary_conjugation(n: int, seed: int) -> bool:
     boundary_b = B.bdry()
 
     diff_tensor = boundary_a.tensor - boundary_b.tensor
-    cochain_complex = CochainComplex(shape=(n - 1, n - 1))
+    cochain_complex = ChainComplex(shape=(n - 1, n - 1))
 
     for i in range(n - 1):
         for j in range(n - 1):
