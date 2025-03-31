@@ -394,16 +394,12 @@ if __name__ == "__main__":
     print("\nFiller tensor:")
     print(filler_1.to_latex())
 
-    shape = (4, 4, 4)
-    conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)    
-    shape = (4, 5, 6)
-    conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)    
-    shape = (5, 5, 5, 5)
-    conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
+def build_shape(n: int) -> Tuple[int]:
+    return tuple((i + 1,) * n for i in range(n))
 
-    # Test with larger shapes
-    shape = (6, 6, 6, 6, 6)
-    conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
+shape = (4, 5, 6)
+conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)    
 
-    shape = (7, 7, 7, 7, 7, 7)
+for d in range(3, 8):
+    shape = build_shape(d)
     conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
