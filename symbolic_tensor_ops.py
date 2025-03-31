@@ -395,11 +395,16 @@ if __name__ == "__main__":
     print(filler_1.to_latex())
 
 def build_shape(n: int) -> Tuple[int]:
-    return tuple((i + 1,) * n for i in range(n))
+    return tuple(n+1 for _ in range(n))
 
 shape = (4, 5, 6)
 conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)    
 
-for d in range(3, 8):
+for d in range(2, 7):
+    print(f"build_shape({d}): {build_shape(d)}")
+
+
+for d in range(2, 7):
     shape = build_shape(d)
     conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
+    
