@@ -117,8 +117,8 @@ class SymbolicTensor:
         Matches tensor_ops.horn().
         """
         d = dimen(self.tensor) + 1  # simplicial dimension + 1
-        if not (0 <= k <= d):
-            raise ValueError(f"Horn index {k} must be in [0, {d}]")
+        if not (0 <= k < d):
+            raise ValueError(f"Horn index {k} must be in [0, {d-1}]")
 
         faces = []
         zero_shape = tuple(dim - 1 for dim in self.shape)
