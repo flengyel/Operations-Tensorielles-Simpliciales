@@ -1,0 +1,65 @@
+shape:(3, 3) order:2 >= dim:2
+Testing horn 1...
+Multiple fillers exist. The original tensor and the filler differ at the following indices:
+  At index (0, 2):
+    Original: x_{0,2}
+    Filler:   x_{0,1} - x_{1,1} + x_{1,2}
+    Monomial count: 3
+  At index (2, 0):
+    Original: x_{2,0}
+    Filler:   x_{1,0} - x_{1,1} + x_{2,1}
+    Monomial count: 3
+    Indices with correction terms: 2
+Conjecture predicts unique fillers: False
+Filler uniqueness observed: False
+Γ£ö∩╕Å  The n-hypergroupoid conjecture is confirmed for this shape.
+Original tensor:
+[[x_{0,0} x_{0,1} x_{0,2}]
+ [x_{1,0} x_{1,1} x_{1,2}]
+ [x_{2,0} x_{2,1} x_{2,2}]]
+
+Filler tensor:
+[[x_{0,0} x_{0,1} x_{0,1} - x_{1,1} + x_{1,2}]
+ [x_{1,0} x_{1,1} x_{1,2}]
+ [x_{1,0} - x_{1,1} + x_{2,1} x_{2,1} x_{2,2}]]
+
+Comparison of original and filler tensors:
+Checking horn(2,1) indices missing from symbolic tensor with shape (3, 3).
+Success: the filler differed from the original at 2 indices.
+Check result: True
+Building inner Horn(3,1) of generic tensor of shape: (4, 4, 4)
+Checking horn(3,1) indices missing from symbolic tensor with shape (4, 4, 4).
+Success: the filler differed from the original at 6 indices.
+Result for shape (4, 4, 4): True
+Building inner Horn(3,2) of generic tensor of shape: (4, 4, 4)
+Checking horn(3,2) indices missing from symbolic tensor with shape (4, 4, 4).
+Success: the filler differed from the original at 6 indices.
+Result for shape (4, 4, 4): True
+Building inner Horn(4,1) of generic tensor of shape: (5, 5, 5, 5)
+Checking horn(4,1) indices missing from symbolic tensor with shape (5, 5, 5, 5).
+Success: the filler differed from the original at 24 indices.
+Result for shape (5, 5, 5, 5): True
+Building inner Horn(4,2) of generic tensor of shape: (5, 5, 5, 5)
+Checking horn(4,2) indices missing from symbolic tensor with shape (5, 5, 5, 5).
+Success: the filler differed from the original at 24 indices.
+Result for shape (5, 5, 5, 5): True
+Building inner Horn(4,3) of generic tensor of shape: (5, 5, 5, 5)
+Checking horn(4,3) indices missing from symbolic tensor with shape (5, 5, 5, 5).
+Success: the filler differed from the original at 24 indices.
+Result for shape (5, 5, 5, 5): True
+Building inner Horn(5,1) of generic tensor of shape: (6, 6, 6, 6, 6)
+Checking horn(5,1) indices missing from symbolic tensor with shape (6, 6, 6, 6, 6).
+Success: the filler differed from the original at 120 indices.
+Result for shape (6, 6, 6, 6, 6): True
+Building inner Horn(5,2) of generic tensor of shape: (6, 6, 6, 6, 6)
+Checking horn(5,2) indices missing from symbolic tensor with shape (6, 6, 6, 6, 6).
+Success: the filler differed from the original at 120 indices.
+Result for shape (6, 6, 6, 6, 6): True
+Building inner Horn(5,3) of generic tensor of shape: (6, 6, 6, 6, 6)
+Checking horn(5,3) indices missing from symbolic tensor with shape (6, 6, 6, 6, 6).
+Success: the filler differed from the original at 120 indices.
+Result for shape (6, 6, 6, 6, 6): True
+Building inner Horn(5,4) of generic tensor of shape: (6, 6, 6, 6, 6)
+Checking horn(5,4) indices missing from symbolic tensor with shape (6, 6, 6, 6, 6).
+Success: the filler differed from the original at 120 indices.
+Result for shape (6, 6, 6, 6, 6): True

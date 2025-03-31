@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        // Debug current Python file in an external terminal (lets you redirect output)
+        "name": "Python: External Terminal",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${file}",
+        "console": "externalTerminal"
+      },
+      {
+        // Debug current Python file in the integrated Terminal panel (also supports redirection)
+        "name": "Python: Integrated Terminal",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${file}",
+        "console": "integratedTerminal"
+      }
+    ]
+  }
+  
