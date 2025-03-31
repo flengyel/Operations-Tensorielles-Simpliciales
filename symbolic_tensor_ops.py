@@ -436,7 +436,7 @@ def check_symbolic_corrections(t, t_prime, horn_faces, k):
             else:
                 changed_symbols.add(str(expr_orig))
 
-    if changed_symbols == missing_symbols:/
+    if changed_symbols == missing_symbols:
         print(f"Success: the filler differed from the original at {len(missing_symbols)} indices.")
         return True
     else:
