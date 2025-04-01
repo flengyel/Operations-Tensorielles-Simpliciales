@@ -117,8 +117,8 @@ class SymbolicTensor:
         Matches tensor_ops.horn().
         """
         d = dimen(self.tensor) + 1  # simplicial dimension + 1
-        if not (0 <= k <= d):
-            raise ValueError(f"Horn index {k} must be in [0, {d}]")
+        if not (0 <= k < d):
+            raise ValueError(f"Horn index {k} must be in [0, {d-1}]")
 
         faces = []
         zero_shape = tuple(dim - 1 for dim in self.shape)
@@ -377,6 +377,78 @@ def test_symbolic_n_hypergroupoid(shape: Tuple[int], verbose=True):
             return conjecture, None, sym_tensor
         raise
 
+import sympy
+import numpy as np
+
+def check_symbolic_corrections(t, t_prime, horn_faces, k):
+    """
+    For symbolic tensors t and t_prime (both SymbolicTensor or at least
+    numpy arrays of sympy expressions), ensures t_prime differs from t exactly
+    at the 'missing' symbols. Missing symbols are those that do not appear
+    in any non-missing face of horn_faces.
+
+    t: original SymbolicTensor
+    t_prime: filler result (also SymbolicTensor)
+    horn_faces: result of t.horn(k)
+    k: the face index that is replaced by zeros in horn_faces
+
+    Returns True if everything matches, else False.
+    """
+    shape = t.shape
+    n = dimen(t)  # simplicial dimension of t
+
+    print(f"Checking horn({n},{k}) indices missing from symbolic tensor with shape {shape}.")
+    # Gather set of all symbols in T (by name).
+    # For example, each T.tensor[idx] is x_{0,1} etc. If T might have zeros, skip them.
+    all_symbols = set()
+    for idx in np.ndindex(shape):
+        expr = t.tensor[idx]
+        if expr != sympy.S.Zero:
+            all_symbols.add(str(expr))
+
+    # Gather union of symbol names in the non-missing faces
+    face_symbol_union = set()
+    for face_idx, face in enumerate(horn_faces):
+        if face_idx == k:  # skip missing (zero) face
+            continue
+        fshape = face.shape
+        for subidx in np.ndindex(fshape):
+            expr = face.tensor[subidx]
+            # If it isn't literally zero, gather its name
+            if sympy.simplify(expr) != sympy.S.Zero:
+                face_symbol_union.add(str(expr))
+
+    # Missing = all symbols not in face_symbol_union
+    missing_symbols = all_symbols - face_symbol_union
+
+    # Now we see which entries Tprime changed vs. T.
+    # We'll gather the symbolic name of T[idx] or Tprime[idx].
+    changed_symbols = set()
+    for idx in np.ndindex(shape):
+        expr_orig = t.tensor[idx]
+        expr_new = t_prime.tensor[idx]
+        diff_expr = sympy.simplify(expr_new - expr_orig)
+        if diff_expr != sympy.S.Zero:
+            # We say that t'[idx] differs from t[idx]. So we record the name of the original symbol.
+            # If the original was zero, there's no symbol to record, so we might record str(expr_new).
+            if expr_orig == sympy.S.Zero:
+                changed_symbols.add(str(expr_new))
+            else:
+                changed_symbols.add(str(expr_orig))
+
+    if changed_symbols == missing_symbols:
+        print(f"Success: the filler differed from the original at {len(missing_symbols)} indices.")
+        return True
+    else:
+        print("Mismatch in correction terms vs. missing symbols.")
+        extra = changed_symbols - missing_symbols
+        missed = missing_symbols - changed_symbols
+        if extra:
+            print("Symbols changed that were not missing:", extra)
+        if missed:
+            print("Symbols missing but unchanged:", missed)
+        return False
+
 
 if __name__ == "__main__":
     # Example usage
@@ -390,20 +462,36 @@ if __name__ == "__main__":
 
     # Compare the original tensor and its filler
     print("Original tensor:")
-    print(sym_tensor.to_latex())
+    print(sym_tensor)
     print("\nFiller tensor:")
-    print(filler_1.to_latex())
+    print(filler_1)
 
-    shape = (4, 4, 4)
-    conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)    
+    print("\nComparison of original and filler tensors:")
+    result = check_symbolic_corrections(sym_tensor, filler_1, horn_1, 1)
+    print("Check result:", result)
+
+
+    def build_shape(n: int) -> Tuple[int]:
+        return tuple(n+1 for _ in range(n))
+
+    for k in range(3, 6):
+        for j in range(1,k):
+            shape = build_shape(k)
+            print(f"Building inner Horn({k},{j}) of generic tensor of shape: {shape}")
+            sym_tensor = SymbolicTensor(shape=shape)
+            inner_horn = sym_tensor.horn(j)
+            filler = sym_tensor.filler(inner_horn, j)
+            result = check_symbolic_corrections(sym_tensor, filler, inner_horn, j)
+            print(f"Result for shape {shape}: {result}")
+            
+
     shape = (4, 5, 6)
     conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)    
-    shape = (5, 5, 5, 5)
-    conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
 
-    # Test with larger shapes
-    shape = (6, 6, 6, 6, 6)
-    conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
+    for d in range(2, 7):
+        print(f"build_shape({d}): {build_shape(d)}")
 
-    shape = (7, 7, 7, 7, 7, 7)
-    conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
+
+    for d in range(2, 7):
+        shape = build_shape(d)
+        conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
