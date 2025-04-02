@@ -1,6 +1,6 @@
 #    Opérations Tensorielles Simpliciales
 #    Simplicial Operations on Matrices and Hypermatrices
-#    tensor_ops.py
+#    sagemath_compatible_tensor_ops.py
 #    
 #    Copyright (C) 2021-2025 Florian Lengyel
 #    Email: florian.lengyel at cuny edu, florian.lengyel at gmail
@@ -37,9 +37,9 @@ class SymbolicTensor:
         else:
             self.tensor = np.empty(shape, dtype=object)
             for idx in np.ndindex(shape):
-                idx_str = ','.join(map(str, idx))
+                idx_str = '_'.join(map(str, idx))  # Use underscores instead of commas or curly braces
                 if init_type == 'range':
-                    self.tensor[idx] = sp.Symbol(f'x_{{{idx_str}}}')
+                    self.tensor[idx] = sp.Symbol(f'x_{idx_str}')
                 elif init_type == 'zeros':
                     self.tensor[idx] = sp.S.Zero
                 elif init_type == 'ones':
