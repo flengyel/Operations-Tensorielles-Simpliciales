@@ -340,7 +340,7 @@ def correction_rank(original: "SymbolicTensor", filler: "SymbolicTensor") -> int
     return len(differences)
 
 
-def test_symbolic_n_hypergroupoid(shape: Tuple[int], verbose=True):
+def test_symbolic_n_hypergroupoid(shape: Tuple[int, ...], verbose=True):
     """
     Test the n-hypergroupoid conjecture using symbolic tensors.
 
@@ -378,8 +378,6 @@ def test_symbolic_n_hypergroupoid(shape: Tuple[int], verbose=True):
             return conjecture, None, sym_tensor
         raise
 
-import sympy
-import numpy as np
 
 def check_symbolic_corrections(t, t_prime, horn_faces, k):
     """
@@ -404,7 +402,7 @@ def check_symbolic_corrections(t, t_prime, horn_faces, k):
     all_symbols = set()
     for idx in np.ndindex(shape):
         expr = t.tensor[idx]
-        if expr != sympy.S.Zero:
+        if expr != sp.S.Zero:
             all_symbols.add(str(expr))
 
     # Gather union of symbol names in the non-missing faces
@@ -416,7 +414,7 @@ def check_symbolic_corrections(t, t_prime, horn_faces, k):
         for subidx in np.ndindex(fshape):
             expr = face.tensor[subidx]
             # If it isn't literally zero, gather its name
-            if sympy.simplify(expr) != sympy.S.Zero:
+            if sp.simplify(expr) != sp.S.Zero:
                 face_symbol_union.add(str(expr))
 
     # Missing = all symbols not in face_symbol_union
@@ -428,83 +426,11 @@ def check_symbolic_corrections(t, t_prime, horn_faces, k):
     for idx in np.ndindex(shape):
         expr_orig = t.tensor[idx]
         expr_new = t_prime.tensor[idx]
-        diff_expr = sympy.simplify(expr_new - expr_orig)
-        if diff_expr != sympy.S.Zero:
+        diff_expr = sp.simplify(expr_new - expr_orig)
+        if diff_expr != sp.S.Zero:
             # We say that t'[idx] differs from t[idx]. So we record the name of the original symbol.
             # If the original was zero, there's no symbol to record, so we might record str(expr_new).
-            if expr_orig == sympy.S.Zero:
-                changed_symbols.add(str(expr_new))
-            else:
-                changed_symbols.add(str(expr_orig))
-
-    if changed_symbols == missing_symbols:
-        print(f"Success: the filler differed from the original at {len(missing_symbols)} indices.")
-        return True
-    else:
-        print("Mismatch in correction terms vs. missing symbols.")
-        extra = changed_symbols - missing_symbols
-        missed = missing_symbols - changed_symbols
-        if extra:
-            print("Symbols changed that were not missing:", extra)
-        if missed:
-            print("Symbols missing but unchanged:", missed)
-        return False
-
-import sympy
-import numpy as np
-
-def check_symbolic_corrections(t, t_prime, horn_faces, k):
-    """
-    For symbolic tensors t and t_prime (both SymbolicTensor or at least
-    numpy arrays of sympy expressions), ensures t_prime differs from t exactly
-    at the 'missing' symbols. Missing symbols are those that do not appear
-    in any non-missing face of horn_faces.
-
-    t: original SymbolicTensor
-    t_prime: filler result (also SymbolicTensor)
-    horn_faces: result of t.horn(k)
-    k: the face index that is replaced by zeros in horn_faces
-
-    Returns True if everything matches, else False.
-    """
-    shape = t.shape
-    n = dimen(t)  # simplicial dimension of t
-
-    print(f"Checking horn({n},{k}) indices missing from symbolic tensor with shape {shape}.")
-    # Gather set of all symbols in T (by name).
-    # For example, each T.tensor[idx] is x_{0,1} etc. If T might have zeros, skip them.
-    all_symbols = set()
-    for idx in np.ndindex(shape):
-        expr = t.tensor[idx]
-        if expr != sympy.S.Zero:
-            all_symbols.add(str(expr))
-
-    # Gather union of symbol names in the non-missing faces
-    face_symbol_union = set()
-    for face_idx, face in enumerate(horn_faces):
-        if face_idx == k:  # skip missing (zero) face
-            continue
-        fshape = face.shape
-        for subidx in np.ndindex(fshape):
-            expr = face.tensor[subidx]
-            # If it isn't literally zero, gather its name
-            if sympy.simplify(expr) != sympy.S.Zero:
-                face_symbol_union.add(str(expr))
-
-    # Missing = all symbols not in face_symbol_union
-    missing_symbols = all_symbols - face_symbol_union
-
-    # Now we see which entries Tprime changed vs. T.
-    # We'll gather the symbolic name of T[idx] or Tprime[idx].
-    changed_symbols = set()
-    for idx in np.ndindex(shape):
-        expr_orig = t.tensor[idx]
-        expr_new = t_prime.tensor[idx]
-        diff_expr = sympy.simplify(expr_new - expr_orig)
-        if diff_expr != sympy.S.Zero:
-            # We say that t'[idx] differs from t[idx]. So we record the name of the original symbol.
-            # If the original was zero, there's no symbol to record, so we might record str(expr_new).
-            if expr_orig == sympy.S.Zero:
+            if expr_orig == sp.S.Zero:
                 changed_symbols.add(str(expr_new))
             else:
                 changed_symbols.add(str(expr_orig))
@@ -545,7 +471,7 @@ if __name__ == "__main__":
     print("Check result:", result)
 
 
-    def build_shape(n: int) -> Tuple[int]:
+    def build_shape(n: int) -> Tuple[int, ...]:
         return tuple(n+1 for _ in range(n))
 
     for k in range(3, 6):

@@ -353,7 +353,7 @@ def test_filler_dimension2() -> None:
     H = horn(X, 1)
     Y = filler(H, 1)
     HH = horn(Y, 1)
-    # This tests the existence of a non-unique filler im dimension two
+    # This tests the existence of a non-unique filler in dimension two
     assert np.allclose(np.array_equal(H, HH) and not np.array_equal(X, Y), True)
 
 # in dimension 3 and higher, the filler is unique
@@ -401,9 +401,9 @@ def test_tensor_kan_condition() -> None:
     assert np.allclose(_kan_condition(), True)
 
 def test_n_hypergroupoid_conjecture() -> None:
-    def random_shape() -> Tuple[int]:
+    def random_shape() -> Tuple[int, ...]:
         length = random.randint(2, 10)  # Length of at least two and bounded by 10
-        return tuple(random.randint(3, 12) for _ in range(length))  # Positive integers at least 3 and bounded by 10
+        return tuple(random.randint(3, 12) for _ in range(length))  # Positive integers at least 3 and bounded by 12
 
     shape = random_shape()
 
