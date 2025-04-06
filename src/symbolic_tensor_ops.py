@@ -28,7 +28,7 @@ from tensor_ops import (order, dimen, n_hypergroupoid_conjecture,
 
 class SymbolicTensor:
 
-    def __init__(self, shape: Tuple[int], tensor=None, init_type: str = 'range'):
+    def __init__(self, shape: Tuple[int, ...], tensor=None, init_type: str = 'range'):
         """Initialize a symbolic tensor."""
         self.shape = shape
 
@@ -84,7 +84,8 @@ class SymbolicTensor:
         result = self.tensor
         for axis in range(result.ndim):
             slices = [slice(None)] * result.ndim
-            slices[axis] = k
+            # REVISIT - this is a bit of a hack to insert the slice
+            slices[axis] = k  # type: ignore
             insert_slice = result[tuple(slices)]
             result = np.insert(result, k, insert_slice, axis=axis)
         return SymbolicTensor(result.shape, tensor=result)

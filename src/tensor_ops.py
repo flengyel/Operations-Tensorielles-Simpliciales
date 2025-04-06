@@ -34,14 +34,14 @@ rng = np.random.default_rng(___SEED___)  # Create a random number generator with
 
 ## Tensor construction functions
 
-def random_tensor(shape: Tuple[int], low: int = 1, high: int = 10, seed: int = ___SEED___) -> np.ndarray:
+def random_tensor(shape: Tuple[int, ...], low: int = 1, high: int = 10, seed: int = ___SEED___) -> np.ndarray:
     if seed != ___SEED___:
         rng_to_use = np.random.default_rng(seed)
     else:
         rng_to_use = rng  # Use the global rng defined with ___SEED___
     return rng_to_use.integers(low=low, high=high, size=shape, dtype=np.int16)
 
-def random_real_tensor(shape: Tuple[int], mean: float = 0.0, std: float = 1.0, seed: int = ___SEED___) -> np.ndarray:
+def random_real_tensor(shape: Tuple[int, ...], mean: float = 0.0, std: float = 1.0, seed: int = ___SEED___) -> np.ndarray:
     if seed != ___SEED___:
         rng_to_use = np.random.default_rng(seed)
     else:
@@ -154,6 +154,7 @@ def degen(z: np.ndarray, k: int) -> np.ndarray:
     # Parcourez chaque dimension et dupliquez la k-ème hypercolonne
     for axis in range(z.ndim):
         slices = [slice(None)] * z.ndim
+        # REVISIT: this is a hack to insert the k-th axis
         slices[axis] = k # type: ignore
         z = np.insert(z, k, z[tuple(slices)], axis=axis)
     return z
@@ -412,7 +413,7 @@ def check_horn(t: np.ndarray,
             # Use a different variable name to avoid overshadowing face_idx
             num_face_elems = np.prod(shape_face)
             for elem_idx in range(num_face_elems):
-                element = int(b[get_index(elem_idx, shape_face)])
+                element = int(b[get_index(elem_idx, tuple(shape_face))])
                 # Increment occurrence count for that element index in occurrence_tensor
                 occurrence_tensor[get_index(element, shape)] += 1
 
