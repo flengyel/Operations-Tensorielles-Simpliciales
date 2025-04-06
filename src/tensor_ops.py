@@ -153,9 +153,11 @@ def degen_matrix(z: np.ndarray, j: int) -> np.ndarray:
 def degen(z: np.ndarray, k: int) -> np.ndarray:
     # Parcourez chaque dimension et dupliquez la k-ème hypercolonne
     for axis in range(z.ndim):
-        slices = [slice(None)] * z.ndim
-        # REVISIT: this is a hack to insert the k-th axis
-        slices[axis] = k # type: ignore
+        # Each element of slices can be either a slice or an int, 
+        # which NumPy indexing with tuple(slices) accepts
+        # slice(None) means "take all elements along this axis"
+        slices: list[Union[int, slice]] = [slice(None)] * z.ndim
+        slices[axis] = k  # duplicate the k-th index 
         z = np.insert(z, k, z[tuple(slices)], axis=axis)
     return z
 

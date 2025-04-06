@@ -83,9 +83,10 @@ class SymbolicTensor:
         """
         result = self.tensor
         for axis in range(result.ndim):
-            slices = [slice(None)] * result.ndim
-            # REVISIT - this is a bit of a hack to insert the slice
-            slices[axis] = k  # type: ignore
+            # Each element of slices can be either a slice or an int, 
+            # which NumPy indexing with tuple(slices) accepts
+            slices: list[Union[int, slice]] = [slice(None)] * result.ndim
+            slices[axis] = k  # duplicate the k-th index 
             insert_slice = result[tuple(slices)]
             result = np.insert(result, k, insert_slice, axis=axis)
         return SymbolicTensor(result.shape, tensor=result)
@@ -462,7 +463,6 @@ if __name__ == "__main__":
     # Compare the original tensor and its filler
     print("Original tensor:")
     print(sym_tensor)
-    print(sym_tensor)
     print("\nFiller tensor:")
     print(filler_1)
 
@@ -485,19 +485,10 @@ if __name__ == "__main__":
             print(f"Result for shape {shape}: {result}")
             
 
-    shape = (4, 5, 6)
-    conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)    
-
-    for d in range(2, 7):
-        print(f"build_shape({d}): {build_shape(d)}")
-
     for d in range(2, 7):
         print(f"build_shape({d}): {build_shape(d)}")
 
 
-    for d in range(2, 7):
-        shape = build_shape(d)
-        conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
     for d in range(2, 7):
         shape = build_shape(d)
         conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)

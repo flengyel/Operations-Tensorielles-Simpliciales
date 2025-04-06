@@ -83,9 +83,11 @@ class SymbolicTensor:
         """
         result = self.tensor
         for axis in range(result.ndim):
-            slices = [slice(None)] * result.ndim
-            # REVISIT: this is a hack to select the k-th slice
-            slices[axis] = k  # type: ignore 
+            # Each element of slices can be either a slice or an int, 
+            # which NumPy indexing with tuple(slices) accepts
+            # slice(None) means "take all elements along this axis"
+            slices: list[Union[int, slice]] = [slice(None)] * result.ndim
+            slices[axis] = k  # duplicate the k-th index 
             insert_slice = result[tuple(slices)]
             result = np.insert(result, k, insert_slice, axis=axis)
         return SymbolicTensor(result.shape, tensor=result)
