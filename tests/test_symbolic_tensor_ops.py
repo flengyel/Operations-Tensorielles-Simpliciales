@@ -23,8 +23,8 @@
 import pytest
 import sympy as sp
 import numpy as np
-from src.symbolic_tensor_ops import SymbolicTensor, correction_rank
-from src.tensor_ops import n_hypergroupoid_conjecture, SimplicialException, ___SEED___
+from symbolic_tensor_ops import SymbolicTensor, correction_rank
+from tensor_ops import n_hypergroupoid_conjecture, SimplicialException, ___SEED___
 import random
 
 random.seed(___SEED___)

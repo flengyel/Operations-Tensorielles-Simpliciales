@@ -24,7 +24,7 @@ from numpy import ndarray
 import pytest
 from typing import Tuple
 
-from src.tensor_ops import (SimplicialException, face, hface, vface, bdry, hbdry, vbdry, 
+from tensor_ops import (SimplicialException, face, hface, vface, bdry, hbdry, vbdry, 
                         degen, hdegen, vdegen, horn, kan_condition, filler,
                         standard_basis_matrix, cobdry, n_hypergroupoid_comparison, 
                         n_hypergroupoid_conjecture, is_degen, decompose_degen, max_norm, 
@@ -34,7 +34,10 @@ import random
 
 random.seed(___SEED___) # Set seed for reproducibility
 
-Z = range_tensor((9,7))
+
+shape=(9, 7) # 7 rows, 9 columns
+Z = range_tensor(shape) # 7 rows, 9 columns
+
 
 def test_range_tensor() -> None:
     expected_range = np.array([[ 0,  1,  2,  3,  4,  5,  6],

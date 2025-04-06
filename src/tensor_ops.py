@@ -51,10 +51,10 @@ def random_real_tensor(shape: Tuple[int], mean: float = 0.0, std: float = 1.0, s
 
 # create a tensor with a given shape and values from 0 to n-1,
 # where n is the product of the shape dimensions
-def range_tensor(shape: Tuple[int]) -> np.ndarray:
+def range_tensor(shape: Tuple[int, ...]) -> np.ndarray:
     return np.arange(np.prod(shape)).reshape(shape)
 
-def get_index(j: int, shape: Tuple[int]) -> Tuple[int]:
+def get_index(j: int, shape: Tuple[int, ...]) -> Tuple[int, ...]:
     """
     Returns the multi-dimensional index of the element in a tensor of specified shape that corresponds to the flat index j.
     
@@ -64,7 +64,7 @@ def get_index(j: int, shape: Tuple[int]) -> Tuple[int]:
     """
     if j < 0 or j >= np.prod(shape):
         raise ValueError("Index out of bounds")
-    return np.unravel_index(j, shape)
+    return tuple(int(idx) for idx in np.unravel_index(j, shape))
 
 
 def dimen(t: np.ndarray) -> int:
@@ -99,11 +99,12 @@ def order(t: np.ndarray) -> int:
 # Cette précomputation est utilisée pour éviter de recalculer la même liste d'indices
 # dans les calculs de frontière
 
-def _dims(m: np.ndarray) -> Tuple[List[np.ndarray]]:
+def _dims(m: np.ndarray) -> Tuple[List[np.ndarray], ...]:
     return tuple([np.arange(dim_size) for dim_size in m.shape])
 
 # Généralisation de l'opération face aux tenseurs
-def _face(m: np.ndarray, axes: Tuple[List[np.ndarray]], i: int) -> np.ndarray:
+def _face(m: np.ndarray, axes: Tuple[List[np.ndarray], ...], i: int) -> np.ndarray:
+    rows, cols = axes[0], axes[1]
     indices = [np.delete(axis, i) if len(axis) > i else axis for axis in axes]
     grid = np.ix_(*indices)
     return m[grid]
@@ -114,24 +115,25 @@ def face(m: np.ndarray, i: int) -> np.ndarray:
     return _face(m, axes, i)
 
 # i-ème face horizontale d'une matrice, avec des indices dimensionnels donnés par les lignes et les colonnes
-def _hface(m: np.ndarray, rows: np.ndarray, cols: np.ndarray, i: int) -> np.ndarray:
-    grid = np.ix_(np.delete(rows,i),cols)
+# def _hface(m: np.ndarray, rows: np.ndarray, cols: np.ndarray, i: int) -> np.ndarray:
+def _hface(m: np.ndarray, axes: Tuple[List[np.ndarray], ...], i: int) -> np.ndarray:
+    rows, cols = axes[0], axes[1]
+    grid = np.ix_(np.delete(rows, i), cols)
     return m[grid]
 
 # i-ème face horizontale d'une matrice
 def hface(m: np.ndarray, i: int) -> np.ndarray:
-    (r, c) = _dims(m)
-    return _hface(m, r, c, i)
+    return _hface(m, _dims(m), i)
 
 # i-ème face verticale d'une matrice, avec des indices dimensionnels donnés par les lignes et les colonnes
-def _vface(m: np.ndarray, rows: np.ndarray, cols: np.ndarray, i: int) -> np.ndarray:
-    grid = np.ix_(rows,np.delete(cols,i))
+def _vface(m: np.ndarray, axes: Tuple[List[np.ndarray], ...], i: int) -> np.ndarray:
+    rows, cols = axes[0], axes[1]
+    grid = np.ix_(rows, np.delete(cols, i))
     return m[grid]
 
 #  i-ème face verticale d'une matrice
 def vface(m: np.ndarray, i: int) -> np.ndarray:
-    (r, c) = _dims(m)
-    return _vface(m, r, c, i)
+    return _vface(m, _dims(m), i)
 
 #  j-ème dégénérescence verticale d'une matrice
 def vdegen(z: np.ndarray, j: int) -> np.ndarray:
@@ -152,22 +154,22 @@ def degen(z: np.ndarray, k: int) -> np.ndarray:
     # Parcourez chaque dimension et dupliquez la k-ème hypercolonne
     for axis in range(z.ndim):
         slices = [slice(None)] * z.ndim
-        slices[axis] = k
+        slices[axis] = k # type: ignore
         z = np.insert(z, k, z[tuple(slices)], axis=axis)
     return z
 
 def is_degen(a: np.ndarray) -> bool:
     d = dimen(a) 
     for i in np.arange(d): # faces have simplicial dimension d
-        if np.array_equal(a, degen(face(a, i), i)):
+        if np.array_equal(a, degen(face(a, int(i)), int(i))):
             return True
     return False
 
 def find_degen(a: np.ndarray) -> Union[Tuple[np.ndarray, int], None]:   
     d = dimen(a) 
     for i in np.arange(d): # faces have simplicial dimension d
-        if np.array_equal(a, degen(face(a, i), i)):
-            return face(a, i), i
+        if np.array_equal(a, degen(face(a, int(i)), int(i))):
+            return face(a, int(i)), int(i)
     return None    
 
 # Decompose a degenerate matrix into a non-degenerate base matrix and a sequence of degeneracy operations
@@ -213,27 +215,27 @@ def bdry(m: np.ndarray) -> np.ndarray:
 #  Frontière horizontale d'une matrice
 def hbdry(m: np.ndarray) -> np.ndarray:
     d = m.shape[0]
-    rows, cols = _dims(m)
+    axes = _dims(m)
     # soustraire 1 de la dimension zéro
     a = np.zeros(np.subtract(m.shape,np.array([1,0])))
     for i in range(d):
         if i % 2 == 0:
-            a = np.add(a, _hface(m, rows, cols, i))
+            a = np.add(a, _hface(m, axes, i))
         else:
-            a = np.subtract(a, _hface(m, rows, cols, i))
+            a = np.subtract(a, _hface(m, axes, i))
     return a
 
 #  Frontière verticale d'une matrice
 def vbdry(m: np.ndarray) -> np.ndarray:
     d = m.shape[1]
-    rows, cols = _dims(m)
+    axes = _dims(m)
     # soustraire 1 de la première dimension
     a = np.zeros(np.subtract(m.shape,np.array([0,1])))
     for i in range(d):
         if i % 2 == 0:
-            a = np.add(a, _vface(m, rows, cols, i))
+            a = np.add(a, _vface(m, axes, i))
         else:
-            a = np.subtract(a, _vface(m, rows, cols, i))  
+            a = np.subtract(a, _vface(m, axes, i))  
     return a
 
 # cobord d'une matrice. Cela donnera toujours une cohomologie nulle
@@ -298,7 +300,7 @@ def standard_basis_matrix(m: int, n: int, i: int, j: int) -> np.ndarray:
 # The n-hypergroupoid conjecture. Let t be a (non-degenerate?) hypermatrix
 # with non-degenerate boundary (necessary). Then the (inner) horns of t are unique 
 # if and only if the order of t is less than its dimension: order(t) < dimen(t).
-def n_hypergroupoid_conjecture(shape: Tuple[int], verbose: bool = False) -> bool:
+def n_hypergroupoid_conjecture(shape: Tuple[int, ...], verbose: bool = False) -> bool:
     _order = len(shape)
     _dimension = min(shape)-1 # simplicial dimension
     conjecture = _order < _dimension
@@ -360,7 +362,7 @@ def principal_diagonal(tensor: np.ndarray) -> np.ndarray:
     return np.array([tensor[idx] for idx in indices])
 
 
-def check_conjecture(shape: Tuple[int], proceed_anyway: bool) -> bool:
+def check_conjecture(shape: Tuple[int, ...], proceed_anyway: bool) -> bool:
     """
     Checks whether the given shape satisfies the n-hypergroupoid conjecture.
     If not, prints a warning and returns False unless proceed_anyway is True.
@@ -390,7 +392,7 @@ def check_nondegenerate_boundary(t: np.ndarray, proceed_anyway: bool, verbose: b
 
 
 def check_horn(t: np.ndarray,
-               shape: Tuple[int],
+               shape: Tuple[int, ...],
                shape_face: np.ndarray,
                z: np.ndarray,
                i: int) -> bool:
@@ -429,7 +431,7 @@ def check_horn(t: np.ndarray,
     return True
 
 
-def reconstruct_range_tensor_from_horn(shape: Tuple[int],
+def reconstruct_range_tensor_from_horn(shape: Tuple[int, ...],
                                        proceed_anyway: bool = False,
                                        verbose: bool = False) -> bool:
     """
@@ -472,7 +474,7 @@ def bdry_mod1(w: np.ndarray) -> np.ndarray:
     result[np.isclose(result, 1.0)] = 0.0
     return result
 
-def random_real_matrix(shape: Tuple[int], low=-10.0, high=10.0, seed: int = 123) -> np.ndarray:
+def random_real_matrix(shape: Tuple[int, ...], low=-10.0, high=10.0, seed: int = 123) -> np.ndarray:
     """
     Generates a real-valued matrix of given 'shape' with values 
     uniformly distributed in [low, high].
