@@ -448,6 +448,8 @@ def check_symbolic_corrections(t, t_prime, horn_faces, k):
             print("Symbols missing but unchanged:", missed)
         return False
 
+def build_shape(n: int) -> Tuple[int, ...]:
+    return tuple(n+1 for _ in range(n))
 
 if __name__ == "__main__":
     # Example usage
@@ -471,9 +473,6 @@ if __name__ == "__main__":
     print("Check result:", result)
 
 
-    def build_shape(n: int) -> Tuple[int, ...]:
-        return tuple(n+1 for _ in range(n))
-
     for k in range(3, 6):
         for j in range(1,k):
             shape = build_shape(k)
@@ -485,19 +484,7 @@ if __name__ == "__main__":
             print(f"Result for shape {shape}: {result}")
             
 
-    shape = (4, 5, 6)
-    conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)    
 
-    for d in range(2, 7):
-        print(f"build_shape({d}): {build_shape(d)}")
-
-    for d in range(2, 7):
-        print(f"build_shape({d}): {build_shape(d)}")
-
-
-    for d in range(2, 7):
-        shape = build_shape(d)
-        conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
     for d in range(2, 7):
         shape = build_shape(d)
         conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
