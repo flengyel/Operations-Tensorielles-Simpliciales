@@ -24,7 +24,7 @@ from numpy import ndarray
 import pytest
 from typing import Tuple
 
-from tensor_ops import (SimplicialException, face, hface, vface, bdry, hbdry, vbdry, 
+from src.tensor_ops import (SimplicialException, face, hface, vface, bdry, hbdry, vbdry, 
                         degen, hdegen, vdegen, horn, kan_condition, filler,
                         standard_basis_matrix, cobdry, n_hypergroupoid_comparison, 
                         n_hypergroupoid_conjecture, is_degen, decompose_degen, max_norm, 
