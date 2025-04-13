@@ -28,7 +28,7 @@ from tensor_ops import (order, dimen, n_hypergroupoid_conjecture,
 
 class SymbolicTensor:
 
-    def __init__(self, shape: Tuple[int], tensor=None, init_type: str = 'range'):
+    def __init__(self, shape: Tuple[int,...], tensor=None, init_type: str = 'range'):
         """Initialize a symbolic tensor."""
         self.shape = shape
 
@@ -83,7 +83,9 @@ class SymbolicTensor:
         """
         result = self.tensor
         for axis in range(result.ndim):
-            slices = [slice(None)] * result.ndim
+             # Each element of slices can be either a slice or an int, 
+            # which NumPy indexing with tuple(slices) accepts
+            slices: list[Union[int, slice]] = [slice(None)] * result.ndim
             slices[axis] = k
             insert_slice = result[tuple(slices)]
             result = np.insert(result, k, insert_slice, axis=axis)
@@ -339,7 +341,7 @@ def correction_rank(original: "SymbolicTensor", filler: "SymbolicTensor") -> int
     return len(differences)
 
 
-def test_symbolic_n_hypergroupoid(shape: Tuple[int], verbose=True):
+def test_symbolic_n_hypergroupoid(shape: Tuple[int,...], verbose=True):
     """
     Test the n-hypergroupoid conjecture using symbolic tensors.
 
@@ -471,7 +473,7 @@ if __name__ == "__main__":
     print("Check result:", result)
 
 
-    def build_shape(n: int) -> Tuple[int]:
+    def build_shape(n: int) -> Tuple[int,...]:
         return tuple(n+1 for _ in range(n))
 
     for k in range(3, 6):
