@@ -5,7 +5,7 @@ import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-from tensor_ops import bdry, degen  # Ensure tensor_ops.py is correctly implemented and accessible
+from tensor_ops import bdry_mod1, degen  # Ensure tensor_ops.py is correctly implemented and accessible
 import matplotlib.pyplot as plt
 import logging
 import os
@@ -116,7 +116,7 @@ class BoundaryAugmentedNet(OriginalNet):
         with torch.no_grad():
             for name, param in self.named_parameters():
                 if name in self.layers_to_augment:
-                    boundary = bdry(param.detach().cpu().numpy())
+                    boundary = bdry_mod1(param.detach().cpu().numpy())
                     k = min(boundary.shape) // 2
                     boundary_degen = degen(boundary, k)
                     boundary_degen_tensor = torch.from_numpy(boundary_degen).to(param.device).type(param.dtype)
@@ -224,7 +224,7 @@ def monitor_weights(net):
 # Unified Training and Evaluation Function
 # ----------------------------
 
-def train_and_evaluate_network(net, train_loader, test_loader, criterion, optimizer, scheduler, num_epochs=40, augment_type=None, device='cpu', verbose=True, patience=10):
+def train_and_evaluate_network(net, train_loader, test_loader, criterion, optimizer, scheduler, num_epochs=40, augment_type=None, device=torch.device('cpu'), verbose=True, patience=10):
     net.to(device)  # Ensure the network is on the correct device
     history = {
         'train_loss': [],
@@ -383,54 +383,13 @@ def validate_one_epoch_with_augmentation(net, test_loader, criterion, device):
     avg_val_loss = val_loss / len(test_loader)
     return avg_val_loss, val_accuracy
 
-def train_and_evaluate_network(net, train_loader, test_loader, criterion, optimizer, scheduler, num_epochs=40, augment_type=None, device='cpu', verbose=True, patience=10):
-    net.to(device)  # Ensure the network is on the correct device
-    history = {
-        'train_loss': [],
-        'train_acc': [],
-        'val_loss': [],
-        'val_acc': []
-    }
-
-    best_val_loss = float('inf')
-    epochs_no_improve = 0
-
-    for epoch in range(num_epochs):
-        train_loss, train_accuracy = train_one_epoch_with_augmentation(net, train_loader, criterion, optimizer, augment_type, verbose, device)
-        val_loss, val_accuracy = validate_one_epoch_with_augmentation(net, test_loader, criterion, device)
-
-        # Scheduler step
-        if isinstance(scheduler, optim.lr_scheduler.ReduceLROnPlateau):
-            scheduler.step(val_loss)
-        else:
-            scheduler.step()
-
-        history['train_loss'].append(train_loss)
-        history['train_acc'].append(train_accuracy)
-        history['val_loss'].append(val_loss)
-        history['val_acc'].append(val_accuracy)
-
-        print(f"Epoch [{epoch+1}/{num_epochs}], "
-              f"Train Loss: {train_loss:.6f}, Train Acc: {train_accuracy:.2f}%, "
-              f"Val Loss: {val_loss:.6f}, Val Acc: {val_accuracy:.2f}%")
-
-        # Early Stopping Check
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            epochs_no_improve = 0
-        else:
-            epochs_no_improve += 1
-            if epochs_no_improve >= patience:
-                print(f"Early stopping triggered after {epoch+1} epochs.")
-                break
-
-    return history
+# Removed duplicate definition of train_and_evaluate_network to avoid obscuring the original function.
 
 # ----------------------------
 # Evaluation Function
 # ----------------------------
 
-def evaluate_model(net, test_loader, criterion, device='cpu'):
+def evaluate_model(net, test_loader, criterion, device=torch.device('cpu')):
     net.eval()
     test_loss = 0
     correct = 0
@@ -457,6 +416,8 @@ def evaluate_model(net, test_loader, criterion, device='cpu'):
 # ----------------------------
 
 def plot_learning_curves(histories, titles=None):
+    if titles is None:
+        titles = [''] * len(histories)  # Default to empty strings if titles are not provided
     plt.figure(figsize=(14, 6))
 
     # Plot Loss

@@ -5,7 +5,7 @@ import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-from tensor_ops import bdry, degen  # Ensure tensor_ops.py is correctly implemented and accessible
+from tensor_ops import bdry_mod1, degen  # Ensure tensor_ops.py is correctly implemented and accessible
 
 # pytorch implementation of max_norm
 def max_norm_pytorch(t: torch.Tensor) -> torch.Tensor:
@@ -46,7 +46,7 @@ class BoundaryAugmentedNet(OriginalNet):
         with torch.no_grad():
             for name, param in self.named_parameters():
                 if 'fc5.weight' in name:  # Only modify the fc5 layer
-                    boundary = bdry(param.detach().cpu().numpy())
+                    boundary = bdry_mod1(param.detach().cpu().numpy())
                     k = min(boundary.shape) // 2
                     boundary_degen = degen(boundary, k)
                     boundary_degen_tensor = torch.from_numpy(boundary_degen).to(param.device).type(param.dtype)
@@ -106,7 +106,7 @@ def load_data(batch_size=32):
 # Unified Training Function
 # ----------------------------
 
-def train_network(net, train_loader, criterion, optimizer, scheduler, num_epochs=40, augment_type=None, device='cpu'):
+def train_network(net, train_loader, criterion, optimizer, scheduler, num_epochs=40, augment_type=None, device=torch.device('cpu')):
     net.to(device)  # Ensure the network is on the correct device
     for epoch in range(num_epochs):
         total_loss = 0

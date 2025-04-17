@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from tensor_ops import bdry, degen  # Ensure tensor_ops.py is correctly implemented and accessible
+from tensor_ops import bdry_mod1, degen  # Ensure tensor_ops.py is correctly implemented and accessible
 
 # ----------------------------
 # Network Classes
@@ -36,7 +36,7 @@ class BoundaryAugmentedNet(OriginalNet):
             for name, param in self.named_parameters():
                 if 'weight' in name and ('fc3' in name or 'fc4' in name or 'fc5' in name):  # Apply to later layers only
                     # Compute boundary tensor
-                    boundary = bdry(param.detach().cpu().numpy())
+                    boundary = bdry_mod1(param.detach().cpu().numpy())
 
                     # Ensure boundary tensor is not scalar
                     if boundary.ndim == 0:

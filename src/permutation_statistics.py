@@ -123,9 +123,11 @@ def is_permutation_matrix(matrix: np.ndarray) -> bool:
     row_sums = np.sum(matrix, axis=1)
     col_sums = np.sum(matrix, axis=0)
     
-    return np.all(row_sums == 1) and np.all(col_sums == 1)
+    return bool(np.all(row_sums == 1) and np.all(col_sums == 1))
 
-def is_nilpotent(matrix: np.ndarray, max_power: int = None, tolerance: float = 1e-10) -> Tuple[bool, int]:
+from typing import Optional
+
+def is_nilpotent(matrix: np.ndarray, max_power: Optional[int] = None, tolerance: float = 1e-10) -> Tuple[bool, int]:
     """
     Check if a matrix is nilpotent (some power of the matrix is zero).
     
@@ -141,6 +143,7 @@ def is_nilpotent(matrix: np.ndarray, max_power: int = None, tolerance: float = 1
         max_power = matrix.shape[0]
     
     current = np.copy(matrix)
+    max_power = max_power or matrix.shape[0]  # Default to matrix size if None
     for i in range(1, max_power + 1):
         if np.all(np.abs(current) < tolerance):
             return True, i  # Return True and the nilpotent index
@@ -490,7 +493,8 @@ def generate_visualizations(all_results: List[Dict[str, Any]], output_dir: str =
     # Plot 3: Similarity distribution
     plt.figure(figsize=(10, 6))
     plt.hist(similarities, bins=20, edgecolor='black', alpha=0.7)
-    plt.axvline(x=np.mean(similarities), color='r', linestyle='--', label=f'Mean: {np.mean(similarities):.4f}')
+    mean_similarity = float(np.mean(similarities))
+    plt.axvline(x=mean_similarity, color='r', linestyle='--', label=f'Mean: {mean_similarity:.4f}')
     plt.xlabel('Cosine Similarity with Discrepancy')
     plt.ylabel('Frequency')
     plt.title('Distribution of Similarities between Faces and Discrepancy')
@@ -509,7 +513,8 @@ def generate_visualizations(all_results: List[Dict[str, Any]], output_dir: str =
     cycle_sims = similarities[has_cycle == 1]
     
     data = [perm_sims, nilp_sims, imm_idemp_sims, ev_idemp_sims, cycle_sims]
-    plt.boxplot(data, labels=labels)
+    box = plt.boxplot(data)
+    plt.xticks(ticks=range(1, len(labels) + 1), labels=labels)
     plt.ylabel('Cosine Similarity with Discrepancy')
     plt.title('Face Properties vs Similarity')
     plt.grid(True, alpha=0.3)
