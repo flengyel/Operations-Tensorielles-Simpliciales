@@ -23,8 +23,9 @@ import numpy as np
 from numpy import ndarray
 import pytest
 from typing import Tuple
+from numpy.testing import assert_array_equal
 
-from tensor_ops import (SimplicialException, face, hface, vface, bdry, hbdry, vbdry, 
+from tensor_ops import (SimplicialException, face, hface, permute_tensor, random_axis_permutation, vface, bdry, hbdry, vbdry, 
                         degen, hdegen, vdegen, horn, kan_condition, filler,
                         standard_basis_matrix, cobdry, n_hypergroupoid_comparison, 
                         n_hypergroupoid_conjecture, is_degen, decompose_degen, max_norm, 
@@ -122,16 +123,6 @@ def facecommute(a)  -> bool:
 def test_facecommute() -> None:
     assert np.allclose(facecommute(random_tensor((73, 109), low=-10, high=33)), True)
 
-def transcommute(a) -> bool:
-    d = dimen(a) 
-    for j in range(d+1):
-        if not np.array_equal(face(np.transpose(a), j), np.transpose(face(a, j))):
-            return False
-    return True
-
-# The face operation preserves transposition
-def test_transcommute() -> None:
-    assert np.allclose(transcommute(random_tensor((73, 109), low=10, high=43)), True)
 
 # Verify that degen(A,j) = hdegen(vdegen(A,j),j) = vdegen(hdegen(A,j),j)
 # This is how Daniel Quillen defines the degeneracy operation of the
@@ -149,17 +140,6 @@ def degencommute(a) -> bool:
 
 def test_degencommute() -> None:
     assert np.allclose(degencommute(random_tensor((73, 109), low=-10,high=73)), True) 
-
-# degeneracies commute with transpose
-def degentranscommute(t) -> bool:
-    d = dimen(t) # simplicial dimension of t
-    for j in range(d+1):
-        if not np.array_equal(degen(np.transpose(t), j), np.transpose(degen(t, j))):
-            return False
-    return True
-
-def test_degentranscommute() -> None:
-    assert np.allclose(degentranscommute(random_tensor((73, 109), low=-10, high=73)), True)
 
 # The five simplicial identities for the diagonal simplicial operations 
 

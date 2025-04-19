@@ -485,6 +485,17 @@ def random_real_matrix(shape: Tuple[int, ...], low=-10.0, high=10.0, seed: int =
     rng = np.random.default_rng(seed)
     return rng.uniform(low, high, size=shape)
 
+def random_axis_permutation(k: int) -> Tuple[int, ...]:
+    """
+    Return a random permutation of the k axes.
+    """
+    return tuple(random.sample(range(k), k))
+
+def permute_tensor(T: np.ndarray, perm: Tuple[int, ...]) -> np.ndarray:
+    """
+    Apply an axis permutation perm to tensor T.
+    """
+    return T.transpose(perm)
 
 
 if __name__ == "__main__":
