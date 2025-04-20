@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import random
 from numpy.testing import assert_array_equal
 from cyclic_tensor_ops import face_axis, degen_axis, cyclic, cyclic_signed
 
@@ -104,27 +105,34 @@ def test_face_axis_then_cyclic_commutes():
             f"cyclic‐module face identity failed at i={i}, axis={axis}"
         )
 
-@pytest.mark.parametrize("seed", [0,1,42])
-def test_degen_axis_then_cyclic_commutes():
+
+
+@pytest.mark.parametrize("seed", [0, 1, 42])
+def test_degen_axis_then_cyclic_commutes(seed):
     """
-    Verify s_i τ = τ s_{i-1}  for i>0,
-           and    s_0 τ = s_d τ^2.
+    Pure cyclic‐module degeneracy axiom on axis=1:
+      for i>0: s_i τ = τ s_{i-1}
+      for i=0: s_0 τ = σ_d τ^2
     """
-    shape = (3,4,5)    # axis=1 length 4 ⇒ d=3
-    T     = random_tensor(shape, seed=7)
+    # reseed both Python and NumPy
+    random.seed(seed)
+    np.random.seed(seed)
+
+    shape = (3, 4, 5)    # axis 1 has length 4 ⇒ d = 3
+    T     = random_tensor(shape, seed=seed)
     axis  = 1
     d     = shape[axis] - 1
 
-    for i in range(d+1):
+    for i in range(d + 1):
         lhs = degen_axis(cyclic(T, axis=axis), axis, i)
         if i > 0:
             # s_i τ == τ s_{i-1}
             rhs = cyclic(degen_axis(T, axis, index=i-1), axis=axis)
         else:
             # s_0 τ == σ_d τ^2
-            g = degen_axis(T, axis, index=d)       # σ_d(T)
-            rhs = cyclic(cyclic(g, axis=axis), axis=axis)  # τ^2(σ_d T)
+            g   = degen_axis(T, axis, index=d)                  # σ_d(T)
+            rhs = cyclic(cyclic(g, axis=axis), axis=axis)       # τ^2 (σ_d T)
         assert_array_equal(
             lhs, rhs,
-            f"cyclic‐module degen identity failed at i={i}, axis={axis}"
+            f"cyclic‐module degeneracy identity failed at seed={seed}, i={i}, axis={axis}"
         )
