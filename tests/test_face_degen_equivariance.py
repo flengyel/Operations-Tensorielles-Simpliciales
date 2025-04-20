@@ -5,7 +5,14 @@ import pytest
 from numpy.testing import assert_array_equal
 
 # Import existing implementations from tensor_ops.py
-from tensor_ops import face, degen, random_tensor, permute_tensor, random_axis_permutation
+from tensor_ops import (
+    face, 
+    degen, 
+    bdry, 
+    random_tensor, 
+    permute_tensor, 
+    random_axis_permutation
+)
 
 # ---------------------------------------------------------------
 # Equivariance Tests for Face and Degeneracy Maps under Permutation
@@ -75,3 +82,31 @@ def test_degeneracy_equivariance(seed: int) -> None:
             d_after, d_before,
             f"Degeneracy equivariance failed: shape={shape}, sigma={sigma}, i={i}"
         )
+
+@pytest.mark.parametrize("seed", [0, 1, 42])
+def test_boundary_equivariance(seed: int) -> None:
+    """
+    Verify that boundary operations commute with any axis permutation.
+    For each random tensor T and permutation sigma,
+    bdry(sigma(T)) == sigma(bdry(T)) holds.
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+
+    # Random order and shape
+    k = random.randint(2, 6)
+    shape = tuple(random.randint(2, 7) for _ in range(k))
+    T = random_tensor(shape, low=0, high=100, seed=seed)
+
+    sigma = random_axis_permutation(k)
+    T_perm = permute_tensor(T, sigma)
+
+    # Compute boundary of permuted tensor
+    b_after = bdry(T_perm)
+    # Compute permuted boundary of original tensor
+    b_before = permute_tensor(bdry(T), sigma)
+
+    assert_array_equal(
+        b_after, b_before,
+        f"Boundary equivariance failed: shape={shape}, sigma={sigma}"
+    )
