@@ -93,7 +93,6 @@ def order(t: np.ndarray) -> int:
     """
     return len(t.shape)
 
-
 # dimensions d'une matrice sous forme d'un tuple de listes d'indices de lignes et de colonnes
 # par exemple, _dims(M) = ([0,1,2,3], [0,1,2,3,4,5,6,7,8])
 # Cette précomputation est utilisée pour éviter de recalculer la même liste d'indices
@@ -496,6 +495,39 @@ def permute_tensor(T: np.ndarray, perm: Tuple[int, ...]) -> np.ndarray:
     Apply an axis permutation perm to tensor T.
     """
     return T.transpose(perm)
+
+
+def cyclic(t: np.ndarray) -> np.ndarray:
+    """
+    Simplicial cycle on the *first* d+1 axes of t, where
+      d = dimen(t) = min(t.shape)-1.
+    Builds the explicit permutation
+      σ = (1,2,...,d,0, d+1, d+2, ..., k-1)
+    and applies it via permute_tensor.
+    """
+    from tensor_ops import permute_tensor, dimen
+
+    d = dimen(t)
+    k = t.ndim
+    # the cycle on simplex‐axes 0..d:
+    sigma: Tuple[int, ...] = tuple(
+        list(range(1, d+1))  # 1→2→...→d
+        + [0]                # d→0
+        + list(range(d+1, k))  # leave the remaining axes alone
+    )
+    return permute_tensor(t, sigma)
+
+
+def cyclic_signed(t: np.ndarray) -> np.ndarray:
+    """
+    Connes’ signed cycle λ = (-1)^d * τ,
+    where τ = cyclic(t) on the first d+1 axes.
+    """
+    from tensor_ops import dimen
+
+    d = dimen(t)
+    sign = -1 if (d % 2) else 1
+    return sign * cyclic(t)
 
 
 if __name__ == "__main__":
