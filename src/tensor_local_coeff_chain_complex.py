@@ -13,11 +13,21 @@ from sympy import Matrix
 from symbolic_tensor_ops import SymbolicTensor, is_generator_symbolic
 
 class NumericLocalChainComplex:
-    def __init__(self, data: np.ndarray):
-        d = min(data.shape) - 1
+    def __init__(self, data: List[np.ndarray]):
+        if not data:
+            raise ValueError("Must provide at least one top-dimensional tensor")
+        # ensure they all have identical shape
+        shapes = {T.shape for T in data}
+        if len(shapes) != 1:
+            raise ValueError(f"All top-dimensional tensors must have the same shape, got {shapes}")
+        top_shape = data[0].shape
+        d = min(top_shape) - 1
+
         print(f"[DEBUG] Numeric: simplex dimension d={d}")
         gens: List[List[np.ndarray]] = [[] for _ in range(d+1)]
-        gens[d] = [data]
+        gens[d] = data[:]   # copy of your list
+
+
         for k in range(d, 0, -1):
             print(f"[DEBUG] Numeric: building C_{k-1} from C_{k}")
             faces: List[np.ndarray] = []
@@ -82,11 +92,23 @@ class NumericLocalChainComplex:
         return bettis
 
 class SymbolicLocalChainComplex:
-    def __init__(self, tensor: SymbolicTensor):
-        d = min(tensor.shape) - 1
+    def __init__(self, data: List[SymbolicTensor]):
+        # 1) non‐empty
+        if not data:
+            raise ValueError("Must provide at least one top‐dimensional symbolic tensor")
+        # 2) all shapes agree
+        shapes = {T.shape for T in data}
+        if len(shapes) != 1:
+            raise ValueError(f"All top‐level symbolic tensors must have the same shape, got {shapes}")
+        top_shape = data[0].shape
+        d = min(top_shape) - 1
+
         print(f"[DEBUG] Symbolic: simplex dimension d={d}")
         gens: List[List[SymbolicTensor]] = [[] for _ in range(d+1)]
-        gens[d] = [tensor]
+        gens[d] = data[:]   # copy your list
+
+        # …and then the rest of your face‐enumeration / filtering code stays the same…
+
         for k in range(d, 0, -1):
             print(f"[DEBUG] Symbolic: building C_{k-1} from C_{k}")
             faces: List[SymbolicTensor] = []
@@ -162,20 +184,32 @@ if __name__ == "__main__":
         "complete_digraph_3": (3, [(i, j) for i in range(3) for j in range(3) if i != j]),
         "triangle_plus_chord": (3, [(0, 1), (1, 2), (2, 0), (0, 2)])
     }
+
     print("Numeric results:")
     for name, (n, edges) in examples.items():
-        cl = NumericLocalChainComplex(adj_from_edges(n, edges))
+        # build one 1‑simplex tensor per edge:
+        top_tensors = []
+        for u, v in edges:
+            T = np.zeros((2, n), dtype=int)
+            T[0, u] = 1   # “source” vertex
+            T[1, v] = 1   # “target” vertex
+            top_tensors.append(T)
+
+        # now pass that list in—your NumericLocalChainComplex __init__
+        # needs to accept a List[np.ndarray] as the “top” data.
+        cl = NumericLocalChainComplex(top_tensors)
         print(f"{name}: {cl.betti_numbers()}")
-    # Additional test: a single 0-simplex with non-zero tensor
+
+    # single 0‑simplex with coefficient [1]
     print("Custom test - 0-simplex with unit tensor [1]:")
-    cl0 = NumericLocalChainComplex(np.array([[1]]))
+    cl0 = NumericLocalChainComplex([np.array([[1]])])
     print(f"scalar_unit: {cl0.betti_numbers()}")
 
     print("Symbolic results:")
     for shape in [(2,2), (3,3,3), (4,4,4,4)]:
-        cl = SymbolicLocalChainComplex(SymbolicTensor(shape))
+        cl = SymbolicLocalChainComplex([SymbolicTensor(shape)])
         print(f"symbolic_{shape}: {cl.betti_numbers()}")
-    # Symbolic test: 0-simplex with symbolic unit tensor
-    print("Custom test - 0-simplex symbolic unit tensor:")
-    cs0 = SymbolicLocalChainComplex(SymbolicTensor((1,1)))
+
+    print("Custom test - 0‑simplex symbolic unit tensor:")
+    cs0 = SymbolicLocalChainComplex([SymbolicTensor((1,1))])
     print(f"symbolic_scalar_unit: {cs0.betti_numbers()}")
