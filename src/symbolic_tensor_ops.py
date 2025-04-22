@@ -23,7 +23,7 @@
 import sympy as sp
 import numpy as np
 from typing import Tuple, List, Union, Any
-from tensor_ops import (order, dimen, n_hypergroupoid_conjecture, 
+from tensor_ops import (order, n_hypergroupoid_conjecture, 
                        SimplicialException)  # Import the exception
 
 
@@ -56,19 +56,23 @@ class SymbolicTensor:
         shape = tensor.shape
         return SymbolicTensor(shape, tensor=tensor)
 
+    def dimen(self) -> int:
+        return min(self.shape) - 1
+
+
     def _dims(self):
         """
         Get dimensions of the tensor as a tuple of arrays of indices.
         This matches tensor_ops._dims()
         """
-        return tuple([np.arange(dim_size) for dim_size in self.shape])
+        return tuple([np.arange(start=0, stop=dim_size) for dim_size in self.shape])
     
     def face(self, i: int):
         """
         Apply the i-th simplicial face operation to the symbolic tensor.
         Matches tensor_ops.face() by removing index i from each axis.
         """
-        d = min(self.shape)
+        d = self.dimen() + 1  # simplicial dimension + 1
         if not (0 <= i < d):
             raise IndexError(f"Face index {i} out of bounds for simplicial dimension {d}")
 
@@ -98,7 +102,7 @@ class SymbolicTensor:
         Compute the simplicial boundary of the symbolic tensor.
         Matches tensor_ops.bdry(), using alternating sum of faces.
         """
-        d = min(self.shape)
+        d = self.dimen() + 1  # simplicial dimension + 1
         result_shape = tuple(dim - 1 for dim in self.shape)
         result = np.zeros(result_shape, dtype=object)
 
@@ -120,7 +124,7 @@ class SymbolicTensor:
         Construct the k-th horn of the symbolic tensor.
         Matches tensor_ops.horn().
         """
-        d = dimen(self.tensor) + 1  # simplicial dimension + 1
+        d = self.dimen() + 1  # simplicial dimension + 1
         if not (0 <= k < d):
             raise ValueError(f"Horn index {k} must be in [0, {d-1}]")
 
@@ -177,7 +181,7 @@ class SymbolicTensor:
         A tensor is degenerate if it equals a degeneracy of one of its faces.
         Matches tensor_ops.is_degen().
         """
-        d = dimen(self.tensor)  # simplicial dimension
+        d = self.dimen()  # simplicial dimension
         for i in range(d):
             face_i = self.face(i)
             degen_i = face_i.degen(i)
@@ -199,7 +203,7 @@ class SymbolicTensor:
                 print("Boundary is degenerate.")
             raise SimplicialException("Degenerate boundary.")
 
-        dim = dimen(self.tensor)
+        dim = self.dimen()  # Updated to use self.dimen() instead of dimen(self.tensor)
         horn_range = range(0 if outer_horns else 1, dim + 1 if outer_horns else dim)
 
         for i in horn_range:
@@ -306,7 +310,7 @@ class SymbolicTensor:
         operations = []
 
         def helper(tensor: "SymbolicTensor", ops: List[Tuple["SymbolicTensor", int]]) -> "SymbolicTensor":
-            d = dimen(tensor.tensor)
+            d = tensor.dimen()
             for i in range(d):
                 face_i = tensor.face(i)
                 degen_i = face_i.degen(i)
@@ -430,7 +434,7 @@ def check_symbolic_corrections(t, t_prime, horn_faces, k):
     Returns True if everything matches, else False.
     """
     shape = t.shape
-    n = dimen(t)  # simplicial dimension of t
+    n = t.dimen()  # simplicial dimension of t
 
     print(f"Checking horn({n},{k}) indices missing from symbolic tensor with shape {shape}.")
     # Gather set of all symbols in T (by name).

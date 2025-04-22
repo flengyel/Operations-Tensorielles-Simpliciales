@@ -176,18 +176,18 @@ def is_generator_numeric(a: np.ndarray) -> bool:
     - If n == 2, degenerate if constant (all entries equal).
     - If n > 2, degenerate if a == num_degen(face(a,i), i) for some i.
     """
-    print(f"[DEBUG] is_generator_numeric: tensor shape={a.shape}")
+    #print(f"[DEBUG] is_generator_numeric: tensor shape={a.shape}")
     if np.all(a == 0):
         print("[DEBUG] is_generator_numeric: zero tensor cannot be a generator")
         return False
     n = min(a.shape)
     if n <= 1:
-        print("[DEBUG] is_generator_numeric: nonzero, dimension 0 is a generator")
+        #print("[DEBUG] is_generator_numeric: nonzero, dimension 0 is a generator")
         return True
     flat = a.flatten()
     if n == 2: # dimension 1 
         is_constant = bool(np.all(flat == flat[0]))
-        print(f"[DEBUG] is_generator_numeric: n==2, constant? {is_constant}")
+        #print(f"[DEBUG] is_generator_numeric: n==2, constant? {is_constant}")
         return not is_constant
     
     for i in range(n):
@@ -197,9 +197,9 @@ def is_generator_numeric(a: np.ndarray) -> bool:
         except IndexError:
             continue
         if np.array_equal(a, C):
-            print(f"[DEBUG] is_generator_numeric: degeneracy via face+degen at i={i}")
+            #print(f"[DEBUG] is_generator_numeric: degeneracy via face+degen at i={i}")
             return False
-    print("[DEBUG] is_generator_numeric: no degeneracy found")
+    #print("[DEBUG] is_generator_numeric: no degeneracy found")
     return True
 
 

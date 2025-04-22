@@ -25,7 +25,7 @@ class NumericLocalChainComplex:
 
         print(f"[DEBUG] Numeric: simplex dimension d={d}")
         gens: List[List[np.ndarray]] = [[] for _ in range(d+1)]
-        gens[d] = data[:]   # copy of your list
+        gens[d] = data[:]   # d-dimensional generators (tensors)
 
 
         for k in range(d, 0, -1):
@@ -34,9 +34,9 @@ class NumericLocalChainComplex:
             for T in gens[k]:
                 for i in range(k+1):
                     faces.append(face(T, i))
-            print(f"[DEBUG] Numeric: faces count (raw)={len(faces)}")
+            #print(f"[DEBUG] Numeric: faces count (raw)={len(faces)}")
             faces = [F for F in faces if is_generator_numeric(F)]
-            print(f"[DEBUG] Numeric: faces count (filtered)={len(faces)}")
+            #print(f"[DEBUG] Numeric: faces count (filtered)={len(faces)}")
             independent: List[np.ndarray] = []
             mats = None
             for F in faces:
@@ -52,12 +52,12 @@ class NumericLocalChainComplex:
                     if matrix_rank(M_new) > matrix_rank(mats):
                         independent.append(F)
                         mats = M_new
-            print(f"[DEBUG] Numeric: independent count={len(independent)}")
+            #print(f"[DEBUG] Numeric: independent count={len(independent)}")
             gens[k-1] = independent
         self.generators = gens
         self.boundaries: List[np.ndarray] = []
         for k in range(1, d+1):
-            print(f"[DEBUG] Numeric: assemble boundary ∂_{k}: C_{k}→C_{k-1}")
+            #print(f"[DEBUG] Numeric: assemble boundary ∂_{k}: C_{k}→C_{k-1}")
             Ck, Ck1 = self.generators[k], self.generators[k-1]
             rows = sum(U.size for U in Ck1)
             cols = len(Ck)
@@ -72,23 +72,23 @@ class NumericLocalChainComplex:
                             start = offs[m]
                             B[start:start+U.size, j] = sign * F.flatten()
                             break
-            print(f"[DEBUG] Numeric: boundary ∂_{k} shape={B.shape}\n{B}")
+            #print(f"[DEBUG] Numeric: boundary ∂_{k} shape={B.shape}\n{B}")
             self.boundaries.append(B)
 
     def betti_numbers(self) -> List[int]:
         dims = [len(layer) for layer in self.generators]
-        print(f"[DEBUG] betti_numbers: dims={dims}")
+        #print(f"[DEBUG] betti_numbers: dims={dims}")
         if len(dims) == 1:
-            print(f"[DEBUG] betti_numbers: no boundaries, returning [dims[0]]={[dims[0]]}")
+            #print(f"[DEBUG] betti_numbers: no boundaries, returning [dims[0]]={[dims[0]]}")
             return [dims[0]]
         ranks = [0 if B.size == 0 else matrix_rank(B) for B in self.boundaries]
-        print(f"[DEBUG] betti_numbers: ranks={ranks}")
+        #print(f"[DEBUG] betti_numbers: ranks={ranks}")
         bettis: List[int] = []
         bettis.append(dims[0] - ranks[0])
         for k in range(1, len(dims)-1):
             bettis.append(dims[k] - ranks[k-1] - ranks[k])
         bettis.append(dims[-1] - ranks[-1])
-        print(f"[DEBUG] betti_numbers: bettis={bettis}")
+        #print(f"[DEBUG] betti_numbers: bettis={bettis}")
         return bettis
 
 class SymbolicLocalChainComplex:
@@ -103,21 +103,21 @@ class SymbolicLocalChainComplex:
         top_shape = data[0].shape
         d = min(top_shape) - 1
 
-        print(f"[DEBUG] Symbolic: simplex dimension d={d}")
+        #print(f"[DEBUG] Symbolic: simplex dimension d={d}")
         gens: List[List[SymbolicTensor]] = [[] for _ in range(d+1)]
         gens[d] = data[:]   # copy your list
 
         # …and then the rest of your face‐enumeration / filtering code stays the same…
 
         for k in range(d, 0, -1):
-            print(f"[DEBUG] Symbolic: building C_{k-1} from C_{k}")
+            #print(f"[DEBUG] Symbolic: building C_{k-1} from C_{k}")
             faces: List[SymbolicTensor] = []
             for T in gens[k]:
                 for i in range(k+1):
                     faces.append(T.face(i))
-            print(f"[DEBUG] Symbolic: faces count (raw)={len(faces)}")
+            #print(f"[DEBUG] Symbolic: faces count (raw)={len(faces)}")
             faces = [F for F in faces if is_generator_symbolic(F)]
-            print(f"[DEBUG] Symbolic: faces count (filtered)={len(faces)}")
+            #print(f"[DEBUG] Symbolic: faces count (filtered)={len(faces)}")
             independent: List[SymbolicTensor] = []
             M: Optional[Matrix] = None
             for F in faces:
@@ -130,12 +130,12 @@ class SymbolicLocalChainComplex:
                     if M_new.rank() > M.rank():
                         independent.append(F)
                         M = M_new
-            print(f"[DEBUG] Symbolic: independent count={len(independent)}")
+            #print(f"[DEBUG] Symbolic: independent count={len(independent)}")
             gens[k-1] = independent
         self.generators = gens
         self.boundaries: List[Matrix] = []
         for k in range(1, d+1):
-            print(f"[DEBUG] Symbolic: assemble boundary ∂_{k}: C_{k}→C_{k-1}")
+            #print(f"[DEBUG] Symbolic: assemble boundary ∂_{k}: C_{k}→C_{k-1}")
             Ck, Ck1 = self.generators[k], self.generators[k-1]
             rows = sum(U.tensor.size for U in Ck1)
             cols = len(Ck)
@@ -150,22 +150,22 @@ class SymbolicLocalChainComplex:
                             start = offs[m]
                             B[start:start+U.tensor.size, j] = sign * Matrix(F.tensor.reshape(-1,1))
                             break
-            print(f"[DEBUG] Symbolic: boundary ∂_{k} shape=({B.rows},{B.cols})\n{B}")
+            #print(f"[DEBUG] Symbolic: boundary ∂_{k} shape=({B.rows},{B.cols})\n{B}")
             self.boundaries.append(B)
 
     def betti_numbers(self, mod: Optional[int] = None) -> List[int]:
         dims = [len(layer) for layer in self.generators]
-        print(f"[DEBUG] betti_numbers (symbolic): dims={dims}")
+        #print(f"[DEBUG] betti_numbers (symbolic): dims={dims}")
         if len(dims) == 1:
-            print(f"[DEBUG] betti_numbers (symbolic): no boundaries, returning [dims[0]]={[dims[0]]}")
+            #print(f"[DEBUG] betti_numbers (symbolic): no boundaries, returning [dims[0]]={[dims[0]]}")
             return [dims[0]]
         ranks: List[int] = [int((B if mod is None else B.applyfunc(lambda x: x % mod)).rank()) for B in self.boundaries]
-        print(f"[DEBUG] betti_numbers (symbolic): ranks={ranks}")
+        #print(f"[DEBUG] betti_numbers (symbolic): ranks={ranks}")
         bettis: List[int] = [dims[0] - ranks[0]]
         for k in range(1, len(dims)-1):
             bettis.append(dims[k] - ranks[k-1] - ranks[k])
         bettis.append(dims[-1] - ranks[-1])
-        print(f"[DEBUG] betti_numbers (symbolic): bettis={bettis}")
+        #print(f"[DEBUG] betti_numbers (symbolic): bettis={bettis}")
         return bettis
 
 
