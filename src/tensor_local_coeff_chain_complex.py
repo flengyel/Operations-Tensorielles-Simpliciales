@@ -7,16 +7,12 @@ allowing the homology to detect relations in the tensor data itself.
 """
 import numpy as np
 from typing import List, Tuple, Optional
-from tensor_ops import face, degen as num_degen, is_degen_tensor
+from tensor_ops import face, is_generator_numeric
 from numpy.linalg import matrix_rank
 from sympy import Matrix
-from symbolic_tensor_ops import SymbolicTensor, is_degen_symbolic
-
+from symbolic_tensor_ops import SymbolicTensor, is_generator_symbolic
 
 class NumericLocalChainComplex:
-    """
-    Builds the normalized chain complex for numeric tensors.
-    """
     def __init__(self, data: np.ndarray):
         d = min(data.shape) - 1
         print(f"[DEBUG] Numeric: simplex dimension d={d}")
@@ -29,7 +25,7 @@ class NumericLocalChainComplex:
                 for i in range(k+1):
                     faces.append(face(T, i))
             print(f"[DEBUG] Numeric: faces count (raw)={len(faces)}")
-            faces = [F for F in faces if not is_degen_tensor(F)]
+            faces = [F for F in faces if is_generator_numeric(F)]
             print(f"[DEBUG] Numeric: faces count (filtered)={len(faces)}")
             independent: List[np.ndarray] = []
             mats = None
@@ -72,30 +68,20 @@ class NumericLocalChainComplex:
     def betti_numbers(self) -> List[int]:
         dims = [len(layer) for layer in self.generators]
         print(f"[DEBUG] betti_numbers: dims={dims}")
-        # Handle 0-dimensional case (d=0): one 0-simplex or none
         if len(dims) == 1:
-            # no boundaries, so beta0 = number of generators in C0
-            beta0 = dims[0]
-            print(f"[DEBUG] betti_numbers: no boundaries, returning [beta0]={[beta0]}")
-            return [beta0]
+            print(f"[DEBUG] betti_numbers: no boundaries, returning [dims[0]]={[dims[0]]}")
+            return [dims[0]]
         ranks = [0 if B.size == 0 else matrix_rank(B) for B in self.boundaries]
         print(f"[DEBUG] betti_numbers: ranks={ranks}")
         bettis: List[int] = []
-        # beta0
         bettis.append(dims[0] - ranks[0])
-        # beta_k for 1 <= k < d
         for k in range(1, len(dims)-1):
             bettis.append(dims[k] - ranks[k-1] - ranks[k])
-        # beta_d
         bettis.append(dims[-1] - ranks[-1])
         print(f"[DEBUG] betti_numbers: bettis={bettis}")
         return bettis
 
-
 class SymbolicLocalChainComplex:
-    """
-    Builds the normalized chain complex for symbolic tensors.
-    """
     def __init__(self, tensor: SymbolicTensor):
         d = min(tensor.shape) - 1
         print(f"[DEBUG] Symbolic: simplex dimension d={d}")
@@ -108,7 +94,7 @@ class SymbolicLocalChainComplex:
                 for i in range(k+1):
                     faces.append(T.face(i))
             print(f"[DEBUG] Symbolic: faces count (raw)={len(faces)}")
-            faces = [F for F in faces if not is_degen_symbolic(F)]
+            faces = [F for F in faces if is_generator_symbolic(F)]
             print(f"[DEBUG] Symbolic: faces count (filtered)={len(faces)}")
             independent: List[SymbolicTensor] = []
             M: Optional[Matrix] = None
@@ -148,18 +134,12 @@ class SymbolicLocalChainComplex:
     def betti_numbers(self, mod: Optional[int] = None) -> List[int]:
         dims = [len(layer) for layer in self.generators]
         print(f"[DEBUG] betti_numbers (symbolic): dims={dims}")
-        # Handle 0-dimensional case
         if len(dims) == 1:
-            beta0 = dims[0]
-            print(f"[DEBUG] betti_numbers (symbolic): no boundaries, returning [beta0]={[beta0]}")
-            return [beta0]
-        ranks: List[int] = []
-        for B in self.boundaries:
-            M = B if mod is None else B.applyfunc(lambda x: x % mod)
-            ranks.append(int(M.rank()))
+            print(f"[DEBUG] betti_numbers (symbolic): no boundaries, returning [dims[0]]={[dims[0]]}")
+            return [dims[0]]
+        ranks: List[int] = [int((B if mod is None else B.applyfunc(lambda x: x % mod)).rank()) for B in self.boundaries]
         print(f"[DEBUG] betti_numbers (symbolic): ranks={ranks}")
-        bettis: List[int] = []
-        bettis.append(dims[0] - ranks[0])
+        bettis: List[int] = [dims[0] - ranks[0]]
         for k in range(1, len(dims)-1):
             bettis.append(dims[k] - ranks[k-1] - ranks[k])
         bettis.append(dims[-1] - ranks[-1])

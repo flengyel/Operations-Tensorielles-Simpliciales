@@ -167,28 +167,29 @@ def is_degen(a: np.ndarray) -> bool:
             return True
     return False
 
-def is_degen_tensor(a: np.ndarray) -> bool:
+def is_generator_numeric(a: np.ndarray) -> bool:
     """
-    Numeric degeneracy test:
+    Symbolic test for generator:
     - Let n = min(a.shape).
-    - Zero tensor (all entries 0) is degenerate.
-    - If n <= 1 (0-simplices), non-degenerate.
+    - Zero tensor (all entries 0) cannot be a generator in tensor local coefficient homology.
+    - Otherwise, f n <= 1 (0-simplices), non-degenerate.
     - If n == 2, degenerate if constant (all entries equal).
     - If n > 2, degenerate if a == num_degen(face(a,i), i) for some i.
     """
-    print(f"[DEBUG] is_degen_tensor: tensor shape={a.shape}")
+    print(f"[DEBUG] is_generator_numeric: tensor shape={a.shape}")
     if np.all(a == 0):
-        print("[DEBUG] is_degen_tensor: zero tensor, degenerate")
-        return True
+        print("[DEBUG] is_generator_numeric: zero tensor cannot be a generator")
+        return False
     n = min(a.shape)
     if n <= 1:
-        print("[DEBUG] is_degen_tensor: n<=1, non-degenerate")
-        return False
+        print("[DEBUG] is_generator_numeric: nonzero, dimension 0 is a generator")
+        return True
     flat = a.flatten()
-    if n == 2:
-        res = bool(np.all(flat == flat[0]))
-        print(f"[DEBUG] is_degen_tensor: n==2, constant? {res}")
-        return res
+    if n == 2: # dimension 1 
+        is_constant = bool(np.all(flat == flat[0]))
+        print(f"[DEBUG] is_generator_numeric: n==2, constant? {is_constant}")
+        return not is_constant
+    
     for i in range(n):
         try:
             B = face(a, i)
@@ -196,10 +197,10 @@ def is_degen_tensor(a: np.ndarray) -> bool:
         except IndexError:
             continue
         if np.array_equal(a, C):
-            print(f"[DEBUG] is_degen_tensor: degeneracy via face+degen at i={i}")
-            return True
-    print("[DEBUG] is_degen_tensor: no degeneracy found")
-    return False
+            print(f"[DEBUG] is_generator_numeric: degeneracy via face+degen at i={i}")
+            return False
+    print("[DEBUG] is_generator_numeric: no degeneracy found")
+    return True
 
 
 def find_degen(a: np.ndarray) -> Union[Tuple[np.ndarray, int], None]:   
@@ -241,7 +242,7 @@ def bdry(m: np.ndarray) -> np.ndarray:
     d = np.min(m.shape)
     axes = _dims(m)
     #  soustraire 1 de chaque dimension
-    a = np.zeros(np.subtract(m.shape,np.array([1])))
+    a = np.zeros(np.subtract(m.shape, np.array([1])), dtype=m.dtype)
     for i in range(d):
        if i % 2 == 0:
            a = np.add(a, _face(m, axes, i))

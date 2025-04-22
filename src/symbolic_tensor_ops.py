@@ -381,7 +381,7 @@ def test_symbolic_n_hypergroupoid(shape: Tuple[int, ...], verbose=True):
             return conjecture, None, sym_tensor
         raise
 
-def is_degen_symbolic(T: SymbolicTensor) -> bool:
+def is_generator_symbolic(T: SymbolicTensor) -> bool:
     """
     Symbolic degeneracy test:
     - Let n = min(T.shape).
@@ -390,29 +390,29 @@ def is_degen_symbolic(T: SymbolicTensor) -> bool:
     - If n == 2, degenerate if constant.
     - If n > 2, degenerate if T.tensor == (T.face(i).degen(i)).tensor for some i.
     """
-    print(f"[DEBUG] is_degen_symbolic: tensor shape={T.shape}")
+    print(f"[DEBUG] is_generator_symbolic: tensor shape={T.shape}")
     entries = list(T.tensor.flatten())
     if all(e == 0 for e in entries):
-        print("[DEBUG] is_degen_symbolic: zero tensor, degenerate")
-        return True
+        print("[DEBUG] is_generator_symbolic: zero tensors cannot be generators")
+        return False
     n = min(T.shape)
     if n <= 1:
-        print("[DEBUG] is_degen_symbolic: n<=1, non-degenerate")
-        return False
+        print("[DEBUG] is_generator_symbolic: n<=1, non-degenerate")
+        return True
     if n == 2:
-        res = all(entry == entries[0] for entry in entries)
-        print(f"[DEBUG] is_degen_symbolic: n==2, constant? {res}")
-        return res
+        constant = all(entry == entries[0] for entry in entries)
+        print(f"[DEBUG] is_generator_symbolic: n==2, constant? {constant}")
+        return not constant
     for i in range(n):
         try:
             D = T.face(i).degen(i)
         except IndexError:
             continue
         if D.tensor.tolist() == T.tensor.tolist():
-            print(f"[DEBUG] is_degen_symbolic: degeneracy via face+degen at i={i}")
-            return True
-    print("[DEBUG] is_degen_symbolic: no degeneracy found")
-    return False
+            print(f"[DEBUG] is_generator_symbolic: degeneracy via face+degen at i={i}")
+            return False
+    print("[DEBUG] is_generator_symbolic: nonzero and non-degenerate. Generator")
+    return True
 
 
 def check_symbolic_corrections(t, t_prime, horn_faces, k):
