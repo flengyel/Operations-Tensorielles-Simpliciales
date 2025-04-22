@@ -7,45 +7,12 @@ allowing the homology to detect relations in the tensor data itself.
 """
 import numpy as np
 from typing import List, Tuple, Optional
-from tensor_ops import face, degen as num_degen
+from tensor_ops import face, degen as num_degen, is_degen_tensor
 from numpy.linalg import matrix_rank
 from sympy import Matrix
 from symbolic_tensor_ops import SymbolicTensor
 
 
-def is_degen_tensor(a: np.ndarray) -> bool:
-    """
-    Numeric degeneracy test:
-    - Let n = min(a.shape).
-    - Zero tensor (all entries 0) is degenerate.
-    - If n <= 1 (0-simplices), non-degenerate.
-    - If n == 2, degenerate if constant (all entries equal).
-    - If n > 2, degenerate if a == num_degen(face(a,i), i) for some i.
-    """
-    print(f"[DEBUG] is_degen_tensor: tensor shape={a.shape}")
-    if np.all(a == 0):
-        print("[DEBUG] is_degen_tensor: zero tensor, degenerate")
-        return True
-    n = min(a.shape)
-    if n <= 1:
-        print("[DEBUG] is_degen_tensor: n<=1, non-degenerate")
-        return False
-    flat = a.flatten()
-    if n == 2:
-        res = bool(np.all(flat == flat[0]))
-        print(f"[DEBUG] is_degen_tensor: n==2, constant? {res}")
-        return res
-    for i in range(n):
-        try:
-            B = face(a, i)
-            C = num_degen(B, i)
-        except IndexError:
-            continue
-        if np.array_equal(a, C):
-            print(f"[DEBUG] is_degen_tensor: degeneracy via face+degen at i={i}")
-            return True
-    print("[DEBUG] is_degen_tensor: no degeneracy found")
-    return False
 
 
 def is_degen_symbolic(T: SymbolicTensor) -> bool:
@@ -141,12 +108,21 @@ class NumericLocalChainComplex:
     def betti_numbers(self) -> List[int]:
         dims = [len(layer) for layer in self.generators]
         print(f"[DEBUG] betti_numbers: dims={dims}")
+        # Handle 0-dimensional case (d=0): one 0-simplex or none
+        if len(dims) == 1:
+            # no boundaries, so beta0 = number of generators in C0
+            beta0 = dims[0]
+            print(f"[DEBUG] betti_numbers: no boundaries, returning [beta0]={[beta0]}")
+            return [beta0]
         ranks = [0 if B.size == 0 else matrix_rank(B) for B in self.boundaries]
         print(f"[DEBUG] betti_numbers: ranks={ranks}")
         bettis: List[int] = []
+        # beta0
         bettis.append(dims[0] - ranks[0])
+        # beta_k for 1 <= k < d
         for k in range(1, len(dims)-1):
             bettis.append(dims[k] - ranks[k-1] - ranks[k])
+        # beta_d
         bettis.append(dims[-1] - ranks[-1])
         print(f"[DEBUG] betti_numbers: bettis={bettis}")
         return bettis
@@ -207,16 +183,23 @@ class SymbolicLocalChainComplex:
 
     def betti_numbers(self, mod: Optional[int] = None) -> List[int]:
         dims = [len(layer) for layer in self.generators]
+        print(f"[DEBUG] betti_numbers (symbolic): dims={dims}")
+        # Handle 0-dimensional case
+        if len(dims) == 1:
+            beta0 = dims[0]
+            print(f"[DEBUG] betti_numbers (symbolic): no boundaries, returning [beta0]={[beta0]}")
+            return [beta0]
         ranks: List[int] = []
         for B in self.boundaries:
             M = B if mod is None else B.applyfunc(lambda x: x % mod)
             ranks.append(int(M.rank()))
+        print(f"[DEBUG] betti_numbers (symbolic): ranks={ranks}")
         bettis: List[int] = []
-        bettis.append(dims[0] - (ranks[0] if ranks else 0))
+        bettis.append(dims[0] - ranks[0])
         for k in range(1, len(dims)-1):
-            bettis.append(dims[k] - ranks[k-1] - (ranks[k] if k < len(ranks) else 0))
-        bettis.append(dims[-1] - (ranks[-1] if ranks else 0))
-        print(f"[DEBUG] betti_numbers (symbolic): dims={dims}, ranks={ranks}, bettis={bettis}")
+            bettis.append(dims[k] - ranks[k-1] - ranks[k])
+        bettis.append(dims[-1] - ranks[-1])
+        print(f"[DEBUG] betti_numbers (symbolic): bettis={bettis}")
         return bettis
 
 

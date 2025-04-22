@@ -167,6 +167,41 @@ def is_degen(a: np.ndarray) -> bool:
             return True
     return False
 
+def is_degen_tensor(a: np.ndarray) -> bool:
+    """
+    Numeric degeneracy test:
+    - Let n = min(a.shape).
+    - Zero tensor (all entries 0) is degenerate.
+    - If n <= 1 (0-simplices), non-degenerate.
+    - If n == 2, degenerate if constant (all entries equal).
+    - If n > 2, degenerate if a == num_degen(face(a,i), i) for some i.
+    """
+    print(f"[DEBUG] is_degen_tensor: tensor shape={a.shape}")
+    if np.all(a == 0):
+        print("[DEBUG] is_degen_tensor: zero tensor, degenerate")
+        return True
+    n = min(a.shape)
+    if n <= 1:
+        print("[DEBUG] is_degen_tensor: n<=1, non-degenerate")
+        return False
+    flat = a.flatten()
+    if n == 2:
+        res = bool(np.all(flat == flat[0]))
+        print(f"[DEBUG] is_degen_tensor: n==2, constant? {res}")
+        return res
+    for i in range(n):
+        try:
+            B = face(a, i)
+            C = degen(B, i)
+        except IndexError:
+            continue
+        if np.array_equal(a, C):
+            print(f"[DEBUG] is_degen_tensor: degeneracy via face+degen at i={i}")
+            return True
+    print("[DEBUG] is_degen_tensor: no degeneracy found")
+    return False
+
+
 def find_degen(a: np.ndarray) -> Union[Tuple[np.ndarray, int], None]:   
     d = dimen(a) 
     for i in np.arange(d): # faces have simplicial dimension d
