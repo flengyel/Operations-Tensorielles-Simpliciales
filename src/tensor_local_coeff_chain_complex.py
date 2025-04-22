@@ -239,7 +239,16 @@ if __name__ == "__main__":
     for name, (n, edges) in examples.items():
         cl = NumericLocalChainComplex(adj_from_edges(n, edges))
         print(f"{name}: {cl.betti_numbers()}")
+    # Additional test: a single 0-simplex with non-zero tensor
+    print("Custom test - 0-simplex with unit tensor [1]:")
+    cl0 = NumericLocalChainComplex(np.array([[1]]))
+    print(f"scalar_unit: {cl0.betti_numbers()}")
+
     print("Symbolic results:")
     for shape in [(2,2), (3,3,3), (4,4,4,4)]:
         cl = SymbolicLocalChainComplex(SymbolicTensor(shape))
         print(f"symbolic_{shape}: {cl.betti_numbers()}")
+    # Symbolic test: 0-simplex with symbolic unit tensor
+    print("Custom test - 0-simplex symbolic unit tensor:")
+    cs0 = SymbolicLocalChainComplex(SymbolicTensor((1,1)))
+    print(f"symbolic_scalar_unit: {cs0.betti_numbers()}")
