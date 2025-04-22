@@ -178,7 +178,7 @@ def is_generator_numeric(a: np.ndarray) -> bool:
     """
     #print(f"[DEBUG] is_generator_numeric: tensor shape={a.shape}")
     if np.all(a == 0):
-        print("[DEBUG] is_generator_numeric: zero tensor cannot be a generator")
+        #print("[DEBUG] is_generator_numeric: zero tensor cannot be a generator")
         return False
     n = min(a.shape)
     if n <= 1:

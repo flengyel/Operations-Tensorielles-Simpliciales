@@ -3,11 +3,19 @@ Tensor Local Coeff Chain Complex
 
 This module computes normalized simplicial homology with *local tensor coefficients*.
 Each simplex is assigned a genuine tensor (numeric or symbolic) rather than a formal symbol,
-allowing the homology to detect relations in the tensor data itself.
+allowing the homology to detect relations in the tensor data itself. In local tensor coefficient homology,
+each simplex is its own coefficient tensor.
+
+ Chain groups:
+      C_k = ⊕_{T ∈ generators[k]} R·T
+      In particular, if generators[k] is empty then C_k = 0 (the zero module).
+
+    Boundaries ∂_k : C_k → C_{k−1} are zero when C_k=0, and otherwise
+    assembled by summing signed face‐tensors.
 """
 import numpy as np
 from typing import List, Tuple, Optional
-from tensor_ops import face, is_generator_numeric
+from tensor_ops import face, is_generator_numeric, dimen
 from numpy.linalg import matrix_rank
 from sympy import Matrix
 from symbolic_tensor_ops import SymbolicTensor, is_generator_symbolic
@@ -16,200 +24,246 @@ class NumericLocalChainComplex:
     def __init__(self, data: List[np.ndarray]):
         if not data:
             raise ValueError("Must provide at least one top-dimensional tensor")
-        # ensure they all have identical shape
         shapes = {T.shape for T in data}
         if len(shapes) != 1:
-            raise ValueError(f"All top-dimensional tensors must have the same shape, got {shapes}")
-        top_shape = data[0].shape
-        d = min(top_shape) - 1
+            raise ValueError(f"All top-dimensional tensors must share the same shape, got {shapes}")
+        # algebraic dimension from shared dimen()
+        d = dimen(data[0])
 
-        print(f"[DEBUG] Numeric: simplex dimension d={d}")
-        gens: List[List[np.ndarray]] = [[] for _ in range(d+1)]
-        gens[d] = data[:]   # d-dimensional generators (tensors)
+        # gens[k] holds degree-k generators
+        gens: List[List[np.ndarray]] = [[] for _ in range(d + 1)]
+        gens[d] = data[:]
 
-
+        # build lower-degree generators by independent numeric faces
         for k in range(d, 0, -1):
-            print(f"[DEBUG] Numeric: building C_{k-1} from C_{k}")
             faces: List[np.ndarray] = []
             for T in gens[k]:
-                for i in range(k+1):
-                    faces.append(face(T, i))
-            #print(f"[DEBUG] Numeric: faces count (raw)={len(faces)}")
+                ℓ = dimen(T)
+                for i in range(ℓ + 1):
+                    F = face(T, i)
+                    faces.append(F)
+
+            # filter out zero/degenerate
             faces = [F for F in faces if is_generator_numeric(F)]
-            #print(f"[DEBUG] Numeric: faces count (filtered)={len(faces)}")
+            # drop exact duplicates
+            unique_faces: List[np.ndarray] = []
+            seen = set()
+            for F in faces:
+                key = tuple(F.flatten().tolist())
+                if key not in seen:
+                    seen.add(key)
+                    unique_faces.append(F)
+            faces = unique_faces
+
+            # keep only linearly independent faces
             independent: List[np.ndarray] = []
             mats = None
             for F in faces:
                 vec = F.flatten().astype(float)
-                if mats is None:
+                if mats is None or matrix_rank(np.hstack([mats, vec[:, None]])) > matrix_rank(mats):
                     independent.append(F)
-                    mats = vec[:, None]
-                else:
-                    try:
-                        M_new = np.hstack([mats, vec[:, None]])
-                    except ValueError:
-                        continue
-                    if matrix_rank(M_new) > matrix_rank(mats):
-                        independent.append(F)
-                        mats = M_new
-            #print(f"[DEBUG] Numeric: independent count={len(independent)}")
-            gens[k-1] = independent
+                    mats = vec[:, None] if mats is None else np.hstack([mats, vec[:, None]])
+            gens[k - 1] = independent
+
         self.generators = gens
         self.boundaries: List[np.ndarray] = []
-        for k in range(1, d+1):
-            #print(f"[DEBUG] Numeric: assemble boundary ∂_{k}: C_{k}→C_{k-1}")
-            Ck, Ck1 = self.generators[k], self.generators[k-1]
-            rows = sum(U.size for U in Ck1)
+
+        # assemble boundary matrices ∂: C_k → C_{k-1}
+        for k in range(1, d + 1):
+            Ck = self.generators[k]
+            Ckm1 = self.generators[k - 1]
+            rows = sum(U.size for U in Ckm1)
             cols = len(Ck)
             B = np.zeros((rows, cols), dtype=int)
-            offs = [0] + [sum(U.size for U in Ck1[:i+1]) for i in range(len(Ck1)-1)]
+            offs = [0] + [sum(U.size for U in Ckm1[:i + 1]) for i in range(len(Ckm1) - 1)]
+
             for j, T in enumerate(Ck):
-                for i in range(k+1):
+                ℓ = dimen(T)
+                for i in range(ℓ + 1):
                     F = face(T, i)
                     sign = 1 if i % 2 == 0 else -1
-                    for m, U in enumerate(Ck1):
+                    for m, U in enumerate(Ckm1):
                         if np.array_equal(F, U):
                             start = offs[m]
-                            B[start:start+U.size, j] = sign * F.flatten()
+                            B[start:start + U.size, j] = sign * F.flatten()
                             break
-            #print(f"[DEBUG] Numeric: boundary ∂_{k} shape={B.shape}\n{B}")
             self.boundaries.append(B)
 
     def betti_numbers(self) -> List[int]:
+        # dims[k] = dim C_k
         dims = [len(layer) for layer in self.generators]
-        #print(f"[DEBUG] betti_numbers: dims={dims}")
-        if len(dims) == 1:
-            #print(f"[DEBUG] betti_numbers: no boundaries, returning [dims[0]]={[dims[0]]}")
-            return [dims[0]]
+        # short‐circuit: only C_0
+        if not self.boundaries:
+            return [dims[0] if dims[0] > 0 else 0]
+
+        # compute boundary ranks, treating empty boundaries as rank 0
         ranks = [0 if B.size == 0 else matrix_rank(B) for B in self.boundaries]
-        #print(f"[DEBUG] betti_numbers: ranks={ranks}")
+
         bettis: List[int] = []
-        bettis.append(dims[0] - ranks[0])
-        for k in range(1, len(dims)-1):
-            bettis.append(dims[k] - ranks[k-1] - ranks[k])
-        bettis.append(dims[-1] - ranks[-1])
-        #print(f"[DEBUG] betti_numbers: bettis={bettis}")
+        for k in range(len(dims)):
+            d_k = dims[k]
+            if d_k == 0:
+                # zero module ⇒ zero homology
+                betti = 0
+            else:
+                # rank of ∂_k: that's ranks[k-1], except for k=0
+                r_prev = ranks[k-1] if k-1 >= 0 else 0
+                # rank of ∂_{k+1}: that's ranks[k], except at top
+                r_next = ranks[k]   if k   < len(ranks) else 0
+                betti = d_k - r_prev - r_next
+                # clamp to ≥0
+                if betti < 0:
+                    betti = 0
+            bettis.append(betti)
         return bettis
 
 class SymbolicLocalChainComplex:
     def __init__(self, data: List[SymbolicTensor]):
-        # 1) non‐empty
         if not data:
-            raise ValueError("Must provide at least one top‐dimensional symbolic tensor")
-        # 2) all shapes agree
+            raise ValueError("Must provide at least one top-dimensional symbolic tensor")
         shapes = {T.shape for T in data}
         if len(shapes) != 1:
-            raise ValueError(f"All top‐level symbolic tensors must have the same shape, got {shapes}")
-        top_shape = data[0].shape
-        d = min(top_shape) - 1
+            raise ValueError(f"All top-level symbolic tensors must share the same shape, got {shapes}")
+        # algebraic dimension from tensor's own method
+        d = data[0].dimen()
 
-        #print(f"[DEBUG] Symbolic: simplex dimension d={d}")
-        gens: List[List[SymbolicTensor]] = [[] for _ in range(d+1)]
-        gens[d] = data[:]   # copy your list
+        gens: List[List[SymbolicTensor]] = [[] for _ in range(d + 1)]
+        gens[d] = data[:]
 
-        # …and then the rest of your face‐enumeration / filtering code stays the same…
-
+        # build lower-degree generators by unique symbolic faces
         for k in range(d, 0, -1):
-            #print(f"[DEBUG] Symbolic: building C_{k-1} from C_{k}")
             faces: List[SymbolicTensor] = []
             for T in gens[k]:
-                for i in range(k+1):
+                ℓ = T.dimen()
+                for i in range(ℓ + 1):
                     faces.append(T.face(i))
-            #print(f"[DEBUG] Symbolic: faces count (raw)={len(faces)}")
+
+            # filter out zero/degenerate
             faces = [F for F in faces if is_generator_symbolic(F)]
-            #print(f"[DEBUG] Symbolic: faces count (filtered)={len(faces)}")
-            independent: List[SymbolicTensor] = []
-            M: Optional[Matrix] = None
+            # drop exact duplicates
+            unique: List[SymbolicTensor] = []
+            seen = set()
             for F in faces:
-                vec = Matrix(F.tensor.reshape(-1,1))
-                if M is None:
-                    independent.append(F)
-                    M = vec
-                else:
-                    M_new = M.row_join(vec)
-                    if M_new.rank() > M.rank():
-                        independent.append(F)
-                        M = M_new
-            #print(f"[DEBUG] Symbolic: independent count={len(independent)}")
-            gens[k-1] = independent
+                flat = tuple(F.tensor.reshape(-1))
+                if flat not in seen:
+                    seen.add(flat)
+                    unique.append(F)
+            gens[k - 1] = unique
+
         self.generators = gens
         self.boundaries: List[Matrix] = []
-        for k in range(1, d+1):
-            #print(f"[DEBUG] Symbolic: assemble boundary ∂_{k}: C_{k}→C_{k-1}")
-            Ck, Ck1 = self.generators[k], self.generators[k-1]
-            rows = sum(U.tensor.size for U in Ck1)
+
+        # assemble boundary matrices ∂: C_k → C_{k-1}
+        for k in range(1, d + 1):
+            Ck = self.generators[k]
+            Ckm1 = self.generators[k - 1]
+            rows = sum(U.tensor.size for U in Ckm1)
             cols = len(Ck)
             B = Matrix.zeros(rows, cols)
-            offs = [0] + [sum(U.tensor.size for U in Ck1[:i+1]) for i in range(len(Ck1)-1)]
+            offs = [0] + [sum(U.tensor.size for U in Ckm1[:i + 1]) for i in range(len(Ckm1) - 1)]
+
             for j, T in enumerate(Ck):
-                for i in range(k+1):
+                ℓ = T.dimen()
+                for i in range(ℓ + 1):
                     F = T.face(i)
                     sign = 1 if i % 2 == 0 else -1
-                    for m, U in enumerate(Ck1):
-                        if F.tensor.tolist() == U.tensor.tolist():
+                    flat_vals = list(F.tensor.reshape(-1))
+                    for m, U in enumerate(Ckm1):
+                        if (F.tensor == U.tensor).all():
                             start = offs[m]
-                            B[start:start+U.tensor.size, j] = sign * Matrix(F.tensor.reshape(-1,1))
+                            for idx, val in enumerate(flat_vals):
+                                B[start + idx, j] = sign * val
                             break
-            #print(f"[DEBUG] Symbolic: boundary ∂_{k} shape=({B.rows},{B.cols})\n{B}")
             self.boundaries.append(B)
 
     def betti_numbers(self, mod: Optional[int] = None) -> List[int]:
+        # dims[k] = dim C_k
         dims = [len(layer) for layer in self.generators]
-        #print(f"[DEBUG] betti_numbers (symbolic): dims={dims}")
-        if len(dims) == 1:
-            #print(f"[DEBUG] betti_numbers (symbolic): no boundaries, returning [dims[0]]={[dims[0]]}")
-            return [dims[0]]
-        ranks: List[int] = [int((B if mod is None else B.applyfunc(lambda x: x % mod)).rank()) for B in self.boundaries]
-        #print(f"[DEBUG] betti_numbers (symbolic): ranks={ranks}")
-        bettis: List[int] = [dims[0] - ranks[0]]
-        for k in range(1, len(dims)-1):
-            bettis.append(dims[k] - ranks[k-1] - ranks[k])
-        bettis.append(dims[-1] - ranks[-1])
-        #print(f"[DEBUG] betti_numbers (symbolic): bettis={bettis}")
+        # short‐circuit: only C_0
+        if not self.boundaries:
+            return [dims[0] if dims[0] > 0 else 0]
+
+        # compute boundary ranks over Z or mod p, empty matrices → rank 0
+        ranks: List[int] = []
+        for B in self.boundaries:
+            Bm = B if mod is None else B.applyfunc(lambda x: x % mod)
+            ranks.append(int(Bm.rank()))
+
+        bettis: List[int] = []
+        for k in range(len(dims)):
+            d_k = dims[k]
+            if d_k == 0:
+                betti = 0
+            else:
+                r_prev = ranks[k-1] if k-1 >= 0 else 0
+                r_next = ranks[k]   if k   < len(ranks) else 0
+                betti = d_k - r_prev - r_next
+                if betti < 0:
+                    betti = 0
+            bettis.append(betti)
         return bettis
 
 
-def adj_from_edges(n: int, edges: List[Tuple[int,int]]) -> np.ndarray:
-    A = np.zeros((n,n), dtype=int)
-    for u,v in edges:
-        A[u,v] = 1
+def adj_from_edges(n: int, edges: List[Tuple[int, int]]) -> np.ndarray:
+    A = np.zeros((n, n), dtype=int)
+    for u, v in edges:
+        A[u, v] = 1
     return A
 
 if __name__ == "__main__":
-    examples = {
-        "single_edge": (2, [(0, 1)]),
-        "directed_3_cycle": (3, [(0, 1), (1, 2), (2, 0)]),
-        "transitive_tournament_3": (3, [(0, 1), (0, 2), (1, 2)]),
-        "directed_path_4": (4, [(0, 1), (1, 2), (2, 3)]),
-        "complete_digraph_3": (3, [(i, j) for i in range(3) for j in range(3) if i != j]),
-        "triangle_plus_chord": (3, [(0, 1), (1, 2), (2, 0), (0, 2)])
-    }
+    import numpy as np
+    from symbolic_tensor_ops import SymbolicTensor
 
-    print("Numeric results:")
-    for name, (n, edges) in examples.items():
-        # build one 1‑simplex tensor per edge:
-        top_tensors = []
-        for u, v in edges:
-            T = np.zeros((2, n), dtype=int)
-            T[0, u] = 1   # “source” vertex
-            T[1, v] = 1   # “target” vertex
-            top_tensors.append(T)
-
-        # now pass that list in—your NumericLocalChainComplex __init__
-        # needs to accept a List[np.ndarray] as the “top” data.
-        cl = NumericLocalChainComplex(top_tensors)
-        print(f"{name}: {cl.betti_numbers()}")
-
-    # single 0‑simplex with coefficient [1]
-    print("Custom test - 0-simplex with unit tensor [1]:")
-    cl0 = NumericLocalChainComplex([np.array([[1]])])
-    print(f"scalar_unit: {cl0.betti_numbers()}")
+    # four distinct 0‑simplices
+    points = [np.array([[i]]) for i in (1, 2, 3, 4)]
+    cl = NumericLocalChainComplex(points)
+    print(f"Four disconnected points: {cl.betti_numbers()}")
 
     print("Symbolic results:")
-    for shape in [(2,2), (3,3,3), (4,4,4,4)]:
-        cl = SymbolicLocalChainComplex([SymbolicTensor(shape)])
-        print(f"symbolic_{shape}: {cl.betti_numbers()}")
+    for shape in [(2,2), (3,3,3)]:
+        t = SymbolicTensor(shape)
+        print(f"symbolic tensor of shape {shape}: {t}")
+        cl_sym = SymbolicLocalChainComplex([t])
+        print(f"Betti numbers: {cl_sym.betti_numbers()}")
 
-    print("Custom test - 0‑simplex symbolic unit tensor:")
-    cs0 = SymbolicLocalChainComplex([SymbolicTensor((1,1))])
-    print(f"symbolic_scalar_unit: {cs0.betti_numbers()}")
+    print("Custom test - 0‑simplex symbolic tensor of shape (2,3):")
+    ts0 = SymbolicTensor((2,3))
+    print(f"symbolic tensor of shape {ts0.shape}: {ts0}")
+    cl0 = SymbolicLocalChainComplex([ts0])
+    print(f"Betti numbers: {cl0.betti_numbers()}")
+
+    import numpy as np
+    import networkx as nx
+
+    # 1) Build the Petersen graph adjacency
+    G = nx.petersen_graph()
+    A = nx.to_numpy_array(G, dtype=int)
+
+    # 2) Compute homology of A itself
+    clA = NumericLocalChainComplex([A])
+    print("Adjacency‐tensor Betti numbers:", clA.betti_numbers())
+
+    # 3) Explicitly look at its principal‐minor “boundary” faces
+    #    (removing row&col i for i=0…n-1)
+    minors = [np.delete(np.delete(A, i, axis=0), i, axis=1)
+            for i in range(A.shape[0])]
+    clMin = NumericLocalChainComplex(minors)
+    print("Principal‐minor Betti numbers:", clMin.betti_numbers())
+
+    # standard graph homology
+    # 1) Build the Petersen graph
+    G = nx.petersen_graph()
+    n = G.number_of_nodes()
+
+    # 2) Turn each edge into a 1‑simplex tensor of shape (2, n)
+    top_tensors = []
+    for u, v in G.edges():
+        T = np.zeros((2, n), dtype=int)
+        T[0, u] = 1   # “source” row
+        T[1, v] = 1   # “target” row
+        top_tensors.append(T)
+
+    # 3) Compute tensor‑local‑coefficient homology
+    cl = NumericLocalChainComplex(top_tensors)
+    print("Petersen edge‑tensor Betti numbers:", cl.betti_numbers())
+
