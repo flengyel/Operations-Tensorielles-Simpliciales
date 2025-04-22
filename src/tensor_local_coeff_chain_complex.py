@@ -10,43 +10,7 @@ from typing import List, Tuple, Optional
 from tensor_ops import face, degen as num_degen, is_degen_tensor
 from numpy.linalg import matrix_rank
 from sympy import Matrix
-from symbolic_tensor_ops import SymbolicTensor
-
-
-
-
-def is_degen_symbolic(T: SymbolicTensor) -> bool:
-    """
-    Symbolic degeneracy test:
-    - Let n = min(T.shape).
-    - Zero tensor is degenerate.
-    - If n <= 1 (0-simplices), non-degenerate.
-    - If n == 2, degenerate if constant.
-    - If n > 2, degenerate if T.tensor == (T.face(i).degen(i)).tensor for some i.
-    """
-    print(f"[DEBUG] is_degen_symbolic: tensor shape={T.shape}")
-    entries = list(T.tensor.flatten())
-    if all(e == 0 for e in entries):
-        print("[DEBUG] is_degen_symbolic: zero tensor, degenerate")
-        return True
-    n = min(T.shape)
-    if n <= 1:
-        print("[DEBUG] is_degen_symbolic: n<=1, non-degenerate")
-        return False
-    if n == 2:
-        res = all(entry == entries[0] for entry in entries)
-        print(f"[DEBUG] is_degen_symbolic: n==2, constant? {res}")
-        return res
-    for i in range(n):
-        try:
-            D = T.face(i).degen(i)
-        except IndexError:
-            continue
-        if D.tensor.tolist() == T.tensor.tolist():
-            print(f"[DEBUG] is_degen_symbolic: degeneracy via face+degen at i={i}")
-            return True
-    print("[DEBUG] is_degen_symbolic: no degeneracy found")
-    return False
+from symbolic_tensor_ops import SymbolicTensor, is_degen_symbolic
 
 
 class NumericLocalChainComplex:

@@ -26,6 +26,8 @@ from typing import Tuple, List, Union, Any
 from tensor_ops import (order, dimen, n_hypergroupoid_conjecture, 
                        SimplicialException)  # Import the exception
 
+
+
 class SymbolicTensor:
 
     def __init__(self, shape: Tuple[int, ...], tensor=None, init_type: str = 'range'):
@@ -378,6 +380,39 @@ def test_symbolic_n_hypergroupoid(shape: Tuple[int, ...], verbose=True):
                 print("Skipping comparison due to degenerate boundary.")
             return conjecture, None, sym_tensor
         raise
+
+def is_degen_symbolic(T: SymbolicTensor) -> bool:
+    """
+    Symbolic degeneracy test:
+    - Let n = min(T.shape).
+    - Zero tensor is degenerate.
+    - If n <= 1 (0-simplices), non-degenerate.
+    - If n == 2, degenerate if constant.
+    - If n > 2, degenerate if T.tensor == (T.face(i).degen(i)).tensor for some i.
+    """
+    print(f"[DEBUG] is_degen_symbolic: tensor shape={T.shape}")
+    entries = list(T.tensor.flatten())
+    if all(e == 0 for e in entries):
+        print("[DEBUG] is_degen_symbolic: zero tensor, degenerate")
+        return True
+    n = min(T.shape)
+    if n <= 1:
+        print("[DEBUG] is_degen_symbolic: n<=1, non-degenerate")
+        return False
+    if n == 2:
+        res = all(entry == entries[0] for entry in entries)
+        print(f"[DEBUG] is_degen_symbolic: n==2, constant? {res}")
+        return res
+    for i in range(n):
+        try:
+            D = T.face(i).degen(i)
+        except IndexError:
+            continue
+        if D.tensor.tolist() == T.tensor.tolist():
+            print(f"[DEBUG] is_degen_symbolic: degeneracy via face+degen at i={i}")
+            return True
+    print("[DEBUG] is_degen_symbolic: no degeneracy found")
+    return False
 
 
 def check_symbolic_corrections(t, t_prime, horn_faces, k):
