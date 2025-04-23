@@ -49,6 +49,17 @@ class SymbolicTensor:
                 else:
                     raise ValueError(f"Unsupported init_type: {init_type}")
 
+    def __sub__(self, other: "SymbolicTensor") -> "SymbolicTensor":
+        if not isinstance(other, SymbolicTensor):
+            return NotImplemented
+        if self.shape != other.shape:
+            raise ValueError(f"Cannot subtract tensors of different shapes {self.shape} vs {other.shape}")
+        # elementwise
+        diff = np.empty(self.shape, dtype=object)
+        for idx in np.ndindex(self.shape):
+            diff[idx] = self.tensor[idx] - other.tensor[idx]
+        return SymbolicTensor(self.shape, tensor=diff)
+
     
     @staticmethod
     def from_tensor(tensor):

@@ -17,7 +17,7 @@ import numpy as np
 from typing import List, Tuple, Optional
 from tensor_ops import face, is_generator_numeric, dimen
 from numpy.linalg import matrix_rank
-from sympy import Matrix
+from sympy import Matrix, Symbol
 from symbolic_tensor_ops import SymbolicTensor, is_generator_symbolic
 
 class NumericLocalChainComplex:
@@ -119,8 +119,9 @@ class NumericLocalChainComplex:
 
 class SymbolicLocalChainComplex:
     def __init__(self, data: List[SymbolicTensor]):
+        data = [T for T in data if is_generator_symbolic(T)]
         if not data:
-            raise ValueError("Must provide at least one top-dimensional symbolic tensor")
+            raise ValueError("Must provide at least one non-degenerate, nonzero top level symbolic tensor")
         shapes = {T.shape for T in data}
         if len(shapes) != 1:
             raise ValueError(f"All top-level symbolic tensors must share the same shape, got {shapes}")
@@ -203,12 +204,41 @@ class SymbolicLocalChainComplex:
             bettis.append(betti)
         return bettis
 
+import numpy as np
+import sympy as sp
+from symbolic_tensor_ops import SymbolicTensor, is_generator_symbolic
 
-def adj_from_edges(n: int, edges: List[Tuple[int, int]]) -> np.ndarray:
-    A = np.zeros((n, n), dtype=int)
-    for u, v in edges:
-        A[u, v] = 1
-    return A
+class _HornDifferenceTensor(SymbolicTensor):
+    """
+    A wrapper around a base tensor Δ so that Δ.face(j) always returns zero,
+    but for i!=j delegates to the real Δ.face(i).
+    """
+    def __init__(self, base: SymbolicTensor, missing_index: int):
+        # we pretend shape is the same
+        self.base = base
+        self.shape = base.shape
+        self.missing_index = missing_index
+
+    def dimen(self):
+        return self.base.dimen()
+
+    def face(self, i: int):
+        if i == self.missing_index:
+            # build a zero tensor of the right “face‐shape”
+            zero_shape = tuple(dim-1 for dim in self.base.shape)
+            Z = np.empty(zero_shape, dtype=object)
+            for idx in np.ndindex(zero_shape):
+                Z[idx] = sp.S.Zero
+            return SymbolicTensor(zero_shape, tensor=Z)
+        else:
+            return self.base.face(i)
+
+    @property
+    def tensor(self):
+        # if anyone inspects tensor directly, get the true array
+        return self.base.tensor
+
+
 
 if __name__ == "__main__":
     import numpy as np
@@ -250,7 +280,7 @@ if __name__ == "__main__":
     clMin = NumericLocalChainComplex(minors)
     print("Principal‐minor Betti numbers:", clMin.betti_numbers())
 
-    # standard graph homology
+    # tensor local coefficient graph homology
     # 1) Build the Petersen graph
     G = nx.petersen_graph()
     n = G.number_of_nodes()
@@ -265,5 +295,33 @@ if __name__ == "__main__":
 
     # 3) Compute tensor‑local‑coefficient homology
     cl = NumericLocalChainComplex(top_tensors)
-    print("Petersen edge‑tensor Betti numbers:", cl.betti_numbers())
+    print("Petersen edge‑tensor Betti numbers in matrix local coefficient homology:", cl.betti_numbers())
 
+    from sympy import symbols, Matrix
+    from symbolic_tensor_ops import SymbolicTensor
+    import numpy as np
+
+    t = SymbolicTensor((3,3))
+    inner_horn = t.horn(1)
+    print("Inner horn tensor list:")
+    for fc in inner_horn:
+        print(fc.tensor)
+    chain_complex = SymbolicLocalChainComplex(inner_horn)
+    print("Inner horn Betti numbers:", chain_complex.betti_numbers())
+    
+
+    # 1) build T and G′ as before
+    T = SymbolicTensor((3,3))
+    horn = T.horn(1)
+    G_prime = T.filler(horn, 1)
+
+    # 2) form the raw difference Δ = T – G′
+    diff = T - G_prime
+
+    # 3) wrap it so face(1) always returns 0
+    hd = _HornDifferenceTensor(diff, missing_index=1)
+
+    # 4) feed that single “fake” tensor into your existing homology engine
+    cl = SymbolicLocalChainComplex([hd])
+    print("Restricted‐boundary Betti numbers:", cl.betti_numbers())
+    # → [0, 0, 1]
