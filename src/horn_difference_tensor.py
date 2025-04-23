@@ -61,13 +61,9 @@ def horn_difference_example(shape=(4, 4)):
         print(f"horn j={j}: β = {restricted_homology(T, j)}")
 
 if __name__ == "__main__":
-    horn_difference_example(shape=(3, 3))  # Example with a (4,4) tensor
-    horn_difference_example(shape=(4, 4))  # Example with a (4,4) tensor
-    horn_difference_example(shape=(5, 5))  # Example with a (5,5) tensor
-
-    # instantiate a (4,4,4) symbolic tensor (nontrivial homology!)
-    horn_difference_example(shape=(4,4,4))
-    horn_difference_example(shape=(5,5,5,5))
-    # instantiate a (6,6,6,6,6) symbolic tensor
-    horn_difference_example(shape=(6,6,6,6,6))
+    for shape in [(3,3), (3,4), (4,4), (5,5), 
+                  (4,4,4), (4,5,6), (3,3,3,3), 
+                  (5,5,5,5), (6,6,6,6), (6,6,6,6,6)]:
+        horn_difference_example(shape=shape)
+    
     
