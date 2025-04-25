@@ -63,7 +63,8 @@ def horn_difference_example(shape=(4, 4)):
 if __name__ == "__main__":
     for shape in [(3,3), (3,4), (4,4), (5,5), 
                   (4,4,4), (4,5,6), (3,3,3,3), 
-                  (5,5,5,5), (6,6,6,6), (6,6,6,6,6)]:
+                  (5,5,5,5), (6,6,6,6), (6,6,6,6,6),
+                  (7,7,7,7,7,7)]:
         horn_difference_example(shape=shape)
     
     
