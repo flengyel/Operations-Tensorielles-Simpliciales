@@ -360,7 +360,7 @@ def test_symbolic_n_hypergroupoid(shape: Tuple[int,...], verbose=True):
 
     try:
         # Compare symbolic horn fillers
-        comparison = sym_tensor.n_hypergroupoid_comparison(verbose=verbose)
+        comparison = sym_tensor.n_hypergroupoid_comparison(outer_horns=True, verbose=verbose)
 
         if verbose:
             print(f"Conjecture predicts unique fillers: {conjecture}")
@@ -378,9 +378,6 @@ def test_symbolic_n_hypergroupoid(shape: Tuple[int,...], verbose=True):
                 print("Skipping comparison due to degenerate boundary.")
             return conjecture, None, sym_tensor
         raise
-
-import sympy
-import numpy as np
 
 def check_symbolic_corrections(t, t_prime, horn_faces, k):
     """
@@ -405,7 +402,7 @@ def check_symbolic_corrections(t, t_prime, horn_faces, k):
     all_symbols = set()
     for idx in np.ndindex(shape):
         expr = t.tensor[idx]
-        if expr != sympy.S.Zero:
+        if expr != sp.S.Zero:
             all_symbols.add(str(expr))
 
     # Gather union of symbol names in the non-missing faces
@@ -417,7 +414,7 @@ def check_symbolic_corrections(t, t_prime, horn_faces, k):
         for subidx in np.ndindex(fshape):
             expr = face.tensor[subidx]
             # If it isn't literally zero, gather its name
-            if sympy.simplify(expr) != sympy.S.Zero:
+            if sp.simplify(expr) != sp.S.Zero:
                 face_symbol_union.add(str(expr))
 
     # Missing = all symbols not in face_symbol_union
@@ -429,11 +426,11 @@ def check_symbolic_corrections(t, t_prime, horn_faces, k):
     for idx in np.ndindex(shape):
         expr_orig = t.tensor[idx]
         expr_new = t_prime.tensor[idx]
-        diff_expr = sympy.simplify(expr_new - expr_orig)
-        if diff_expr != sympy.S.Zero:
+        diff_expr = sp.simplify(expr_new - expr_orig)
+        if diff_expr != sp.S.Zero:
             # We say that t'[idx] differs from t[idx]. So we record the name of the original symbol.
             # If the original was zero, there's no symbol to record, so we might record str(expr_new).
-            if expr_orig == sympy.S.Zero:
+            if expr_orig == sp.S.Zero:
                 changed_symbols.add(str(expr_new))
             else:
                 changed_symbols.add(str(expr_orig))
@@ -477,9 +474,9 @@ if __name__ == "__main__":
         return tuple(n+1 for _ in range(n))
 
     for k in range(3, 6):
-        for j in range(1,k):
+        for j in range(0,k+1):
             shape = build_shape(k)
-            print(f"Building inner Horn({k},{j}) of generic tensor of shape: {shape}")
+            print(f"Building Horn({k},{j}) of generic tensor of shape: {shape}")
             sym_tensor = SymbolicTensor(shape=shape)
             inner_horn = sym_tensor.horn(j)
             filler = sym_tensor.filler(inner_horn, j)
