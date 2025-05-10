@@ -66,7 +66,6 @@ def get_index(j: int, shape: Tuple[int, ...]) -> Tuple[int, ...]:
         raise ValueError("Index out of bounds")
     return tuple(int(idx) for idx in np.unravel_index(j, shape))
 
-
 def dimen(t: np.ndarray) -> int:
     """
     Calculates the dimension of a hypermatrix t, defined as min(t.shape)-1.
@@ -325,6 +324,21 @@ def filler(horn: np.ndarray, k: int) -> np.ndarray:
         t -= 1
     return g
 
+
+def normalize(m: np.ndarray) -> np.ndarray:
+    # recursively strip off any degeneracy component
+    base, _ = decompose_degen(m)
+    return base
+
+def normalized_filler(horn: np.ndarray, k: int) -> np.ndarray:
+    # 1) Normalize each face of the horn
+    H = np.array([normalize(face) for face in horn])
+    # 2) Run Moore’s algorithm *in the quotient* by simply working on these bases
+    g = filler(H, k)
+    # 3) Finally normalize the result
+    return normalize(g)
+
+
 def standard_basis_matrix(m: int, n: int, i: int, j: int) -> np.ndarray:
     # Create a zero matrix of dimensions (m, n)
     s = np.zeros((m, n))
@@ -350,7 +364,7 @@ def n_hypergroupoid_conjecture(shape: Tuple[int, ...], verbose: bool = False) ->
 class SimplicialException(Exception):
     pass
 
-# Conjecture. Supppse that bdry(a) is non-degenerate. 
+# Conjecture. Suppose that bdry(a) is non-degenerate.
 # Then every inner horn of a has a unique filler if and only if deg(a) < dimen(a)
 # We added the parameter outer_horns to allow for the comparison of outer horns as well.
 def n_hypergroupoid_comparison(a: np.ndarray, outer_horns: bool = False, verbose: bool = False, allow_degen=False) -> bool:
@@ -360,7 +374,7 @@ def n_hypergroupoid_comparison(a: np.ndarray, outer_horns: bool = False, verbose
     # if outer_horns is True, then we need to check the outer horns as well
     for i in range(0 if outer_horns else 1, dim+1 if outer_horns else dim):
         h = horn(a, i)
-        b = filler(h, i)
+        b = normalized_filler(h, i)
         hprime = horn(b, i)
         if not np.array_equal(h,hprime):
             raise SimplicialException("Original horn and filler horn disagree!")
