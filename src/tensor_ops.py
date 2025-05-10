@@ -324,21 +324,6 @@ def filler(horn: np.ndarray, k: int) -> np.ndarray:
         t -= 1
     return g
 
-
-def normalize(m: np.ndarray) -> np.ndarray:
-    # recursively strip off any degeneracy component
-    base, _ = decompose_degen(m)
-    return base
-
-def normalized_filler(horn: np.ndarray, k: int) -> np.ndarray:
-    # 1) Normalize each face of the horn
-    H = np.array([normalize(face) for face in horn])
-    # 2) Run Moore’s algorithm *in the quotient* by simply working on these bases
-    g = filler(H, k)
-    # 3) Finally normalize the result
-    return normalize(g)
-
-
 def standard_basis_matrix(m: int, n: int, i: int, j: int) -> np.ndarray:
     # Create a zero matrix of dimensions (m, n)
     s = np.zeros((m, n))
@@ -374,7 +359,7 @@ def n_hypergroupoid_comparison(a: np.ndarray, outer_horns: bool = False, verbose
     # if outer_horns is True, then we need to check the outer horns as well
     for i in range(0 if outer_horns else 1, dim+1 if outer_horns else dim):
         h = horn(a, i)
-        b = normalized_filler(h, i)
+        b = filler(h, i)
         hprime = horn(b, i)
         if not np.array_equal(h,hprime):
             raise SimplicialException("Original horn and filler horn disagree!")
