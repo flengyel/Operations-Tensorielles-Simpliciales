@@ -23,7 +23,7 @@
 import sympy as sp
 import numpy as np
 from typing import Tuple, List, Union, Any
-from tensor_ops import (order, n_hypergroupoid_conjecture, 
+from tensor_ops import (n_hypergroupoid_conjecture, 
                        SimplicialException)  # Import the exception
 
 
@@ -70,6 +70,11 @@ class SymbolicTensor:
     def dimen(self) -> int:
         return min(self.shape) - 1
 
+    def order(self) -> int:
+        """
+        Calculates the order of this tensor, defined as the number of its dimensions.
+        """
+        return len(self.shape)
 
     def _dims(self):
         """
@@ -535,10 +540,14 @@ if __name__ == "__main__":
             print(f"Result for shape {shape}: {result}")
             
 
-    for d in range(2, 7):
-        print(f"build_shape({d}): {build_shape(d)}")
+#    for d in range(2, 7):
+#        print(f"build_shape({d}): {build_shape(d)}")
 
 
-    for d in range(2, 7):
-        shape = build_shape(d)
-        conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
+#    for d in range(2, 7):
+#        shape = build_shape(d)
+#        conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
+
+    shape = (3,3,3)
+    conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
+    print(f"Shape: {shape}, Conjecture: {conjecture}, Comparison: {comparison}")
