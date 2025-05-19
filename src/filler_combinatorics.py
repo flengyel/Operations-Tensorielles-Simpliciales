@@ -1,6 +1,6 @@
 #    Opérations Tensorielles Simpliciales
 #    Simplicial Operations on Matrices and Hypermatrices
-#    tensor_ops.py
+#    filler_combinatorics.py
 #    
 #    Copyright (C) 2021-2025 Florian Lengyel
 #    Email: florian.lengyel at cuny edu, florian.lengyel at gmail
