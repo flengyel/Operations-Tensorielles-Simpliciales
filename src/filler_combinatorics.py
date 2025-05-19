@@ -254,6 +254,23 @@ def show_filler_formula(shape: tuple, j_missing: int, target_index_to_analyze: t
     print(f"--- End of Formula Inspection for Index {target_index_to_analyze} ---")
 
 if __name__ == "__main__":
+    shape = (5, 5, 5, 5, 5)
+    validate_filler_conjecture(shape)   
+    # Show filler formula for a specific case
+    j_missing = 2
+    target_index_to_analyze = (0, 2, 1, 3, 4)
+    show_filler_formula(shape, j_missing, target_index_to_analyze)
+
+
+
+    shape = (5, 5, 5, 5, 5, 5)
+    validate_filler_conjecture(shape)   
+    # Show filler formula for a specific case
+    j_missing = 2
+    target_index_to_analyze = (0, 2, 1, 3, 4, 0)
+    show_filler_formula(shape, j_missing, target_index_to_analyze)
+
+
     # Example usage
     shape = (3, 3, 3)
     validate_filler_conjecture(shape)
