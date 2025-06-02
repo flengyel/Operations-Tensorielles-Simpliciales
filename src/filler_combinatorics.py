@@ -81,7 +81,7 @@ def validate_filler_conjecture(shape: tuple):
     original_axes_t = t._dims() 
 
     for j_missing in range(N + 1): 
-        print(f"\n  Testing Horn j_missing={j_missing}:")
+        print(f"\n  Testing Horn j_missing={j_missing} shape={shape}:")
         
         horn_faces_list = t.horn(j_missing)
 
@@ -254,22 +254,6 @@ def show_filler_formula(shape: tuple, j_missing: int, target_index_to_analyze: t
     print(f"--- End of Formula Inspection for Index {target_index_to_analyze} ---")
 
 if __name__ == "__main__":
-    shape = (5, 5, 5, 5, 5)
-    validate_filler_conjecture(shape)   
-    # Show filler formula for a specific case
-    j_missing = 2
-    target_index_to_analyze = (0, 2, 1, 3, 4)
-    show_filler_formula(shape, j_missing, target_index_to_analyze)
-
-
-
-    shape = (5, 5, 5, 5, 5, 5)
-    validate_filler_conjecture(shape)   
-    # Show filler formula for a specific case
-    j_missing = 2
-    target_index_to_analyze = (0, 2, 1, 3, 4, 0)
-    show_filler_formula(shape, j_missing, target_index_to_analyze)
-
 
     # Example usage
     shape = (3, 3, 3)
@@ -435,4 +419,29 @@ if __name__ == "__main__":
     # Show filler formula for a specific case
     j_missing = 2   
     target_index_to_analyze = (0, 2, 1, 3, 0)
+    show_filler_formula(shape, j_missing, target_index_to_analyze)    
+    
+    shape = (5, 5, 5, 5, 5)
+    validate_filler_conjecture(shape)   
+    # Show filler formula for a specific case
+    j_missing = 2
+    target_index_to_analyze = (0, 2, 1, 3, 4)
     show_filler_formula(shape, j_missing, target_index_to_analyze)
+
+
+
+    shape = (5, 5, 5, 5, 5, 5)
+    validate_filler_conjecture(shape)   
+    # Show filler formula for a specific case
+    j_missing = 2
+    target_index_to_analyze = (0, 2, 1, 3, 4, 0)
+    show_filler_formula(shape, j_missing, target_index_to_analyze)
+
+    exit()
+
+    shapes = [(3,3), (3,4), (3,5), (3,6), (3,7), (4,4), (4, 5), (5,5), (3,3,3), (3,3,4),(3,3,5), (3,3,6), (3,3,7), 
+              (3,4,4),(3,4,5), (3,4,6),(3,5,5), (3,5,6), (3,5,7), (3,6,7), (4,4,4), (5,5,5)]
+    shapes = [(3,3), (4,4,4), (5,5,5,5), (6,6,6,6,6)]
+    for shape in shapes:
+        validate_filler_conjecture(shape)
+    
