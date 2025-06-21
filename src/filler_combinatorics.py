@@ -254,7 +254,23 @@ def show_filler_formula(shape: tuple, j_missing: int, target_index_to_analyze: t
     print(f"--- End of Formula Inspection for Index {target_index_to_analyze} ---")
 
 if __name__ == "__main__":
+    shapes = [(3,3), (3,4), (3,5), (3,6), (3,7), 
+              (4,4), (4, 5), (5,5), (3,3,3), (3,3,4),
+              (3,3,5), (3,3,6), (3,3,7), (3,4,4),(3,4,5), 
+              (3,4,6),(3,5,5), (3,5,6), (3,5,7), (3,6,7), 
+              (4,4,4), (4,4,5), (4,4,6),(4,5,5), (4,5,6),
+              (4,5,7), (4,6,6), (5,5,5),
+              (5,5,5,5), (5,5,5,6), (5,5,6,6), (5,6,6,6),
+              (6,6,6,6), (3,3,3,3),(3,3,3,4), (3,3,4,4), (3,4,4,4),
+              (4,4,4,4), (4,4,4,5), (4,4,5,5), (4,5,5,5),
+              (3,3,3,3,3), (3,3,3,3,4), (3,3,3,4,4), (3,3,4,4,4),
+              (3,4,4,4,4), (4,4,4,4,4), (4,4,4,4,5), (4,4,4,5,5),
+              (4,4,5,5,5), (4,5,5,5,5), (3,3,3,3,3,3)]
+    for shape in shapes:
+        validate_filler_conjecture(shape)
 
+    exit(0) # Exit after running all shapes
+    
     # Example usage
     shape = (3, 3, 3)
     validate_filler_conjecture(shape)
@@ -438,9 +454,4 @@ if __name__ == "__main__":
     show_filler_formula(shape, j_missing, target_index_to_analyze)
 
     
-    shapes = [(3,3), (3,4), (3,5), (3,6), (3,7), (4,4), (4, 5), (5,5), (3,3,3), (3,3,4),(3,3,5), (3,3,6), (3,3,7), 
-              (3,4,4),(3,4,5), (3,4,6),(3,5,5), (3,5,6), (3,5,7), (3,6,7), (4,4,4), (5,5,5)]
-    shapes = [(3,3), (4,4,4), (5,5,5,5), (6,6,6,6,6)]
-    for shape in shapes:
-        validate_filler_conjecture(shape)
     
