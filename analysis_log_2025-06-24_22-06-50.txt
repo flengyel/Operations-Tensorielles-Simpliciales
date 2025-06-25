@@ -1,0 +1,42 @@
+The analyzer now allows for specifying the horn_j to test.
+Log file for this session: analysis_log_2025-06-24_22-06-50.txt
+
+
+--- Analyzing shape (3,3,4,5) with outer horn j=0 ---
+--- Analyzing Path to Shape: (5, 4, 3, 3) for horn_j = 0 ---
+Fundamental Shape: (3, 3, 3, 3) (k=4, N=2)
+Predicted Count for Fundamental Shape: 50
+Path contains 4 steps.
+
+Computing counts along the path using Dask (for horn_j=0)...
+Computation complete.
+
+--- Finite Difference Calculus Table ---
+Shape        | Count | Prediction Check            |  D1 |  D2 |  D3
+--------------------------------------------------------------------
+(3, 3, 3, 3) | 50 | (Predicted: 50, Matches!)   |  12 |   0 |   4
+(3, 3, 3, 4) | 62 |                             |  12 |   4 |    
+(3, 3, 3, 5) | 74 |                             |  16 |     |    
+(3, 3, 4, 5) | 90 |                             |     |     |    
+
+
+================================================================================
+
+
+--- Analyzing shape (3,3,4,5) with inner horn j=1 ---
+--- Analyzing Path to Shape: (5, 4, 3, 3) for horn_j = 1 ---
+Fundamental Shape: (3, 3, 3, 3) (k=4, N=2)
+Predicted Count for Fundamental Shape: 50
+Path contains 4 steps.
+
+Computing counts along the path using Dask (for horn_j=1)...
+Computation complete.
+
+--- Finite Difference Calculus Table ---
+Shape        | Count | Prediction Check            |  D1 |  D2 |  D3
+--------------------------------------------------------------------
+(3, 3, 3, 3) | 50 | (Predicted: 50, Matches!)   |  12 |   0 |   4
+(3, 3, 3, 4) | 62 |                             |  12 |   4 |    
+(3, 3, 3, 5) | 74 |                             |  16 |     |    
+(3, 3, 4, 5) | 90 |                             |     |     |    
+
