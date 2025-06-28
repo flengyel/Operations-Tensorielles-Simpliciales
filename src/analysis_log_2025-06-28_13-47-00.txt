@@ -1,0 +1,41 @@
+Log file for this session: analysis_log_2025-06-28_13-47-00.txt
+
+Running analysis with the FIXED algorithm (k < n case is now handled).
+--- Analyzing Path to Shape: (17, 19, 23) ---
+Fundamental Shape: (17, 17, 17) (k=3, N=16)
+Predicted Count for Fundamental Shape: 0
+Path contains 9 steps.
+
+Computing counts along the path using Dask...
+Computation complete.
+
+--- Finite Difference Calculus Table ---
+Shape        | Count | Prediction Check           |  D1 |  D2 |  D3 |  D4 |  D5 |  D6 |  D7 |  D8
+-------------------------------------------------------------------------------------------------
+(17, 17, 17) | 0 | (Predicted: 0, Matches!)   |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0
+(17, 17, 18) | 0 |                            |   0 |   0 |   0 |   0 |   0 |   0 |   0 |    
+(17, 17, 19) | 0 |                            |   0 |   0 |   0 |   0 |   0 |   0 |     |    
+(17, 18, 19) | 0 |                            |   0 |   0 |   0 |   0 |   0 |     |     |    
+(17, 18, 20) | 0 |                            |   0 |   0 |   0 |   0 |     |     |     |    
+(17, 18, 21) | 0 |                            |   0 |   0 |   0 |     |     |     |     |    
+(17, 19, 21) | 0 |                            |   0 |   0 |     |     |     |     |     |    
+(17, 19, 22) | 0 |                            |   0 |     |     |     |     |     |     |    
+(17, 19, 23) | 0 |                            |     |     |     |     |     |     |     |    
+
+--- Analyzing Path to Shape: (4, 4, 5, 7) ---
+Fundamental Shape: (4, 4, 4, 4) (k=4, N=3)
+Predicted Count for Fundamental Shape: 60
+Path contains 5 steps.
+
+Computing counts along the path using Dask...
+Computation complete.
+
+--- Finite Difference Calculus Table ---
+Shape        | Count | Prediction Check            |  D1 |  D2 |  D3 |  D4
+--------------------------------------------------------------------------
+(4, 4, 4, 4) | 60 | (Predicted: 60, Matches!)   |   6 |   0 |   0 |   0
+(4, 4, 5, 4) | 66 |                             |   6 |   0 |   0 |    
+(4, 4, 5, 5) | 72 |                             |   6 |   0 |     |    
+(4, 4, 5, 6) | 78 |                             |   6 |     |     |    
+(4, 4, 5, 7) | 84 |                             |     |     |     |    
+

@@ -7,6 +7,9 @@ from typing import List, Tuple, Set
 from functools import reduce
 import dask.bag as db
 
+# --- Import the primary algorithm from the dedicated module ---
+from horn_map_reduce import compute_missing_indices_dask
+
 # --- Caches for memoization ---
 _wrapper_cache = {}
 _stirling_cache = {}
@@ -28,42 +31,6 @@ def setup_logger():
         logger.addHandler(ch)
         
     return logger, logfile_name
-
-def compute_missing_indices_dask(shape: Tuple[int, ...], horn_j: int) -> Set[Tuple[int, ...]]:
-    """
-    FIXED: Computes the set of missing multi-indices using Dask.
-    This version now correctly handles the k < N case.
-    """
-    if not shape:
-        return set()
-    
-    order_k = len(shape)
-    dim_n = min(shape) - 1
-
-    # --- ALGORITHMIC FIX ---
-    # According to the n-hypergroupoid conjecture, if k < n, the number
-    # of missing indices must be 0.
-    if order_k < dim_n:
-        return set()
-
-    if not (0 <= horn_j <= dim_n):
-        raise ValueError(f"horn_j must be between 0 and {dim_n}, but got {horn_j}")
-
-    horn_faces = [k for k in range(dim_n + 1) if k != horn_j]
-
-    if not horn_faces:
-        return set(itertools.product(*(range(s) for s in shape)))
-
-    all_indices_iterator = itertools.product(*(range(s) for s in shape))
-    first_face = horn_faces[0]
-    initial_bag = db.from_sequence(all_indices_iterator).filter(lambda idx: first_face in idx)
-
-    def intersection_reducer(bag, face_k):
-        return bag.filter(lambda idx: face_k in idx)
-
-    final_bag = reduce(intersection_reducer, horn_faces[1:], initial_bag)
-    missing_indices = set(final_bag.compute())
-    return missing_indices
 
 def stirling2(n: int, k: int) -> int:
     """Computes the Stirling number of the second kind, S2(n, k), with memoization."""
@@ -180,6 +147,5 @@ if __name__ == '__main__':
     target_shape_k3_n16 = (17, 19, 23)
     analyze_shape_calculus(target_shape_k3_n16, logger)
 
-
-    target_shape_k4_n3 = (4, 7, 11, 13)
+    target_shape_k4_n3 = (4, 4, 5, 7, 9)
     analyze_shape_calculus(target_shape_k4_n3, logger)

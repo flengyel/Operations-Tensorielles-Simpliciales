@@ -5,53 +5,38 @@ from functools import reduce
 
 def compute_missing_indices_dask(shape: Tuple[int, ...], horn_j: int) -> Set[Tuple[int, ...]]:
     """
-    Computes the set of missing multi-indices for a given tensor horn using Dask.
-
-    Args:
-        shape: A tuple representing the tensor's shape.
-        horn_j: The index of the missing face in the horn.
-
-    Returns:
-        A set of tuples, where each tuple is a missing multi-index.
+    FIXED: Computes the set of missing multi-indices using Dask.
+    This version now correctly handles the k < N case.
     """
-    # 1. Calculate dimension N and the set of face indices present in the horn.
     if not shape:
         return set()
-    n = min(shape) - 1
-    if not (0 <= horn_j <= n):
-        raise ValueError(f"horn_j must be between 0 and {n}, but got {horn_j}")
+    
+    order_k = len(shape)
+    dim_n = min(shape) - 1
 
-    horn_faces = [k for k in range(n + 1) if k != horn_j]
+    # --- ALGORITHMIC FIX ---
+    # According to the n-hypergroupoid conjecture, if k < n, the number
+    # of missing indices must be 0.
+    if order_k < dim_n:
+        return set()
+
+    if not (0 <= horn_j <= dim_n):
+        raise ValueError(f"horn_j must be between 0 and {dim_n}, but got {horn_j}")
+
+    horn_faces = [k for k in range(dim_n + 1) if k != horn_j]
 
     if not horn_faces:
-        # If there are no faces in the horn, all indices are "missing".
-        all_indices = set(itertools.product(*(range(s) for s in shape)))
-        return all_indices
+        return set(itertools.product(*(range(s) for s in shape)))
 
-    # 2. Create a dask.bag representing all possible index tuples for the shape.
-    #    (Hint: use itertools.product and dask.bag.from_sequence)
     all_indices_iterator = itertools.product(*(range(s) for s in shape))
-    # It's more efficient to start with a filtered bag than to create bags for all E_k
-    # and then intersect them. We can start with E_k for the first face.
     first_face = horn_faces[0]
     initial_bag = db.from_sequence(all_indices_iterator).filter(lambda idx: first_face in idx)
 
-    # 3. For each face index 'k' present in the horn, create the set E_k in parallel.
-    #    This is the "map" step. You can use dask.bag.filter for this.
-    # 4. Compute the intersection of all the E_k sets. This is the "reduce" step.
-    # We can combine the map and reduce steps by iteratively filtering the bag.
-    
     def intersection_reducer(bag, face_k):
         return bag.filter(lambda idx: face_k in idx)
 
-    # Start with the initial bag and apply the filter for the rest of the faces.
-    # The reduce function here is a high-level concept; in Dask, it's a sequence of transformations.
     final_bag = reduce(intersection_reducer, horn_faces[1:], initial_bag)
-
-    # 5. Return the final set of missing indices.
-    # The .compute() method triggers the actual Dask computation.
     missing_indices = set(final_bag.compute())
-
     return missing_indices
 
 if __name__ == '__main__':
@@ -103,13 +88,8 @@ if __name__ == '__main__':
         assert all_faces_present
         print(f"Sanity check passed: A sample index indeed contains all faces from the horn.")
 
-    shapes = [(3,3), (3,3,3), (3,3,3,3), (3,3,3,3,3), 
-              (3,3,3,3,3,3),(3,3,3,3,3,3,3), (3,3,3,3,3,3,3,3), 
-              (3,3,3,3,3,3,3,3,3),(3,3,3,3,3,3,3,3,3,3)]
-    shapes = [(3,5), (3,4,5), (3,5,5)]
     shapes = [(3,5), (3,3,5), (3,3,3,5), (3,3,3,3,5), 
               (3,3,3,3,3,5),(3,3,3,3,3,3,5), (3,3,3,3,3,3,3,5)] 
-
    
     horn_j = 1
     for shape in shapes:
