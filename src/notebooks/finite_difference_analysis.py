@@ -143,9 +143,10 @@ if __name__ == '__main__':
     logger.info(f"Log file for this session: {logfile_name}\n")
     logger.info("Running analysis with the FIXED algorithm (k < n case is now handled).")
 
-    # Re-running the problematic case
+    # This shape has k = 3 < n = 16
     target_shape_k3_n16 = (17, 19, 23)
     analyze_shape_calculus(target_shape_k3_n16, logger)
 
+    # This shape has k = 4 >= n = 3
     target_shape_k4_n3 = (4, 4, 5, 7, 9)
     analyze_shape_calculus(target_shape_k4_n3, logger)
