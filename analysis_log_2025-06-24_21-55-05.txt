@@ -1,0 +1,113 @@
+The analyzer now includes a 'greedy' path generation algorithm.
+Log file for this session: analysis_log_2025-06-24_21-55-05.txt
+
+Running analysis for target shape: (3, 4, 6)
+
+--- Running analysis with the new GREEDY path generator ---
+--- Analyzing Path to Shape: (3, 4, 6) ---
+Path generation method: Greedy (minimizing increase)
+Fundamental Shape: (3, 3, 3) (k=3, N=2)
+Predicted Count for Fundamental Shape: 12
+Path contains 5 steps.
+
+Computing counts along the path using Dask...
+Computation complete.
+
+--- Finite Difference Calculus Table ---
+Shape     | Count | Prediction Check            |  D1 |  D2 |  D3 |  D4
+-----------------------------------------------------------------------
+(3, 3, 3) | 12 | (Predicted: 12, Matches!)   |   2 |   0 |   0 |   0
+(3, 4, 3) | 14 |                             |   2 |   0 |   0 |    
+(3, 4, 4) | 16 |                             |   2 |   0 |     |    
+(3, 4, 5) | 18 |                             |   2 |     |     |    
+(3, 4, 6) | 20 |                             |     |     |     |    
+
+Running analysis for target shape: (3, 5, 8)
+
+--- Running analysis with the new GREEDY path generator ---
+--- Analyzing Path to Shape: (3, 5, 8) ---
+Path generation method: Greedy (minimizing increase)
+Fundamental Shape: (3, 3, 3) (k=3, N=2)
+Predicted Count for Fundamental Shape: 12
+Path contains 8 steps.
+
+Computing counts along the path using Dask...
+Computation complete.
+
+--- Finite Difference Calculus Table ---
+Shape     | Count | Prediction Check            |  D1 |  D2 |  D3 |  D4 |  D5 |  D6 |  D7
+-----------------------------------------------------------------------------------------
+(3, 3, 3) | 12 | (Predicted: 12, Matches!)   |   2 |   0 |   0 |   0 |   0 |   0 |   0
+(3, 4, 3) | 14 |                             |   2 |   0 |   0 |   0 |   0 |   0 |    
+(3, 4, 4) | 16 |                             |   2 |   0 |   0 |   0 |   0 |     |    
+(3, 4, 5) | 18 |                             |   2 |   0 |   0 |   0 |     |     |    
+(3, 4, 6) | 20 |                             |   2 |   0 |   0 |     |     |     |    
+(3, 5, 6) | 22 |                             |   2 |   0 |     |     |     |     |    
+(3, 5, 7) | 24 |                             |   2 |     |     |     |     |     |    
+(3, 5, 8) | 26 |                             |     |     |     |     |     |     |    
+
+Running analysis for target shape: (3, 5, 8, 13)
+
+--- Running analysis with the new GREEDY path generator ---
+--- Analyzing Path to Shape: (3, 5, 8, 13) ---
+Path generation method: Greedy (minimizing increase)
+Fundamental Shape: (3, 3, 3, 3) (k=4, N=2)
+Predicted Count for Fundamental Shape: 50
+Path contains 18 steps.
+
+Computing counts along the path using Dask...
+Computation complete.
+
+--- Finite Difference Calculus Table ---
+Shape         | Count | Prediction Check            |  D1 |  D2 |  D3 |  D4 |  D5 |  D6 |   D7 |   D8 |   D9 |   D10 |   D11 |   D12 |   D13 |    D14 |    D15 |    D16 |   D17
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+(3, 3, 3, 3)  |  50 | (Predicted: 50, Matches!)   |  12 |   0 |   0 |   0 |   0 |   0 |    0 |    0 |    0 |     0 |    20 |  -200 |  1100 |  -4400 |  14300 | -40030 | 99950
+(3, 3, 3, 4)  |  62 |                             |  12 |   0 |   0 |   0 |   0 |   0 |    0 |    0 |    0 |    20 |  -180 |   900 | -3300 |   9900 | -25730 |  59920 |      
+(3, 3, 3, 5)  |  74 |                             |  12 |   0 |   0 |   0 |   0 |   0 |    0 |    0 |   20 |  -160 |   720 | -2400 |  6600 | -15830 |  34190 |        |      
+(3, 3, 3, 6)  |  86 |                             |  12 |   0 |   0 |   0 |   0 |   0 |    0 |   20 | -140 |   560 | -1680 |  4200 | -9230 |  18360 |        |        |      
+(3, 3, 3, 7)  |  98 |                             |  12 |   0 |   0 |   0 |   0 |   0 |   20 | -120 |  420 | -1120 |  2520 | -5030 |  9130 |        |        |        |      
+(3, 3, 3, 8)  | 110 |                             |  12 |   0 |   0 |   0 |   0 |  20 | -100 |  300 | -700 |  1400 | -2510 |  4100 |       |        |        |        |      
+(3, 3, 3, 9)  | 122 |                             |  12 |   0 |   0 |   0 |  20 | -80 |  200 | -400 |  700 | -1110 |  1590 |       |       |        |        |        |      
+(3, 3, 3, 10) | 134 |                             |  12 |   0 |   0 |  20 | -60 | 120 | -200 |  300 | -410 |   480 |       |       |       |        |        |        |      
+(3, 3, 3, 11) | 146 |                             |  12 |   0 |  20 | -40 |  60 | -80 |  100 | -110 |   70 |       |       |       |       |        |        |        |      
+(3, 3, 3, 12) | 158 |                             |  12 |  20 | -20 |  20 | -20 |  20 |  -10 |  -40 |      |       |       |       |       |        |        |        |      
+(3, 3, 3, 13) | 170 |                             |  32 |   0 |   0 |   0 |   0 |  10 |  -50 |      |      |       |       |       |       |        |        |        |      
+(3, 3, 4, 13) | 202 |                             |  32 |   0 |   0 |   0 |  10 | -40 |      |      |      |       |       |       |       |        |        |        |      
+(3, 3, 5, 13) | 234 |                             |  32 |   0 |   0 |  10 | -30 |     |      |      |      |       |       |       |       |        |        |        |      
+(3, 3, 6, 13) | 266 |                             |  32 |   0 |  10 | -20 |     |     |      |      |      |       |       |       |       |        |        |        |      
+(3, 3, 7, 13) | 298 |                             |  32 |  10 | -10 |     |     |     |      |      |      |       |       |       |       |        |        |        |      
+(3, 3, 8, 13) | 330 |                             |  42 |   0 |     |     |     |     |      |      |      |       |       |       |       |        |        |        |      
+(3, 4, 8, 13) | 372 |                             |  42 |     |     |     |     |     |      |      |      |       |       |       |       |        |        |        |      
+(3, 5, 8, 13) | 414 |                             |     |     |     |     |     |     |      |      |      |       |       |       |       |        |        |        |      
+
+Running analysis for target shape: (3, 5, 7, 11)
+
+--- Running analysis with the new GREEDY path generator ---
+--- Analyzing Path to Shape: (3, 5, 7, 11) ---
+Path generation method: Greedy (minimizing increase)
+Fundamental Shape: (3, 3, 3, 3) (k=4, N=2)
+Predicted Count for Fundamental Shape: 50
+Path contains 15 steps.
+
+Computing counts along the path using Dask...
+Computation complete.
+
+--- Finite Difference Calculus Table ---
+Shape         | Count | Prediction Check            |  D1 |  D2 |  D3 |  D4 |  D5 |  D6 |   D7 |   D8 |   D9 |   D10 |   D11 |   D12 |   D13 |    D14
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+(3, 3, 3, 3)  |  50 | (Predicted: 50, Matches!)   |  12 |   0 |   0 |   0 |   0 |   0 |    0 |    0 |   16 |  -128 |   580 | -1960 |  5500 | -13552
+(3, 3, 3, 4)  |  62 |                             |  12 |   0 |   0 |   0 |   0 |   0 |    0 |   16 | -112 |   452 | -1380 |  3540 | -8052 |       
+(3, 3, 3, 5)  |  74 |                             |  12 |   0 |   0 |   0 |   0 |   0 |   16 |  -96 |  340 |  -928 |  2160 | -4512 |       |       
+(3, 3, 3, 6)  |  86 |                             |  12 |   0 |   0 |   0 |   0 |  16 |  -80 |  244 | -588 |  1232 | -2352 |       |       |       
+(3, 3, 3, 7)  |  98 |                             |  12 |   0 |   0 |   0 |  16 | -64 |  164 | -344 |  644 | -1120 |       |       |       |       
+(3, 3, 3, 8)  | 110 |                             |  12 |   0 |   0 |  16 | -48 | 100 | -180 |  300 | -476 |       |       |       |       |       
+(3, 3, 3, 9)  | 122 |                             |  12 |   0 |  16 | -32 |  52 | -80 |  120 | -176 |      |       |       |       |       |       
+(3, 3, 3, 10) | 134 |                             |  12 |  16 | -16 |  20 | -28 |  40 |  -56 |      |      |       |       |       |       |       
+(3, 3, 3, 11) | 146 |                             |  28 |   0 |   4 |  -8 |  12 | -16 |      |      |      |       |       |       |       |       
+(3, 4, 3, 11) | 174 |                             |  28 |   4 |  -4 |   4 |  -4 |     |      |      |      |       |       |       |       |       
+(3, 5, 3, 11) | 202 |                             |  32 |   0 |   0 |   0 |     |     |      |      |      |       |       |       |       |       
+(3, 5, 4, 11) | 234 |                             |  32 |   0 |   0 |     |     |     |      |      |      |       |       |       |       |       
+(3, 5, 5, 11) | 266 |                             |  32 |   0 |     |     |     |     |      |      |      |       |       |       |       |       
+(3, 5, 6, 11) | 298 |                             |  32 |     |     |     |     |     |      |      |      |       |       |       |       |       
+(3, 5, 7, 11) | 330 |                             |     |     |     |     |     |     |      |      |      |       |       |       |       |       
+

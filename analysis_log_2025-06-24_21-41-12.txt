@@ -1,0 +1,56 @@
+The analyzer now includes a 'greedy' path generation algorithm.
+Log file for this session: analysis_log_2025-06-24_21-41-12.txt
+
+
+--- Running analysis with the CANONICAL path generator ---
+--- Analyzing Path to Shape: (4, 4, 4, 5, 5, 7, 8) ---
+Path generation method: Canonical (right-to-left)
+Fundamental Shape: (4, 4, 4, 4, 4, 4, 4) (k=7, N=3)
+Predicted Count for Fundamental Shape: 10206
+Path contains 10 steps.
+
+Computing counts along the path using Dask...
+Computation complete.
+
+--- Finite Difference Calculus Table ---
+Shape                 | Count | Prediction Check               |   D1 |   D2 |    D3 |    D4 |    D5 |    D6 |     D7 |     D8 |    D9
+--------------------------------------------------------------------------------------------------------------------------------------
+(4, 4, 4, 4, 4, 4, 4) | 10206 | (Predicted: 10206, Matches!)   | 2100 |    0 |     0 |     0 |  1560 | -6240 |  15600 | -29310 | 42252
+(4, 4, 4, 4, 4, 4, 5) | 12306 |                                | 2100 |    0 |     0 |  1560 | -4680 |  9360 | -13710 |  12942 |      
+(4, 4, 4, 4, 4, 4, 6) | 14406 |                                | 2100 |    0 |  1560 | -3120 |  4680 | -4350 |   -768 |        |      
+(4, 4, 4, 4, 4, 4, 7) | 16506 |                                | 2100 | 1560 | -1560 |  1560 |   330 | -5118 |        |        |      
+(4, 4, 4, 4, 4, 4, 8) | 18606 |                                | 3660 |    0 |     0 |  1890 | -4788 |       |        |        |      
+(4, 4, 4, 4, 4, 5, 8) | 22266 |                                | 3660 |    0 |  1890 | -2898 |       |       |        |        |      
+(4, 4, 4, 4, 4, 6, 8) | 25926 |                                | 3660 | 1890 | -1008 |       |       |       |        |        |      
+(4, 4, 4, 4, 4, 7, 8) | 29586 |                                | 5550 |  882 |       |       |       |       |        |        |      
+(4, 4, 4, 4, 5, 7, 8) | 35136 |                                | 6432 |      |       |       |       |       |        |        |      
+(4, 4, 4, 5, 5, 7, 8) | 41568 |                                |      |      |       |       |       |       |        |        |      
+
+
+================================================================================
+
+
+--- Running analysis with the new GREEDY path generator ---
+--- Analyzing Path to Shape: (4, 4, 4, 5, 5, 7, 8) ---
+Path generation method: Greedy (minimizing increase)
+Fundamental Shape: (4, 4, 4, 4, 4, 4, 4) (k=7, N=3)
+Predicted Count for Fundamental Shape: 10206
+Path contains 10 steps.
+
+Computing counts along the path using Dask...
+Computation complete.
+
+--- Finite Difference Calculus Table ---
+Shape                 | Count | Prediction Check               |   D1 |   D2 |    D3 |    D4 |    D5 |    D6 |     D7 |     D8 |    D9
+--------------------------------------------------------------------------------------------------------------------------------------
+(4, 4, 4, 4, 4, 4, 4) | 10206 | (Predicted: 10206, Matches!)   | 2100 |  390 |    60 |  -510 |   960 | -1410 |   3924 | -14694 | 46104
+(4, 4, 4, 5, 4, 4, 4) | 12306 |                                | 2490 |  450 |  -450 |   450 |  -450 |  2514 | -10770 |  31410 |      
+(4, 4, 4, 5, 5, 4, 4) | 14796 |                                | 2940 |    0 |     0 |     0 |  2064 | -8256 |  20640 |        |      
+(4, 4, 4, 5, 5, 4, 5) | 17736 |                                | 2940 |    0 |     0 |  2064 | -6192 | 12384 |        |        |      
+(4, 4, 4, 5, 5, 4, 6) | 20676 |                                | 2940 |    0 |  2064 | -4128 |  6192 |       |        |        |      
+(4, 4, 4, 5, 5, 4, 7) | 23616 |                                | 2940 | 2064 | -2064 |  2064 |       |       |        |        |      
+(4, 4, 4, 5, 5, 4, 8) | 26556 |                                | 5004 |    0 |     0 |       |       |       |        |        |      
+(4, 4, 4, 5, 5, 5, 8) | 31560 |                                | 5004 |    0 |       |       |       |       |        |        |      
+(4, 4, 4, 5, 5, 6, 8) | 36564 |                                | 5004 |      |       |       |       |       |        |        |      
+(4, 4, 4, 5, 5, 7, 8) | 41568 |                                |      |      |       |       |       |       |        |        |      
+
