@@ -269,6 +269,7 @@ if __name__ == "__main__":
     # Fundamental sequence
     shapes = [(3, 4), (3, 3, 4), (3,3,3,4), (3,3,3,3,4),
               (3,3,3,3,3,4), (3,3,3,3,3,3,4)]
+    shapes = [(2,2), (3,3,3)] # homology test cases
     for shape in shapes:
         validate_filler_conjecture(shape)
 
