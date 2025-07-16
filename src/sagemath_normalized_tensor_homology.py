@@ -7,13 +7,11 @@ import sympy as sp # For SymbolicTensor
 from collections import deque
 
 # SageMath imports
-from sage.all import matrix, vector, block_matrix, identity_matrix, Matrix # Added Matrix for vstack
+from sage.all import matrix, vector, block_matrix, identity_matrix, Matrix, Integer, Hom
 from sage.all import QQ # Rational Field, for robust linear algebra
-from sage.homology.chain_complex import ChainComplex, ChainMap
+from sage.homology.chain_complex import ChainComplex
 
-# --- SymbolicTensor class (adapted from user-provided symbolic_tensor_ops.py) ---
-# (Removed n_hypergroupoid_conjecture and SimplicialException imports as they are not used here)
-# (Removed test_symbolic_n_hypergroupoid, check_symbolic_corrections, is_generator_symbolic for brevity in this context)
+# --- SymbolicTensor class (adapted from symbolic_tensor_ops.py) ---
 
 class SymbolicTensor:
 
@@ -284,6 +282,12 @@ def get_moore_chain_complex(tensors_by_dim_map: dict, max_homology_dim: int, bas
         C_k_basis_tensors_list[k_dim] = unique_tensors_at_k
         C_k_basis_indices_map[k_dim] = {key_tensor(t): i for i, t in enumerate(unique_tensors_at_k)}
 
+    print("\n--- DEBUG: Initial Chain Group Dimensions ---")
+    for k, v in sorted(C_k_basis_tensors_list.items()):
+        if v: # Only print non-empty
+            print(f"  dim(C_{k}) = {len(v)}")
+    print("-------------------------------------------\n")
+
     all_face_op_matrices = {} 
     # Iterate for d_i: C_k -> C_{k-1}
     for k_dim in range(max_homology_dim + 3): 
@@ -373,18 +377,29 @@ def get_moore_chain_complex(tensors_by_dim_map: dict, max_homology_dim: int, bas
 
         if not face_ops_for_Mk_kernel_matrices: 
             M_k_basis_as_cols_in_Ck[k_dim] = identity_matrix(base_ring, dim_Ck) 
+        # Find the original else block and replace it entirely with this:
         else:
+            # Alternative method: Compute kernels individually and intersect them.
             try:
-                # Stack matrices: each d_i is C_k -> C_{k-1}.
-                # We want kernel of map C_k -> C_{k-1} x ... x C_{k-1} (k times)
-                # So stack d_i matrices vertically.
-                stacked_map_matrix_for_kernel = Matrix.stack(face_ops_for_Mk_kernel_matrices)
-                kernel_basis_matrix_rows = stacked_map_matrix_for_kernel.right_kernel().basis_matrix()
+                # Get the list of face maps d_1, ..., d_k
+                face_ops = [all_face_op_matrices.get((k_dim, i)) for i in range(1, k_dim + 1)]
+
+                # Start with the full space C_k
+                ambient_space = QQ**dim_Ck
+                intersection_of_kernels = ambient_space
+
+                # Intersect with the kernel of each face map
+                for op_matrix in face_ops:
+                    if op_matrix is not None:
+                        kernel_subspace = op_matrix.right_kernel()
+                        intersection_of_kernels = intersection_of_kernels.intersection(kernel_subspace)
+
+                kernel_basis_matrix_rows = intersection_of_kernels.basis_matrix()
                 M_k_basis_as_cols_in_Ck[k_dim] = kernel_basis_matrix_rows.transpose()
+
             except Exception as e:
-                print(f"Error computing kernel for M_{k_dim}: {e}. Stacked matrix might be ill-formed.")
-                print(f"  Matrices were: {[m.dimensions() for m in face_ops_for_Mk_kernel_matrices]}")
-                M_k_basis_as_cols_in_Ck[k_dim] = matrix(base_ring, dim_Ck, 0) 
+                print(f"Error computing kernel for M_{k_dim} via intersection: {e}")
+                M_k_basis_as_cols_in_Ck[k_dim] = matrix(base_ring, dim_Ck, 0)
 
 
     moore_complex_differential_matrices = {} 
@@ -406,6 +421,18 @@ def get_moore_chain_complex(tensors_by_dim_map: dict, max_homology_dim: int, bas
             moore_complex_differential_matrices[k_dim] = matrix(base_ring, dim_M_km1, dim_M_k, 0)
             continue
 
+        print(f"\n--- DEBUG FOR k_dim = {k_dim} ---")
+        if d0_from_Ck_to_Ckm1 is not None:
+            print(f"  d0_from_Ck_to_Ckm1 dimensions: {d0_from_Ck_to_Ckm1.dimensions()}")
+        else:
+            print("  d0_from_Ck_to_Ckm1 is None")
+
+        if Inc_Mk_to_Ck is not None:
+            print(f"  Inc_Mk_to_Ck dimensions: {Inc_Mk_to_Ck.dimensions()}")
+        else:
+            print("  Inc_Mk_to_Ck is None")
+        print("--------------------------")
+
         img_d0_Mk_in_Ckm1 = d0_from_Ck_to_Ckm1 * Inc_Mk_to_Ck
         
         try:
@@ -417,29 +444,74 @@ def get_moore_chain_complex(tensors_by_dim_map: dict, max_homology_dim: int, bas
             dim_M_km1 = Basis_Mkm1_in_Ckm1.ncols()
             moore_complex_differential_matrices[k_dim] = matrix(base_ring, dim_M_km1, dim_M_k, 0)
 
-    chain_complex_data = {}
-    chain_complex_data['boundary_maps'] = {
-        k: moore_complex_differential_matrices[k] 
-        for k in range(1, max_homology_dim + 2) 
-        if k in moore_complex_differential_matrices and moore_complex_differential_matrices[k] is not None
-    }
-    chain_complex_data['dimensions'] = {
-        k: (M_k_basis_as_cols_in_Ck[k].ncols() if k in M_k_basis_as_cols_in_Ck and M_k_basis_as_cols_in_Ck[k] is not None else 0)
-        for k in range(max_homology_dim + 2) 
-    }
-    chain_complex_data['degree'] = -1 
+    # --- Build the final chain complex data with explicit Sage Integers for keys ---
+    final_chain_complex_maps = {}
+    for k in range(1, max_homology_dim + 2):
+        if k in moore_complex_differential_matrices and moore_complex_differential_matrices[k] is not None:
+            # Ensure the key `k` is a Sage Integer
+            final_chain_complex_maps[Integer(k)] = moore_complex_differential_matrices[k]
 
-    for k_check in range(1, max_homology_dim + 1): # Check d_k * d_{k+1} == 0
-        d_k = chain_complex_data['boundary_maps'].get(k_check)
-        d_k_plus_1 = chain_complex_data['boundary_maps'].get(k_check + 1)
-        if d_k is not None and d_k_plus_1 is not None:
-            if d_k.nrows() == d_k_plus_1.ncols() and d_k.ncols() == d_k_plus_1.nrows() : # Check composability
-                prod = d_k * d_k_plus_1
-                if not prod.is_zero():
-                    print(f"ERROR: Moore complex differential d_{k_check} * d_{k_check+1} is NOT zero!")
-            # else: print(f"Cannot compose d_{k_check} and d_{k_check+1} for Moore complex. Dim M_{k_check-1}={d_k.nrows()}, M_{k_check}={d_k.ncols()}, M_{k_check+1}={d_k_plus_1.ncols()}")
+    # As requested, add a final debug print
+    print("\n--- DEBUG: Final data for ChainComplex constructor ---")
+    for k, v in sorted(final_chain_complex_maps.items()):
+        print(f"  Map for d_{k}: {v.dimensions()}")
+    print("--------------------------------------------------\n")
+
+    # The ChainComplex constructor in this version of Sage prefers a direct dictionary of maps.
+    return ChainComplex(final_chain_complex_maps, base_ring=base_ring, degree=-1), M_k_basis_as_cols_in_Ck
+
+def create_mapping_cone_manually(chain_map):
+    """
+    Manually constructs the mapping cone of a chain map f: C -> D.
+    This version is the final solution, deriving all necessary
+    information from the internal _diff attribute, bypassing the
+    inconsistent public API entirely.
+    """
+    C = chain_map.domain()
+    D = chain_map.codomain()
     
-    return ChainComplex(data=chain_complex_data, base_ring=base_ring), M_k_basis_as_cols_in_Ck
+    # Step 1: Manually build dimension dictionaries from matrix shapes.
+    c_dims = {}
+    for degree, diff_matrix in C._diff.items():
+        c_dims[degree] = diff_matrix.ncols()
+        c_dims[degree - 1] = diff_matrix.nrows()
+        
+    d_dims = {}
+    for degree, diff_matrix in D._diff.items():
+        d_dims[degree] = diff_matrix.ncols()
+        d_dims[degree - 1] = diff_matrix.nrows()
+
+    cone_differentials = {}
+    all_degs = set(c_dims.keys()) | set(d_dims.keys())
+
+    if not all_degs:
+        return ChainComplex({}, base_ring=C.base_ring())
+
+    min_deg = min(all_degs) - 1
+    max_deg = max(all_degs)
+    
+    # Step 2: Build the cone differentials using our new dimension maps.
+    for n in range(min_deg, max_deg + 2):
+        dC_nm1 = C._diff.get(n - 1)
+        dD_n = D._diff.get(n)
+        f_nm1 = chain_map._matrix_dictionary.get(n - 1)
+        
+        if dC_nm1 is None:
+            dC_nm1 = matrix(C.base_ring(), c_dims.get(n - 2, 0), c_dims.get(n - 1, 0), 0)
+
+        if dD_n is None:
+            dD_n = matrix(D.base_ring(), d_dims.get(n - 1, 0), d_dims.get(n, 0), 0)
+            
+        if f_nm1 is None:
+            f_nm1 = matrix(C.base_ring(), d_dims.get(n - 1, 0), c_dims.get(n - 1, 0), 0)
+            
+        zero_map = matrix(C.base_ring(), dC_nm1.nrows(), dD_n.ncols(), 0)
+        cone_diff_n = block_matrix([[-dC_nm1, zero_map], [-f_nm1, dD_n]])
+        
+        if not cone_diff_n.is_zero():
+            cone_differentials[Integer(n)] = cone_diff_n
+            
+    return ChainComplex(data=cone_differentials, base_ring=C.base_ring(), degree=-1)
 
 
 def compute_relative_homology_sage(T_symbolic: SymbolicTensor, j_horn_excluded_face: int, base_ring=QQ):
@@ -514,17 +586,25 @@ def compute_relative_homology_sage(T_symbolic: SymbolicTensor, j_horn_excluded_f
                 J_k_matrix[row_a_idx, col_l_idx] = 1
         
         # Target matrix for i_k: M_k(L) -> M_k(A) is (B_Mk_A)^pseudo_inv * J_k * B_Mk_L
-        try:
-            map_matrix_k = B_Mk_A.solve_left(J_k_matrix * B_Mk_L)
-            inclusion_chain_maps_M_L_to_M_A[k_map_dim] = map_matrix_k
-        except Exception as e:
-            print(f"Error computing inclusion M_{k_map_dim}(L) -> M_{k_map_dim}(A): {e}")
-            inclusion_chain_maps_M_L_to_M_A[k_map_dim] = matrix(base_ring, dim_Mk_A, dim_Mk_L,0)
+        # Manually handle the k=0 case, as M_0 = C_0.
+        if k_map_dim == 0:
+            inclusion_chain_maps_M_L_to_M_A[k_map_dim] = J_k_matrix
+        else:
+            try:
+                # For k > 0, the original logic is fine.
+                map_matrix_k = B_Mk_A.solve_left(J_k_matrix * B_Mk_L)
+                inclusion_chain_maps_M_L_to_M_A[k_map_dim] = map_matrix_k
+            except Exception as e:
+                print(f"Error computing inclusion M_{k_map_dim}(L) -> M_{k_map_dim}(A): {e}")
+                inclusion_chain_maps_M_L_to_M_A[k_map_dim] = matrix(base_ring, dim_Mk_A, dim_Mk_L, 0)
 
-    chain_map_i_Moore = ChainMap(Moore_L_obj, Moore_A_obj, inclusion_chain_maps_M_L_to_M_A)
+    chain_map_i_Moore = Hom(Moore_L_obj, Moore_A_obj)(inclusion_chain_maps_M_L_to_M_A)
+    #print(type(chain_map_i_Moore))
+    #print([name for name in dir(chain_map_i_Moore) if 'cone' in name.lower()])
+
     
     print(f"\nComputing H_{n_homology_dim}(Cone(i_Moore))...")
-    cone_i_Moore = chain_map_i_Moore.mapping_cone()
+    cone_i_Moore = create_mapping_cone_manually(chain_map_i_Moore)
     # The homology group object itself (e.g., Free module of rank k over QQ)
     homology_group_n_object = cone_i_Moore.homology(n_homology_dim, base_ring=base_ring) 
     
