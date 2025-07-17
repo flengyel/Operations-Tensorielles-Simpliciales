@@ -345,7 +345,7 @@ class SymbolicTensor:
         base = helper(self, operations)
         return base, operations
 
-def correction_rank(original: "SymbolicTensor", filler: "SymbolicTensor") -> int:
+def tensor_filler_difference_rank(original: "SymbolicTensor", filler: "SymbolicTensor") -> int:
     """
     Returns the number of distinct nonzero symbolic differences between original and filler tensors.
     This quantifies the number of independently modified entries.
@@ -435,7 +435,7 @@ def is_generator_symbolic(T: SymbolicTensor) -> bool:
     return True
 
 
-def check_symbolic_corrections(t, t_prime, horn_faces, k):
+def check_missing_symbols(t, t_prime, horn_faces, k):
     """
     For symbolic tensors t and t_prime (both SymbolicTensor or at least
     numpy arrays of sympy expressions), ensures t_prime differs from t exactly
@@ -522,7 +522,7 @@ if __name__ == "__main__":
     print(filler_1)
 
     print("\nComparison of original and filler tensors:")
-    result = check_symbolic_corrections(sym_tensor, filler_1, horn_1, 1)
+    result = check_missing_symbols(sym_tensor, filler_1, horn_1, 1)
     print("Check result:", result)
 
 
@@ -536,7 +536,7 @@ if __name__ == "__main__":
             sym_tensor = SymbolicTensor(shape=shape)
             inner_horn = sym_tensor.horn(j)
             filler = sym_tensor.filler(inner_horn, j)
-            result = check_symbolic_corrections(sym_tensor, filler, inner_horn, j)
+            result = check_missing_symbols(sym_tensor, filler, inner_horn, j)
             print(f"Result for shape {shape}: {result}")
             
 

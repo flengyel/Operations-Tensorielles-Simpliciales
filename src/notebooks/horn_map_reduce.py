@@ -41,12 +41,12 @@ def compute_missing_indices_dask(shape: Tuple[int, ...], horn_j: int) -> Set[Tup
 
 if __name__ == '__main__':
     # Example from the problem description
-    shape_ex = (3, 3)
+    shape_ex = (2, 2)
     horn_j_ex = 1
     missing_indices_ex = compute_missing_indices_dask(shape_ex, horn_j_ex)
     print(f"For shape = {shape_ex} and horn_j = {horn_j_ex}:")
     print(f"The missing indices are: {missing_indices_ex}")
-    expected_ex = {(0, 2), (2, 0)}
+    expected_ex = {(0, 1), (1, 0), (0, 0)}
     print(f"Expected: {expected_ex}")
     assert missing_indices_ex == expected_ex
     print("Example assertion passed!")
@@ -88,9 +88,9 @@ if __name__ == '__main__':
         assert all_faces_present
         print(f"Sanity check passed: A sample index indeed contains all faces from the horn.")
 
-    shapes = [(3,5), (3,3,5), (3,3,3,5), (3,3,3,3,5), 
+    shapes = [(2,2), (3,3,3), (3,5), (3,3,5), (3,3,3,5), (3,3,3,3,5), (3,4,5,6),
               (3,3,3,3,3,5),(3,3,3,3,3,3,5), (3,3,3,3,3,3,3,5)] 
-    shapes = [(2,2), (3,3,3), (3,3,3,3)] 
+    shapes = [(2,2), (3,3,3), (3,3,3,3), (3,4,5,6)] 
    
     horn_j = 1
     for shape in shapes:

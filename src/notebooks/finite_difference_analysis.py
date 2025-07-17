@@ -71,7 +71,7 @@ def generate_greedy_path(target_shape: Tuple[int, ...]) -> List[Tuple[int, ...]]
                 candidates.add(tuple(next_shape_list))
         if not candidates: break
         candidate_counts = {cand: calculate_missing_indices_wrapper(cand) for cand in candidates}
-        best_next_shape = min(candidate_counts, key=candidate_counts.get)
+        best_next_shape = min(candidate_counts, key=lambda x: candidate_counts[x])
         current_shape = best_next_shape
         path.append(current_shape)
     return path
