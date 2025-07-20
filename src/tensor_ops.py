@@ -644,3 +644,16 @@ if __name__ == "__main__":
         print(__NONDEGENERATE_BASE__+'\n', non_degen_base)
         print(__DEGENERACY_OPERATIONS__+'\n', ops)
 
+    m = standard_basis_matrix(3, 3, 0, 0)
+    print("m:", m)
+    print("is_degen(m):", is_degen(m))
+    non_degen_base, ops = decompose_degen(m)
+    print(__NONDEGENERATE_BASE__, non_degen_base)
+    print(__DEGENERACY_OPERATIONS__, ops)
+    for i in range(3):
+        degeneracy = degen(m, i)
+        print(f"degeneracy (axis {i}):\n", degeneracy)
+        non_degen_base, ops = decompose_degen(degeneracy)
+        print(__NONDEGENERATE_BASE__+'\n', non_degen_base)
+        print(__DEGENERACY_OPERATIONS__+'\n', ops)
+
