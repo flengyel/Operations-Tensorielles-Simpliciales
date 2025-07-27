@@ -8,7 +8,7 @@ import logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    filename='injectivity_verification.log',
+    filename='logs/injectivity_verification.log',
     filemode='w'
 )
 # Also log to the console
@@ -18,9 +18,6 @@ formatter = logging.Formatter('%(message)s') # Keep console output clean
 console_handler.setFormatter(formatter)
 logging.getLogger('').addHandler(console_handler)
 
-
-# We will use functions from your existing tensor_ops.py script.
-# Ensure tensor_ops.py is in the same directory.
 try:
     from tensor_ops import face, dimen
 except ImportError as e:
