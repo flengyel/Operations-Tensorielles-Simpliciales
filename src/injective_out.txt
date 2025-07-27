@@ -1,0 +1,55 @@
+======================================================
+ VERIFYING INJECTIVITY OF THE FACE MAP d_i 
+======================================================
+
+--- Verifying Injectivity for shape=(3, 3), face_index=0 ---
+Generated 4 non-zero faces from 4 source indices.
+Found 0 duplicates.
+Result: PASSED. The map m -> d_i(E_m) is injective on its non-zero domain.
+
+--- Verifying Injectivity for shape=(3, 3), face_index=1 ---
+Generated 4 non-zero faces from 4 source indices.
+Found 0 duplicates.
+Result: PASSED. The map m -> d_i(E_m) is injective on its non-zero domain.
+
+--- Verifying Injectivity for shape=(3, 3), face_index=2 ---
+Generated 4 non-zero faces from 4 source indices.
+Found 0 duplicates.
+Result: PASSED. The map m -> d_i(E_m) is injective on its non-zero domain.
+
+--- Verifying Injectivity for shape=(4, 4, 4), face_index=0 ---
+Generated 27 non-zero faces from 27 source indices.
+Found 0 duplicates.
+Result: PASSED. The map m -> d_i(E_m) is injective on its non-zero domain.
+
+--- Verifying Injectivity for shape=(4, 4, 4), face_index=1 ---
+Generated 27 non-zero faces from 27 source indices.
+Found 0 duplicates.
+Result: PASSED. The map m -> d_i(E_m) is injective on its non-zero domain.
+
+--- Verifying Injectivity for shape=(4, 4, 4), face_index=2 ---
+Generated 27 non-zero faces from 27 source indices.
+Found 0 duplicates.
+Result: PASSED. The map m -> d_i(E_m) is injective on its non-zero domain.
+
+--- Verifying Injectivity for shape=(4, 4, 4), face_index=3 ---
+Generated 27 non-zero faces from 27 source indices.
+Found 0 duplicates.
+Result: PASSED. The map m -> d_i(E_m) is injective on its non-zero domain.
+
+--- Verifying Injectivity for shape=(3, 4, 5), face_index=0 ---
+Generated 24 non-zero faces from 24 source indices.
+Found 0 duplicates.
+Result: PASSED. The map m -> d_i(E_m) is injective on its non-zero domain.
+
+--- Verifying Injectivity for shape=(3, 4, 5), face_index=1 ---
+Generated 24 non-zero faces from 24 source indices.
+Found 0 duplicates.
+Result: PASSED. The map m -> d_i(E_m) is injective on its non-zero domain.
+
+--- Verifying Injectivity for shape=(3, 4, 5), face_index=2 ---
+Generated 24 non-zero faces from 24 source indices.
+Found 0 duplicates.
+Result: PASSED. The map m -> d_i(E_m) is injective on its non-zero domain.
+
+-------------------------------------------

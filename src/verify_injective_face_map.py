@@ -1,12 +1,30 @@
 import numpy as np
 import itertools
+import logging
+
+# --- Setup Logging ---
+# This will create a log file in the same directory as the script.
+# The file will be overwritten each time the script is run (filemode='w').
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filename='injectivity_verification.log',
+    filemode='w'
+)
+# Also log to the console
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(message)s') # Keep console output clean
+console_handler.setFormatter(formatter)
+logging.getLogger('').addHandler(console_handler)
+
 
 # We will use functions from your existing tensor_ops.py script.
 # Ensure tensor_ops.py is in the same directory.
 try:
     from tensor_ops import face, dimen
 except ImportError as e:
-    print(f"Error: Could not import required functions from tensor_ops.py. {e}")
+    logging.error(f"Error: Could not import required functions from tensor_ops.py. {e}")
     # Define dummy functions to avoid crashing the script
     def face(m: np.ndarray, i: int) -> np.ndarray: return np.array([])
     def dimen(t: np.ndarray) -> int: return min(t.shape) - 1 if t.shape else -1
@@ -26,7 +44,7 @@ def verify_face_map_injectivity(shape, face_index):
     set of indices m where the result is non-zero. This is equivalent to
     showing there is no repetition among the non-zero output tensors.
     """
-    print(f"\n--- Verifying Injectivity for shape={shape}, face_index={face_index} ---")
+    logging.info(f"\n--- Verifying Injectivity for shape={shape}, face_index={face_index} ---")
 
     non_zero_faces_list = []
     source_indices = [] # Keep track of which m produced which face
@@ -45,7 +63,7 @@ def verify_face_map_injectivity(shape, face_index):
             source_indices.append(m)
 
     if not non_zero_faces_list:
-        print("Result: Vacuously TRUE (no non-zero faces were produced).")
+        logging.info("Result: Vacuously TRUE (no non-zero faces were produced).")
         return True
 
     # Now, check for duplicates. A robust way is to convert flattened arrays to hashable tuples.
@@ -55,22 +73,22 @@ def verify_face_map_injectivity(shape, face_index):
         face_tuple = tuple(face_tensor.flatten())
 
         if face_tuple in seen_faces:
-            print(f"Result: FAILED. Duplicate face found.")
+            logging.error(f"Result: FAILED. Duplicate face found.")
             # Find the original source index for the duplicate
             original_index_of_duplicate = -1
             for j in range(i):
                 if np.array_equal(non_zero_faces_list[j], face_tensor):
                     original_index_of_duplicate = j
                     break
-            print(f"  - Face from index {source_indices[i]} is identical to face from index {source_indices[original_index_of_duplicate]}")
+            logging.error(f"  - Face from index {source_indices[i]} is identical to face from index {source_indices[original_index_of_duplicate]}")
             has_duplicates = True
             break
         seen_faces.add(face_tuple)
 
     if not has_duplicates:
-        print(f"Generated {len(non_zero_faces_list)} non-zero faces from {len(domain_indices)} source indices.")
-        print("Found 0 duplicates.")
-        print("Result: PASSED. The map m -> d_i(E_m) is injective on its non-zero domain.")
+        logging.info(f"Generated {len(non_zero_faces_list)} non-zero faces from {len(domain_indices)} source indices.")
+        logging.info("Found 0 duplicates.")
+        logging.info("Result: PASSED. The map m -> d_i(E_m) is injective on its non-zero domain.")
 
     return not has_duplicates
 
@@ -78,13 +96,23 @@ if __name__ == '__main__':
     # A representative set of shapes for testing
     shapes_to_test = [
         (3, 3),
+        (3,3,3),
         (4, 4, 4),
         (3, 4, 5),
+        (2, 3, 4, 5),
+        (2, 2, 2, 2, 2),
+        (5, 5, 5, 5, 5),
+        (6, 7, 8),
+        (10, 10),
+        (4, 5, 6, 7),
+        (4,4,4,4,5,5),
+        (4,4,4,5,5,5),
+        (4,4,5,5,5,5),
     ]
 
-    print("======================================================")
-    print(" VERIFYING INJECTIVITY OF THE FACE MAP d_i ")
-    print("======================================================")
+    logging.info("======================================================")
+    logging.info(" VERIFYING INJECTIVITY OF THE FACE MAP d_i ")
+    logging.info("======================================================")
     all_passed = True
     for shape in shapes_to_test:
         # Create a dummy tensor to use the imported dimen function
@@ -94,8 +122,8 @@ if __name__ == '__main__':
             if not verify_face_map_injectivity(shape=shape, face_index=i):
                 all_passed = False
     
-    print("\n-------------------------------------------")
+    logging.info("\n-------------------------------------------")
     if all_passed:
-        print("✅ Injectivity premise holds for all tested cases.")
+        logging.info("OVERALL RESULT: PASSED. Injectivity premise holds for all tested cases.")
     else:
-        print("❌ Injectivity premise FAILED for one or more cases.")
+        logging.info("OVERALL RESULT: FAILED. Injectivity premise FAILED for one or more cases.")
