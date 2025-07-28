@@ -644,7 +644,8 @@ if __name__ == "__main__":
         print(__NONDEGENERATE_BASE__+'\n', non_degen_base)
         print(__DEGENERACY_OPERATIONS__+'\n', ops)
 
-    m = standard_basis_matrix(3, 3, 0, 0)
+    m = standard_basis_matrix(3, 3, 0, 2)
+    print(f"Checking E_{(0,2)}")
     print("m:", m)
     print("is_degen(m):", is_degen(m))
     non_degen_base, ops = decompose_degen(m)
@@ -657,3 +658,7 @@ if __name__ == "__main__":
         print(__NONDEGENERATE_BASE__+'\n', non_degen_base)
         print(__DEGENERACY_OPERATIONS__+'\n', ops)
 
+    m = standard_basis_matrix(4, 4, 0, 3)
+    print(f"Checking E_{(0,3)}")
+    print("m:", m)
+    print("is_degen(m):", is_degen(m))
