@@ -20,6 +20,7 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import numpy as np
+import sympy as sp
 from typing import Tuple, List, Union, Any, Optional
 import logging
 import random
@@ -199,7 +200,7 @@ def _get_degeneracy_system_matrix(a: np.ndarray) -> np.ndarray:
     return S_combined
 
 
-def decompose_degen(a: np.ndarray) -> Optional[List[np.ndarray]]:
+def decompose_degen_numpy(a: np.ndarray) -> Optional[List[np.ndarray]]:
     """
     Decomposes a degenerate tensor 'a' into a sum of degenerate elements.
     If 'a' is degenerate, it finds a set of tensors {b_i} such that:
@@ -240,7 +241,57 @@ def decompose_degen(a: np.ndarray) -> Optional[List[np.ndarray]]:
         return b_tensors
     except np.linalg.LinAlgError:
         return None
+
+def decompose_degen(a: np.ndarray) -> Optional[List[np.ndarray]]:
+    """
+    Decomposes a degenerate tensor 'a'. This final version handles
+    underdetermined systems by substituting 0 for all free parameters to
+    return the simplest particular solution.
+    """
+    n = dimen(a)
+    if n <= 0:
+        return None
+
+    try:
+        v_a_sympy = sp.Matrix([sp.Rational(val) for val in a.flatten()])
+        S_numpy = _get_degeneracy_system_matrix(a)
+        S_sympy = sp.Matrix(S_numpy)
+    except ValueError:
+        return None
+
+    if S_sympy.cols == 0:
+        return None if v_a_sympy.norm() != 0 else []
+
+    augmented_matrix = S_sympy.row_join(v_a_sympy)
+    rref_matrix, pivots = augmented_matrix.rref()
+
+    if S_sympy.cols in pivots:
+        return None
+
+    # --- Handle Underdetermined Systems ---
     
+    # 1. Solve the system. The solution `x` may contain `tau` parameters.
+    x, params = S_sympy.gauss_jordan_solve(v_a_sympy)
+
+    # 2. Find all free parameters (tau_i) in the symbolic solution
+    free_params = x.free_symbols
+    
+    # 3. Substitute 0 for all free parameters to get the simplest numerical solution
+    if free_params:
+        subs_dict = {param: 0 for param in free_params}
+        x = x.subs(subs_dict)
+    
+    # 4. Now, x is guaranteed to be numerical. Reconstruct the tensors.
+    shape_n_minus_1 = tuple(s - 1 for s in a.shape)
+    size_n_minus_1 = np.prod(shape_n_minus_1)
+
+    b_tensors = []
+    for i in range(n):
+        b_flat = x[i * size_n_minus_1 : (i + 1) * size_n_minus_1]
+        b_array = np.array(b_flat).reshape(shape_n_minus_1)
+        b_tensors.append(b_array)
+        
+    return b_tensors
 
 def is_degen(a: np.ndarray) -> bool:
     """
@@ -594,97 +645,93 @@ def cyclic_signed(t: np.ndarray) -> np.ndarray:
     return sign * cyclic(t)
 
 
-if __name__ == "__main__":
-    # more counterexamples from manvel and stockmeyer 1971
-    __NONDEGENERATE_BASE__ = "Non-degenerate base matrix:"
-    __DEGENERACY_OPERATIONS__ = "Sequence of degeneracy operations:"
 
-    def matrix_m(n: int) -> np.ndarray:
-        j = int(np.ceil(n // 2))
-        A = np.zeros((n,n))
-        A[0,j] = 1
-        A[j,0] = 1
-        return A
+# Define your test helper functions at the top level
+def matrix_m(n: int) -> np.ndarray:
+    j = int(np.ceil(n // 2))
+    A = np.zeros((n,n))
+    A[0,j] = 1
+    A[j,0] = 1
+    return A
 
-    def matrix_n(n: int) -> np.ndarray:
-        A = np.zeros((n,n))
-        j = int(np.ceil(n // 2))+1
-        A[0,j] = 1
-        A[j,0] = 1
-        return A
+def matrix_n(n: int) -> np.ndarray:
+    A = np.zeros((n,n))
+    j = int(np.ceil(n // 2))+1
+    A[0,j] = 1
+    A[j,0] = 1
+    return A
+
+def run_decomposition_test(name: str, tensor: np.ndarray):
+    """A general helper function to run and print a degeneracy test."""
+    print(f"--- Checking: {name} ---")
+    print("Tensor shape:", tensor.shape)
+    print(tensor)
     
-    def run_decomposition_test(name: str, tensor: np.ndarray):
-        """A general helper function to run and print a degeneracy test."""
-        print(f"--- Checking: {name} ---")
-        print("Tensor shape:", tensor.shape)
-        print(tensor)
-        
-        is_degen_result = is_degen(tensor)
-        print(f"Is degenerate: {is_degen_result}")
-        
-        if is_degen_result:
-            decomposition = decompose_degen(tensor)
-            print("Degeneracy decomposition found:")
-            if decomposition is not None:
-                # Check if any component in the decomposition is meaningfully non-zero
-                is_trivial_decomp = not any(np.any(np.abs(b) > 1e-9) for b in decomposition)
-                
-                if is_trivial_decomp:
-                    print("  (Decomposition is trivial, involving only zero tensors)")
-                else:
-                    # Iterate through the list of component tensors and print them
-                    for i, b in enumerate(decomposition):
-                        if np.any(np.abs(b) > 1e-9): # Only print non-zero components
-                            print(f"  Component b_{i} for operator s_{i}:\n{np.round(b, 4)}")
+    is_degen_result = is_degen(tensor)
+    print(f"Is degenerate: {is_degen_result}")
+    
+    if is_degen_result:
+        decomposition = decompose_degen(tensor)
+        print("Degeneracy decomposition found:")
+
+        if decomposition is not None:
+            is_trivial_decomp = not any(
+                val != 0 for b in decomposition for val in np.array(b).flatten()
+            )
+
+            if is_trivial_decomp:
+                print("  (Decomposition is trivial, involving only zero tensors)")
             else:
-                print("  (No decomposition found; tensor is degenerate but could not be decomposed.)")
+                for i, b in enumerate(decomposition):
+                    if any(val != 0 for val in np.array(b).flatten()):
+                         print(f"  Component b_{i} for operator s_{i}:\n{b}")
         else:
-            print("Tensor is not degenerate.")
-        
-        print("-" * (len(name) + 14) + "\n")
-        
+            print("  (Error: Decomposition was unexpectedly None)")
+    else:
+        print("Tensor is not degenerate.")
+    
+    print("-" * (len(name) + 14) + "\n")
+
+
+# The __main__ block should only contain the code to be executed.
+if __name__ == "__main__":
+    print("Running tensor operations tests...")
+
     m = matrix_m(5)
     run_decomposition_test("Matrix M (5x5)", m)
-    
-
 
     n = degen(degen(degen(matrix_n(3),2),3),4)
     run_decomposition_test("Matrix N (6x6)", n)
     
     X = np.array([[0, 0, 1, 0],
-                [0, 0, 0, 0],
-                [1, 0, 0, 0,],
-                [0, 0, 0, 0]])
-
+                  [0, 0, 0, 0],
+                  [1, 0, 0, 0,],
+                  [0, 0, 0, 0]])
     run_decomposition_test("Matrix X (4x4)", X)
-
     
-    Y = np.array([[0, 0, 0, 0],
-                [0, 0, 0, 0],
-                [0, 0, 0, 0,],
-                [0, 0, 0, 0]])
+    Y = np.zeros((4,4))
     run_decomposition_test("Matrix Y (4x4)", Y)
     
-    
-    
-    shape = (7, 9, 11, 12)
+    shape = (4, 4, 4, 4)
     can_reconstruct = reconstruct_range_tensor_from_horn(shape, proceed_anyway=True)
-    print(f"Range tensor of shape {shape} can be reconstructed from any horn: {can_reconstruct}") 
-    
+    print(f"Range tensor of shape {shape} can be reconstructed from any horn: {can_reconstruct}")
+    print("-" * 30 + "\n")
 
     w = random_real_matrix((7, 9), low=-10, high=10, seed=123)
-    print("w:", w)
-    print("bdry(w):", bdry(w))
-    print("bdry_mod1(w):", bdry_mod1(w))
-    print("bdry_mod1(bdry_mod1(w)):", bdry_mod1(bdry_mod1(w)))
+    print("w:\n", w)
+    print("\nbdry(w):\n", bdry(w))
+    print("\nbdry_mod1(w):\n", bdry_mod1(w))
+    print("\nbdry_mod1(bdry_mod1(w)):\n", bdry_mod1(bdry_mod1(w)))
+    print("-" * 30 + "\n")
 
-    m = standard_basis_matrix(2, 2, 0, 0)
-    run_decomposition_test("Standard Basis Matrix E_(0,0)", m)
+    m_basis_1 = standard_basis_matrix(2, 2, 0, 0)
+    run_decomposition_test("Standard Basis Matrix E_(0,0)", m_basis_1)
 
-
-    m = standard_basis_matrix(3, 3, 0, 2)
-    run_decomposition_test("Standard Basis Matrix E_(0,2)", m)
-
+    m_basis_2 = standard_basis_matrix(3, 3, 0, 2)
+    run_decomposition_test("Standard Basis Matrix E_(0,2)", m_basis_2)
     
-    m = standard_basis_matrix(4, 4, 0, 3)
-    run_decomposition_test("Standard Basis Matrix E_(0,3)", m)
+    m_basis_3 = standard_basis_matrix(4, 4, 0, 3)
+    run_decomposition_test("Standard Basis Matrix E_(0,3)", m_basis_3)
+
+    m_basis_4 = standard_basis_matrix(5, 5, 1, 1)
+    run_decomposition_test("Standard Basis Matrix E_(1,1)", m_basis_4)
