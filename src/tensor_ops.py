@@ -20,7 +20,7 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import numpy as np
-from typing import Tuple, List, Union, Any
+from typing import Tuple, List, Union, Any, Optional
 import logging
 import random
 
@@ -159,82 +159,111 @@ def degen(z: np.ndarray, k: int) -> np.ndarray:
         z = np.insert(z, k, z[tuple(slices)], axis=axis)
     return z
 
+# Insufficient for simplicial modules
+# def is_degen(a: np.ndarray) -> bool:
+#    d = dimen(a) 
+#    for i in np.arange(d): # faces have simplicial dimension d
+#        if np.array_equal(a, degen(face(a, int(i)), int(i))):
+#            return True
+#    return False
+
+def _get_degeneracy_system_matrix(a: np.ndarray) -> np.ndarray:
+    """
+    Constructs the matrix representing the combined degeneracy operators.
+    Each column is the flattened image of a basis vector under a degeneracy operator.
+    """
+    n = dimen(a)
+    shape_n = a.shape
+    size_n = np.prod(shape_n)
+    
+    shape_n_minus_1 = tuple(s - 1 for s in shape_n)
+    size_n_minus_1 = np.prod(shape_n_minus_1)
+
+    if size_n_minus_1 <= 0:
+        return np.zeros((size_n, 0))
+
+    num_degen_ops = n
+    S_combined = np.zeros((size_n, num_degen_ops * size_n_minus_1), dtype=float)
+
+    for i in range(num_degen_ops):
+        for j in range(size_n_minus_1):
+            b = np.zeros(size_n_minus_1)
+            b[j] = 1.0
+            b = b.reshape(shape_n_minus_1)
+            
+            degen_b = degen(b, i)
+            
+            col_index = i * size_n_minus_1 + j
+            S_combined[:, col_index] = degen_b.flatten()
+            
+    return S_combined
+
+
+def decompose_degen(a: np.ndarray) -> Optional[List[np.ndarray]]:
+    """
+    Decomposes a degenerate tensor 'a' into a sum of degenerate elements.
+    If 'a' is degenerate, it finds a set of tensors {b_i} such that:
+        a = sum_{i=0}^{n-1} s_i(b_i)
+    where n = dimen(a) and s_i is the i-th degeneracy operator (degen).
+    Returns a list of the tensors [b_0, b_1, ..., b_{n-1}].
+    If 'a' is not degenerate, returns None.
+    The decomposition is not unique; this function returns one valid solution.
+    """
+    n = dimen(a)
+    if n <= 0:
+        return None
+
+    v_a = a.flatten().astype(float)
+    S_combined = _get_degeneracy_system_matrix(a)
+
+    if S_combined.shape[1] == 0:
+        return None if np.any(v_a) else []
+
+    try:
+        x, residuals, rank, s = np.linalg.lstsq(S_combined, v_a, rcond=None)
+        
+        v_a_reconstructed = S_combined @ x
+        if not np.allclose(v_a, v_a_reconstructed):
+            return None
+
+        shape_n_minus_1 = tuple(s - 1 for s in a.shape)
+        size_n_minus_1 = np.prod(shape_n_minus_1)
+        
+        x_reshaped = x.reshape(n, size_n_minus_1)
+        
+        b_tensors = []
+        for i in range(n):
+            b_flat = x_reshaped[i, :]
+            b = b_flat.reshape(shape_n_minus_1)
+            b_tensors.append(b)
+            
+        return b_tensors
+    except np.linalg.LinAlgError:
+        return None
+    
+
 def is_degen(a: np.ndarray) -> bool:
-    d = dimen(a) 
-    for i in np.arange(d): # faces have simplicial dimension d
-        if np.array_equal(a, degen(face(a, int(i)), int(i))):
-            return True
-    return False
+    """
+    Checks if a tensor 'a' is degenerate by attempting to decompose it.
+    """
+    return decompose_degen(a) is not None
+
 
 def is_generator_numeric(a: np.ndarray) -> bool:
     """
-    Symbolic test for generator:
-    - Let n = min(a.shape).
-    - Zero tensor (all entries 0) cannot be a generator in tensor local coefficient homology.
-    - Otherwise, f n <= 1 (0-simplices), non-degenerate.
-    - If n == 2, degenerate if constant (all entries equal).
-    - If n > 2, degenerate if a == num_degen(face(a,i), i) for some i.
+    Tests if a tensor is a non-degenerate generator. The zero tensor is always degenerate.
     """
-    #print(f"[DEBUG] is_generator_numeric: tensor shape={a.shape}")
     if np.all(a == 0):
-        #print("[DEBUG] is_generator_numeric: zero tensor cannot be a generator")
         return False
-    n = min(a.shape)
-    if n <= 1:
-        #print("[DEBUG] is_generator_numeric: nonzero, dimension 0 is a generator")
-        return True
-    flat = a.flatten()
-    if n == 2: # dimension 1 
-        is_constant = bool(np.all(flat == flat[0]))
-        #print(f"[DEBUG] is_generator_numeric: n==2, constant? {is_constant}")
-        return not is_constant
-    
-    for i in range(n):
-        try:
-            B = face(a, i)
-            C = degen(B, i)
-        except IndexError:
-            continue
-        if np.array_equal(a, C):
-            #print(f"[DEBUG] is_generator_numeric: degeneracy via face+degen at i={i}")
-            return False
-    #print("[DEBUG] is_generator_numeric: no degeneracy found")
-    return True
+    return not is_degen(a)
 
+def find_degen(a: np.ndarray) -> Union[Tuple[np.ndarray, int], None]:
+    """
+    This function is obsolete due to its flawed premise. Use `decompose_degen`.
+    """
+    logging.warning("The function `find_degen` is deprecated and based on an incorrect definition of degeneracy.")
+    return None
 
-def find_degen(a: np.ndarray) -> Union[Tuple[np.ndarray, int], None]:   
-    d = dimen(a) 
-    for i in np.arange(d): # faces have simplicial dimension d
-        if np.array_equal(a, degen(face(a, int(i)), int(i))):
-            return face(a, int(i)), int(i)
-    return None    
-
-# Decompose a degenerate matrix into a non-degenerate base matrix and a sequence of degeneracy operations
-# Example usage
-# A = np.array([[...], [...]])  # Replace with an actual hypermatrix
-# non_degenerate_base, ops = decomposeDegeneracy(A)
-# print("Non-degenerate base matrix:", non_degenerate_base)
-# print("Sequence of degeneracy operations:", ops)
-
-def decompose_degen(a: np.ndarray) -> Tuple[np.ndarray, list]:
-    operations = []
-
-    def helper(b: np.ndarray, ops: list) -> np.ndarray:
-        nonlocal operations
-        degeneracy_info = find_degen(b)
-        
-        # Base case: If B is non-degenerate or no degeneracy found, set the operations
-        if degeneracy_info is None:
-            operations = ops
-            return b
-        
-        # Recursive case
-        f, i = degeneracy_info
-        return helper(f, ops + [(f, i)])
-
-    # Start the decomposition
-    non_degenerate_base = helper(a, [])
-    return non_degenerate_base, operations
 
 # Frontière d'un tenseur
 def bdry(m: np.ndarray) -> np.ndarray:
@@ -584,40 +613,58 @@ if __name__ == "__main__":
         A[j,0] = 1
         return A
     
+    def run_decomposition_test(name: str, tensor: np.ndarray):
+        """A general helper function to run and print a degeneracy test."""
+        print(f"--- Checking: {name} ---")
+        print("Tensor shape:", tensor.shape)
+        print(tensor)
+        
+        is_degen_result = is_degen(tensor)
+        print(f"Is degenerate: {is_degen_result}")
+        
+        if is_degen_result:
+            decomposition = decompose_degen(tensor)
+            print("Degeneracy decomposition found:")
+            if decomposition is not None:
+                # Check if any component in the decomposition is meaningfully non-zero
+                is_trivial_decomp = not any(np.any(np.abs(b) > 1e-9) for b in decomposition)
+                
+                if is_trivial_decomp:
+                    print("  (Decomposition is trivial, involving only zero tensors)")
+                else:
+                    # Iterate through the list of component tensors and print them
+                    for i, b in enumerate(decomposition):
+                        if np.any(np.abs(b) > 1e-9): # Only print non-zero components
+                            print(f"  Component b_{i} for operator s_{i}:\n{np.round(b, 4)}")
+            else:
+                print("  (No decomposition found; tensor is degenerate but could not be decomposed.)")
+        else:
+            print("Tensor is not degenerate.")
+        
+        print("-" * (len(name) + 14) + "\n")
+        
     m = matrix_m(5)
-    print("M:", m)
-    print("is_degen(M):", is_degen(m))
-    non_degen_base, ops = decompose_degen(m)
-    print(__NONDEGENERATE_BASE__, non_degen_base)
-    print(__DEGENERACY_OPERATIONS__, ops)
+    run_decomposition_test("Matrix M (5x5)", m)
+    
+
 
     n = degen(degen(degen(matrix_n(3),2),3),4)
-    print("n:", n)
-    print("is_degen(n):", is_degen(n))
-    non_degenerate_base, ops = decompose_degen(n)
-    print(__NONDEGENERATE_BASE__, non_degenerate_base)
-    print(__DEGENERACY_OPERATIONS__, ops)
-
+    run_decomposition_test("Matrix N (6x6)", n)
+    
     X = np.array([[0, 0, 1, 0],
                 [0, 0, 0, 0],
                 [1, 0, 0, 0,],
                 [0, 0, 0, 0]])
-    print("X:", X)
-    print("is_degen(X):", is_degen(X))
-    non_degenerate_base, ops = decompose_degen(X)
-    print(__NONDEGENERATE_BASE__, non_degenerate_base)
-    print(__DEGENERACY_OPERATIONS__, ops)
 
+    run_decomposition_test("Matrix X (4x4)", X)
+
+    
     Y = np.array([[0, 0, 0, 0],
                 [0, 0, 0, 0],
                 [0, 0, 0, 0,],
                 [0, 0, 0, 0]])
-    print("Y:", Y)
-    print("is_degen(Y):", is_degen(Y))
-    non_degenerate_base, ops = decompose_degen(Y)
-    print(__NONDEGENERATE_BASE__, non_degenerate_base)
-    print(__DEGENERACY_OPERATIONS__, ops)
-
+    run_decomposition_test("Matrix Y (4x4)", Y)
+    
     
     
     shape = (7, 9, 11, 12)
@@ -632,33 +679,12 @@ if __name__ == "__main__":
     print("bdry_mod1(bdry_mod1(w)):", bdry_mod1(bdry_mod1(w)))
 
     m = standard_basis_matrix(2, 2, 0, 0)
-    print("m:", m)
-    print("is_degen(m):", is_degen(m))
-    non_degen_base, ops = decompose_degen(m)
-    print(__NONDEGENERATE_BASE__, non_degen_base)
-    print(__DEGENERACY_OPERATIONS__, ops)
-    for i in range(2):
-        degeneracy = degen(m, i)
-        print(f"degeneracy (axis {i}):\n", degeneracy)
-        non_degen_base, ops = decompose_degen(degeneracy)
-        print(__NONDEGENERATE_BASE__+'\n', non_degen_base)
-        print(__DEGENERACY_OPERATIONS__+'\n', ops)
+    run_decomposition_test("Standard Basis Matrix E_(0,0)", m)
+
 
     m = standard_basis_matrix(3, 3, 0, 2)
-    print(f"Checking E_{(0,2)}")
-    print("m:", m)
-    print("is_degen(m):", is_degen(m))
-    non_degen_base, ops = decompose_degen(m)
-    print(__NONDEGENERATE_BASE__, non_degen_base)
-    print(__DEGENERACY_OPERATIONS__, ops)
-    for i in range(3):
-        degeneracy = degen(m, i)
-        print(f"degeneracy (axis {i}):\n", degeneracy)
-        non_degen_base, ops = decompose_degen(degeneracy)
-        print(__NONDEGENERATE_BASE__+'\n', non_degen_base)
-        print(__DEGENERACY_OPERATIONS__+'\n', ops)
+    run_decomposition_test("Standard Basis Matrix E_(0,2)", m)
 
+    
     m = standard_basis_matrix(4, 4, 0, 3)
-    print(f"Checking E_{(0,3)}")
-    print("m:", m)
-    print("is_degen(m):", is_degen(m))
+    run_decomposition_test("Standard Basis Matrix E_(0,3)", m)

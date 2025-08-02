@@ -15,7 +15,7 @@ import datetime
 # --- Setup Logging ---
 # This will create a log file in the same directory as the script.
 # The file will be overwritten each time the script is run (filemode='w').
-timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
