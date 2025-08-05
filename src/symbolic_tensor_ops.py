@@ -49,6 +49,18 @@ class SymbolicTensor:
                 else:
                     raise ValueError(f"Unsupported init_type: {init_type}")
 
+    # Tensor addition 
+    def __add__(self, other: "SymbolicTensor") -> "SymbolicTensor":
+        if not isinstance(other, SymbolicTensor):
+            return NotImplemented
+        if self.shape != other.shape:
+            raise ValueError(f"Cannot add tensors of different shapes {self.shape} vs {other.shape}")
+        
+        sum_tensor = np.empty(self.shape, dtype=object)
+        for idx in np.ndindex(self.shape):
+            sum_tensor[idx] = self.tensor[idx] + other.tensor[idx]
+        return SymbolicTensor(self.shape, tensor=sum_tensor)
+    
     def __sub__(self, other: "SymbolicTensor") -> "SymbolicTensor":
         if not isinstance(other, SymbolicTensor):
             return NotImplemented
@@ -59,7 +71,6 @@ class SymbolicTensor:
         for idx in np.ndindex(self.shape):
             diff[idx] = self.tensor[idx] - other.tensor[idx]
         return SymbolicTensor(self.shape, tensor=diff)
-
     
     @staticmethod
     def from_tensor(tensor):
@@ -191,23 +202,6 @@ class SymbolicTensor:
 
         return g
     
-    def is_degen(self):
-        """
-        Determine if the symbolic tensor is degenerate.
-        A tensor is degenerate if it equals a degeneracy of one of its faces.
-        Matches tensor_ops.is_degen().
-        """
-        d = self.dimen()  # simplicial dimension
-        for i in range(d):
-            face_i = self.face(i)
-            degen_i = face_i.degen(i)
-            for idx in np.ndindex(self.shape):
-                if sp.simplify(self.tensor[idx] - degen_i.tensor[idx]) != 0:
-                    break
-            else:
-                return True  # All entries matched ⇒ degenerate
-        return False
-    
     def n_hypergroupoid_comparison(self, outer_horns=False, verbose=False, allow_degen=False):
         """
         Test the n-hypergroupoid conjecture: uniqueness of fillers.
@@ -314,36 +308,72 @@ class SymbolicTensor:
         """Representative string of the tensor"""
         return f"SymbolicTensor(shape={self.shape})"
 
-    def decompose_degen(self) -> Tuple["SymbolicTensor", List[Tuple["SymbolicTensor", int]]]:
+# Replace the decompose_degen method in the SymbolicTensor class with this version
+
+    def decompose_degen(self) -> Union[List["SymbolicTensor"], None]:
         """
-        Decompose a degenerate symbolic tensor into a non-degenerate base
-        and a sequence of degeneracy operations.
-        Matches tensor_ops.decompose_degen().
-        
+        Decomposes a symbolic tensor into a sum of degenerate components by
+        solving a system of symbolic linear equations.
+
+        A tensor T of dimension n is degenerate if it can be written as
+        T = sum_{i=0}^{n-1} s_i(B_i), where B_i are symbolic tensors of
+        dimension n-1.
+
         Returns:
-            Tuple of (non-degenerate base tensor, list of (face, index) degeneracies)
+            A list of the component tensors [B_0, B_1, ...], or None if no
+            exact decomposition exists (i.e., the tensor is non-degenerate).
         """
-        operations = []
+        n = self.dimen()
+        if n <= 0: # 0-simplices and lower cannot be degenerate
+            return None
 
-        def helper(tensor: "SymbolicTensor", ops: List[Tuple["SymbolicTensor", int]]) -> "SymbolicTensor":
-            d = tensor.dimen()
-            for i in range(d):
-                face_i = tensor.face(i)
-                degen_i = face_i.degen(i)
+        shape_n_minus_1 = tuple(s - 1 for s in self.shape)
+        if any(s < 1 for s in shape_n_minus_1): # Shape must be at least (1,1,...)
+            return None
 
-                # Check symbolic equality
-                for idx in np.ndindex(tensor.shape):
-                    if sp.simplify(tensor.tensor[idx] - degen_i.tensor[idx]) != 0:
-                        break
-                else:
-                    # Found degeneracy at face(i)
-                    ops.append((face_i, i))
-                    return helper(face_i, ops)
+        # 1. Create the unknown B_i tensors with unique symbols
+        unknown_b_tensors = []
+        all_unknown_symbols = []
+        # The loop must go from 0 to n-1. This is the fix.
+        for i in range(n):
+            prefix = f"b_{i}"
+            b_i = SymbolicTensor(shape_n_minus_1)
+            b_i_symbols = []
+            for idx in np.ndindex(b_i.shape):
+                idx_str = ','.join(map(str, idx))
+                symbol = sp.Symbol(f'{prefix}_{{{idx_str}}}')
+                b_i.tensor[idx] = symbol
+                b_i_symbols.append(symbol)
+            
+            unknown_b_tensors.append(b_i)
+            all_unknown_symbols.extend(b_i_symbols)
 
-            return tensor  # Base case: non-degenerate
+        # 2. Form the symbolic sum of the degeneracies: Sum_{i=0}^{n-1}(s_i(B_i))
+        sum_of_degen = SymbolicTensor(self.shape, init_type='zeros')
+        # The loop must go from 0 to n-1. This is the fix.
+        for i in range(n):
+            degen_bi = unknown_b_tensors[i].degen(i)
+            sum_of_degen = sum_of_degen + degen_bi
+        
+        # 3. Create and solve the system of equations
+        equations = [sp.Eq(self.tensor[idx], sum_of_degen.tensor[idx]) for idx in np.ndindex(self.shape)]
+        solution = sp.solve(equations, all_unknown_symbols, dict=True)
 
-        base = helper(self, operations)
-        return base, operations
+        if not solution:
+            return None
+
+        # 5. Substitute the solution back to get the concrete B_i tensors
+        subs_dict = solution[0]
+        result_b_tensors = [b.subs(subs_dict) for b in unknown_b_tensors]
+            
+        return result_b_tensors
+    
+    def is_degen(self) -> bool:
+        """
+        Determine if the symbolic tensor is degenerate by attempting to find
+        an exact additive decomposition.
+        """
+        return self.decompose_degen() is not None
 
 def tensor_filler_difference_rank(original: "SymbolicTensor", filler: "SymbolicTensor") -> int:
     """
