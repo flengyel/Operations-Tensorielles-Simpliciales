@@ -23,7 +23,7 @@
 import pytest
 import sympy as sp
 import numpy as np
-from symbolic_tensor_ops import SymbolicTensor, correction_rank
+from symbolic_tensor_ops import SymbolicTensor, tensor_filler_difference_rank
 from tensor_ops import n_hypergroupoid_conjecture, SimplicialException, ___SEED___
 import random
 
@@ -67,10 +67,10 @@ def test_filler_agrees_with_horn():
             diff = sp.simplify(face_j.tensor[idx] - horn_prime[j].tensor[idx])
             assert diff == 0
 
-def test_correction_rank():
+def test_tensor_filler_difference_rank():
     T = SymbolicTensor((3, 3))
     filler = T.filler(T.horn(1), 1)
-    rank = correction_rank(T, filler)
+    rank = tensor_filler_difference_rank(T, filler)
     assert isinstance(rank, int)
     assert rank >= 0
 
