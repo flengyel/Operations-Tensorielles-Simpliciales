@@ -62,7 +62,9 @@ def verify_face_map_injectivity(shape, face_index):
     if not non_zero_faces_list:
         logging.info("Result: Vacuously TRUE (no non-zero faces were produced).")
         return True
-
+    logging.info(f"Found {len(non_zero_faces_list)} non-zero faces for shape={shape}, face_index={face_index}.")
+    logging.info(f"face_index={face_index} Source indices: {source_indices}")
+    
     # Now, check for duplicates. A robust way is to convert flattened arrays to hashable tuples.
     seen_faces = set()
     has_duplicates = False
