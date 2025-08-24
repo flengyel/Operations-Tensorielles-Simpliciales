@@ -93,10 +93,6 @@ if __name__ == "__main__":
         (8,8),
         (5,5,5),
         (5,5,6),
-        (5,6,6),
-        (6,6,6),
-        (7,7,7),
-        (8,8,8)
     ]
     for shape in shapes:
         count_basis_tensors_for_shape(shape)
