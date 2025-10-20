@@ -273,7 +273,14 @@ class SymbolicTensor:
     def subs(self, substitutions: dict):
         """Apply substitutions to all expressions"""
         for idx in np.ndindex(self.shape):
-            self.tensor[idx] = self.tensor[idx].subs(substitutions)
+            val = self.tensor[idx]
+            subs_method = getattr(val, "subs", None)
+            if callable(subs_method):
+                # Only call subs if the element provides such a method (e.g., a SymPy expression)
+                self.tensor[idx] = subs_method(substitutions)
+            else:
+                # Leave non-symbolic entries unchanged
+                self.tensor[idx] = val
         return self
     
     def to_latex(self):
