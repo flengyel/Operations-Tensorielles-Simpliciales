@@ -87,14 +87,14 @@ class SymbolicTensor:
         """
         return len(self.shape)
 
-    def _dims(self):
+    def _dims(self) -> Tuple[np.ndarray, ...]:
         """
         Get dimensions of the tensor as a tuple of arrays of indices.
         This matches tensor_ops._dims()
         """
         return tuple([np.arange(start=0, stop=dim_size) for dim_size in self.shape])
     
-    def face(self, i: int):
+    def face(self, i: int) -> "SymbolicTensor":
         """
         Apply the i-th simplicial face operation to the symbolic tensor.
         Matches tensor_ops.face() by removing index i from each axis.
@@ -109,7 +109,7 @@ class SymbolicTensor:
         result = self.tensor[grid]
         return SymbolicTensor(result.shape, tensor=result)
 
-    def degen(self, k: int):
+    def degen(self, k: int) -> "SymbolicTensor":
         """
         Apply k-th simplicial degeneracy by duplicating index k in every axis.
         Matches tensor_ops.degen().
@@ -124,7 +124,7 @@ class SymbolicTensor:
             result = np.insert(result, k, insert_slice, axis=axis)
         return SymbolicTensor(result.shape, tensor=result)
 
-    def bdry(self):
+    def bdry(self) -> "SymbolicTensor":
         """
         Compute the simplicial boundary of the symbolic tensor.
         Matches tensor_ops.bdry(), using alternating sum of faces.
@@ -146,7 +146,7 @@ class SymbolicTensor:
 
         return SymbolicTensor(result_shape, tensor=result)
     
-    def horn(self, k: int):
+    def horn(self, k: int) -> List["SymbolicTensor"]:
         """
         Construct the k-th horn of the symbolic tensor.
         Matches tensor_ops.horn().
@@ -170,7 +170,7 @@ class SymbolicTensor:
 
         return faces
     
-    def filler(self, horn_list, k: int):
+    def filler(self, horn_list:List["SymbolicTensor"], k: int) -> "SymbolicTensor":
         """
         Compute a filler for the horn using Moore's algorithm.
         Matches tensor_ops.filler().
