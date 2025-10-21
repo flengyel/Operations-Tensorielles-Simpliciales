@@ -14,9 +14,7 @@ def compute_missing_indices_dask(shape: Tuple[int, ...], horn_j: int) -> Set[Tup
     order_k = len(shape)
     dim_n = min(shape) - 1
 
-    # --- ALGORITHMIC FIX ---
-    # According to the n-hypergroupoid conjecture, if k < n, the number
-    # of missing indices must be 0.
+    # If k < n, the number of missing indices must be 0.
     if order_k < dim_n:
         return set()
 
