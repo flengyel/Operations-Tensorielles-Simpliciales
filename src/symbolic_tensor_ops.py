@@ -202,7 +202,7 @@ class SymbolicTensor:
 
         return g
     
-    def n_hypergroupoid_comparison(self, outer_horns=False, verbose=False, allow_degen=False):
+    def n_hypergroupoid_comparison(self, outer_horns=False, verbose=False, allow_degen=False) -> bool:
         """
         Test the n-hypergroupoid conjecture: uniqueness of fillers.
         Matches tensor_ops.n_hypergroupoid_comparison().
@@ -264,13 +264,13 @@ class SymbolicTensor:
         return True
 
     ############### Simplification and Substitution Methods ###############    
-    def simplify(self):
+    def simplify(self) -> "SymbolicTensor":
         """Simplify all expressions in the tensor"""
         for idx in np.ndindex(self.shape):
             self.tensor[idx] = sp.simplify(self.tensor[idx])
         return self
     
-    def subs(self, substitutions: dict):
+    def subs(self, substitutions: dict) -> "SymbolicTensor":
         """Apply substitutions to all expressions"""
         for idx in np.ndindex(self.shape):
             val = self.tensor[idx]
@@ -283,7 +283,7 @@ class SymbolicTensor:
                 self.tensor[idx] = val
         return self
     
-    def to_latex(self):
+    def to_latex(self) -> str:
         """Convert to LaTeX representation"""
         if len(self.shape) == 2:
             rows, cols = self.shape
@@ -307,11 +307,11 @@ class SymbolicTensor:
                     slices.append(f"Slice {i}:\n{slice_tensor.to_latex()}")
             return "\n\n".join(slices)
     
-    def __str__(self):
+    def __str__(self) -> str:
         """String representation of the tensor"""
         return str(self.tensor)
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Representative string of the tensor"""
         return f"SymbolicTensor(shape={self.shape})"
 
