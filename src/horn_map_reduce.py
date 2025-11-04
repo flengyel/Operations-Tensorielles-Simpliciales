@@ -49,7 +49,7 @@ if __name__ == '__main__':
     assert missing_indices_ex == expected_ex
     print("Example assertion passed!")
 
-    # A more complex example
+    # A more complex example     
     shape_complex = (4, 4, 4)
     horn_j_complex = 0
     # N = 3. Horn faces are k=1, 2, 3.
@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
     shapes = [(2,2), (3,3,3), (3,5), (3,3,5), (3,3,3,5), (3,3,3,3,5), (3,4,5,6),
               (3,3,3,3,3,5),(3,3,3,3,3,3,5), (3,3,3,3,3,3,3,5)] 
-    shapes = [(2,2), (3,3,3), (3,3,3,3), (3,4,5,6)] 
+#    shapes = [(2,2), (3,3,3), (3,3,3,3), (3,4,5,6)] 
    
     horn_j = 1
     for shape in shapes:
