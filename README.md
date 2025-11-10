@@ -1,10 +1,12 @@
 # Simplicial Tensor Operations
 
-**Research playground for simplicial operations on matrices and hypermatrices.**
+**Simplicial operations on matrices and hypermatrices.**
 
 ## Mathematical formalities
 
-This project focuses on simplicial operations on matrices and hypermatrices, in particular the face maps (`d_i`), degeneracies (`s_i`), and boundary operators. The operations studied here satisfy the standard simplicial identities.
+This project defines sumplicial operations  matrices and hypermatrices (tensors), including face maps (`d_i`), degeneracies (`s_i`), and boundary operators, as well mathematical computer experiments for the diagonal sinplicial tensor module X(s; A), where s=(n_1,...,n_k) is the shape of a tensor of order k.
+
+The operations defined here satisfy the standard simplicial identities.
 
 $$
 \begin{aligned}
@@ -55,47 +57,3 @@ python examples/tensor_ops.py
 
 Each script imports the corresponding module under `simplicial_tensors` and calls its `main()` entry point.
 
-## Publishing your changes to GitHub
-
-When you work inside a remote environment (for example this Codex container), commits stay local to that environment until you push them to GitHub. For this project the destination repository should be named **`SimplicialTensors`**.
-
-1. Open the integrated terminal (see [`docs/no_terminal_troubleshooting.md`](docs/no_terminal_troubleshooting.md) if the terminal tab is hidden) and make sure you are at the workspace root:
-
-   ```bash
-   cd /workspace/Operations-Tensorielles-Simpliciales
-   ```
-
-2. Configure or update the remote so it points at your GitHub project:
-
-   ```bash
-   git remote add origin git@github.com:<your-username>/SimplicialTensors.git
-   # If origin already exists, run instead:
-   # git remote set-url origin git@github.com:<your-username>/SimplicialTensors.git
-   ```
-
-3. Push the active branch (the workspace uses `work` by default):
-
-   ```bash
-   git push -u origin work
-   ```
-
-4. Open `https://github.com/<your-username>/SimplicialTensors/pulls` and create a Pull Request if desired.
-
-## Step-by-step: from this workspace to your computer
-
-If you started in this hosted workspace and you do **not** yet have the project locally, follow this checklist. It mirrors the detailed guide in [`docs/pushing_from_codex_workspace.md`](docs/pushing_from_codex_workspace.md).
-
-1. **Push the code from here to GitHub.**
-   * Open the Terminal tab (or follow the troubleshooting guide linked above) so you can run shell commands.
-   * Stay in `/workspace/Operations-Tensorielles-Simpliciales`.
-   * Verify you are on the correct branch (`git status -sb`).
-   * Ensure the remote targets `git@github.com:<your-username>/SimplicialTensors.git`.
-   * Push the branch (`git push -u origin work`).
-2. **Clone or pull on your own computer.**
-   * First time: `git clone git@github.com:<your-username>/SimplicialTensors.git`.
-   * Later: `git pull --ff-only` from inside the `SimplicialTensors` directory.
-3. **Work with the package.**
-   * Change into `SimplicialTensors/` and install with `pip install -e .`.
-   * Run examples or tests as shown earlier in the README.
-
-Cloning from GitHub automatically gives you a local folder named `SimplicialTensors`, so no manual renaming or downloading is required.
