@@ -25,7 +25,7 @@ $$
 
 The refactor places all installable code under `src/simplicial_tensors/`. The repository root can remain `Operations-Tensorielles-Simpliciales`; during installation Python resolves the package via `simplicial_tensors` contained in `src/`. No folder renaming is required.
 
-```
+```ascii
 Operations-Tensorielles-Simpliciales/
 ├── pyproject.toml
 └── src/
@@ -56,4 +56,3 @@ python examples/tensor_ops.py
 ```
 
 Each script imports the corresponding module under `simplicial_tensors` and calls its `main()` entry point.
-
