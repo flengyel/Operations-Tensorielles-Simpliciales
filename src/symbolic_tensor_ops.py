@@ -588,3 +588,7 @@ if __name__ == "__main__":
     shape = (3,3,3)
     conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
     print(f"Shape: {shape}, Conjecture: {conjecture}, Comparison: {comparison}")
+
+#    shape = (2,2)
+#    conjecture, comparison, sym_tensor = test_symbolic_n_hypergroupoid(shape)
+#    print(f"Shape: {shape}, Conjecture: {conjecture}, Comparison: {comparison}")
