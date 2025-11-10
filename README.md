@@ -4,7 +4,7 @@
 
 ## Mathematical formalities
 
-This project defines sumplicial operations  matrices and hypermatrices (tensors), including face maps (`d_i`), degeneracies (`s_i`), and boundary operators, as well mathematical computer experiments for the diagonal sinplicial tensor module X(s; A), where s=(n_1,...,n_k) is the shape of a tensor of order k.
+This project defines simplicial operations  matrices and hypermatrices (tensors), including face maps (`d_i`), degeneracies (`s_i`), and boundary operators, as well mathematical computer experiments for the diagonal simplicial tensor module X(s; A), where s=(n_1,...,n_k) is the shape of a tensor of order k.
 
 The operations defined here satisfy the standard simplicial identities.
 
@@ -20,20 +20,6 @@ s_j d_{i-1}, & \text{if } i > j+1.
 \end{cases}
 \end{aligned}
 $$
-
-## Where are the sources now?
-
-The refactor places all installable code under `src/simplicial_tensors/`. The repository root can remain `Operations-Tensorielles-Simpliciales`; during installation Python resolves the package via `simplicial_tensors` contained in `src/`. No folder renaming is required.
-
-```ascii
-Operations-Tensorielles-Simpliciales/
-├── pyproject.toml
-└── src/
-    └── simplicial_tensors/
-        ├── __init__.py
-        ├── tensor_ops.py
-        └── ...
-```
 
 To work with these files on your own machine:
 
