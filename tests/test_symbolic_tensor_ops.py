@@ -21,11 +21,13 @@
 
 
 import pytest
-import sympy as sp
-import numpy as np
-from symbolic_tensor_ops import SymbolicTensor, tensor_filler_difference_rank
-from tensor_ops import n_hypergroupoid_conjecture, SimplicialException, ___SEED___
 import random
+
+sp = pytest.importorskip("sympy")
+np = pytest.importorskip("numpy")
+
+from simplicial_tensors.symbolic_tensor_ops import SymbolicTensor, tensor_filler_difference_rank
+from simplicial_tensors.tensor_ops import n_hypergroupoid_conjecture, SimplicialException, ___SEED___
 
 random.seed(___SEED___)
 

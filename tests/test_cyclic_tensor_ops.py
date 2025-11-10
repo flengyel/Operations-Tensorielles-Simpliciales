@@ -1,8 +1,10 @@
-import numpy as np
 import pytest
 import random
+
+np = pytest.importorskip("numpy")
 from numpy.testing import assert_array_equal
-from cyclic_tensor_ops import face_axis, degen_axis, cyclic, cyclic_signed
+
+from simplicial_tensors.cyclic_tensor_ops import face_axis, degen_axis, cyclic, cyclic_signed
 
 # helper to build a small random tensor
 def random_tensor(shape, seed=0):

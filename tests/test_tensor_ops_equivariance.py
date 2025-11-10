@@ -1,11 +1,13 @@
 import random
 from typing import Tuple
-import numpy as np
+
 import pytest
+
+np = pytest.importorskip("numpy")
 from numpy.testing import assert_array_equal
 
 # Import existing implementations from tensor_ops.py
-from tensor_ops import (
+from simplicial_tensors.tensor_ops import (
     dimen,
     face, 
     degen, 

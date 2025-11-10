@@ -19,19 +19,46 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import numpy as np
-from numpy import ndarray
 import pytest
 from typing import Tuple
+import random
+
+np = pytest.importorskip("numpy")
+from numpy import ndarray
 from numpy.testing import assert_array_equal
 
-from tensor_ops import (SimplicialException, face, hface, permute_tensor, random_axis_permutation, vface, bdry, hbdry, vbdry, 
-                        degen, hdegen, vdegen, horn, kan_condition, filler,
-                        standard_basis_matrix, cobdry, n_hypergroupoid_comparison, 
-                        n_hypergroupoid_conjecture, is_degen, decompose_degen, max_norm, 
-                        bdry_n, dimen, ___SEED___, random_tensor, range_tensor, 
-                        reconstruct_range_tensor_from_horn, random_real_matrix,bdry_mod1)
-import random
+from simplicial_tensors.tensor_ops import (
+    SimplicialException,
+    face,
+    hface,
+    permute_tensor,
+    random_axis_permutation,
+    vface,
+    bdry,
+    hbdry,
+    vbdry,
+    degen,
+    hdegen,
+    vdegen,
+    horn,
+    kan_condition,
+    filler,
+    standard_basis_matrix,
+    cobdry,
+    n_hypergroupoid_comparison,
+    n_hypergroupoid_conjecture,
+    is_degen,
+    decompose_degen,
+    max_norm,
+    bdry_n,
+    dimen,
+    ___SEED___,
+    random_tensor,
+    range_tensor,
+    reconstruct_range_tensor_from_horn,
+    random_real_matrix,
+    bdry_mod1,
+)
 
 random.seed(___SEED___) # Set seed for reproducibility
 

@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from tensor_ops import bdry_mod1, degen  # Ensure tensor_ops.py is correctly implemented and accessible
+from simplicial_tensors.tensor_ops import bdry_mod1, degen  # Ensure tensor_ops.py is correctly implemented and accessible
 
 # ----------------------------
 # Network Classes

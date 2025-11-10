@@ -1,7 +1,9 @@
 # test_permutation_matrix_representations.py
 
 import random
-import numpy as np
+import pytest
+
+np = pytest.importorskip("numpy")
 
 def kronecker_delta(a: int, b: int) -> int:
     """Kronecker delta: 1 if a == b, else 0."""

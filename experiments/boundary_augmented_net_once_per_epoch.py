@@ -5,7 +5,7 @@ import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-from tensor_ops import bdry_mod1, degen  # Ensure tensor_ops.py is correctly implemented and accessible
+from simplicial_tensors.tensor_ops import bdry_mod1, degen  # Ensure tensor_ops.py is correctly implemented and accessible
 import matplotlib.pyplot as plt
 import logging
 import os

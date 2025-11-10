@@ -15,7 +15,7 @@ from scipy import stats
 import logging
 from typing import Tuple
 from scipy.stats import truncnorm
-from tensor_ops import degen, bdry
+from simplicial_tensors.tensor_ops import degen, bdry
 
 # Set up logging
 logging.basicConfig(level=logging.WARNING)

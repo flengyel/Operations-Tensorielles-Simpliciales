@@ -23,19 +23,18 @@
 # It should be run within a SageMath environment.
 
 import pytest
-import numpy as np
 import random
 
-# Sage imports
-try:
-    from sage.all import var, simplify
-    from sage.symbolic.expression import Expression
-except ImportError:
-    raise ImportError("This test suite must be run in a SageMath environment.")
+np = pytest.importorskip("numpy")
+sage_all = pytest.importorskip("sage.all")
+sage_symbolic = pytest.importorskip("sage.symbolic.expression")
+var = sage_all.var
+simplify = sage_all.simplify
+Expression = sage_symbolic.Expression
 
 # Import the class and helpers from the Sage-compatible file
 # Ensure sagemath_compatible_tensor_ops.py is in the same directory or Python path.
-from sagemath_compatible_tensor_ops import SymbolicTensor, SimplicialException, n_hypergroupoid_conjecture
+from simplicial_tensors.sagemath_compatible_tensor_ops import SymbolicTensor, SimplicialException, n_hypergroupoid_conjecture
 
 # Seed for reproducibility
 ___SEED___ = 42

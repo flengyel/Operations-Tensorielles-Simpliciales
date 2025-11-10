@@ -5,9 +5,10 @@
 import pytest
 import random
 import itertools
-import numpy as np
 
-from tensor_ops import face, bdry
+np = pytest.importorskip("numpy")
+
+from simplicial_tensors.tensor_ops import face, bdry
 
 def relabel_matrix(A: np.ndarray, sigma: list[int]) -> np.ndarray:
     """

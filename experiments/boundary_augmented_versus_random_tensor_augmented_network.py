@@ -5,7 +5,7 @@ import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-from tensor_ops import bdry_mod1, degen  # Ensure tensor_ops.py is correctly implemented and accessible
+from simplicial_tensors.tensor_ops import bdry_mod1, degen  # Ensure tensor_ops.py is correctly implemented and accessible
 
 # pytorch implementation of max_norm
 def max_norm_pytorch(t: torch.Tensor) -> torch.Tensor:

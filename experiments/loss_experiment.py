@@ -7,7 +7,7 @@ import numpy as np
 from scipy import stats
 import csv
 from typing import Tuple, List
-from tensor_ops import random_real_tensor, bdry, degen, ___SEED___  # Ensure tensor_ops.py is in the same directory
+from simplicial_tensors.tensor_ops import random_real_tensor, bdry, degen, ___SEED___  # Ensure tensor_ops.py is in the same directory
 from tqdm import tqdm  # For progress bars
 import pandas as pd
 import matplotlib.pyplot as plt

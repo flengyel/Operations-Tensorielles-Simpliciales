@@ -1,5 +1,22 @@
-[tool.pytest.ini_options]
-pythonpath = "src"
-addopts = [
-    "--import-mode=importlib",
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "SimplicialTensors"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "sympy",
+    "scipy",
 ]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["simplicial_tensors", "simplicial_tensors.nn"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "-q"
+testpaths = ["tests"]
